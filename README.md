@@ -87,7 +87,11 @@ npm run db:reset     # ricrea DB + migration + seed
 Riempi le variabili in `.env.local` (vedi `.env.example`):
 
 - **Telegram**: `TELEGRAM_BOT_ORDINI_TOKEN`, `TELEGRAM_BOT_PAGAMENTI_TOKEN` e i
-  `telegram_chat_*` dei ristoranti. Il ristoratore deve premere "Avvia" su
+  `TELEGRAM_CHAT_*` (id chat dove i bot scrivono). Imposta i chat id in
+  `.env.local` e rilancia `scripts/seed-users.mjs` per applicarli ai ristoranti
+  demo: il seed li lascia `null`, così i tuoi id sopravvivono a un `db:reset`
+  (un id finto farebbe rispondere Telegram con "400 chat not found" e la
+  notifica fallirebbe in silenzio). Il ristoratore deve premere "Avvia" su
   entrambi i bot prima di ricevere messaggi.
 - **Stripe**: `STRIPE_SECRET_KEY` + i `*_WEBHOOK_SECRET`. Con Stripe configurato
   il simulatore dev si disattiva: l'unica fonte di verità sul pagamento è il

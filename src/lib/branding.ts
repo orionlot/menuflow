@@ -1,4 +1,5 @@
 import type { BrandingPatch } from "@/types/db";
+import { sanitizeLayout } from "@/lib/config/layout";
 
 /** Whitelist + validate branding fields. Used by the dashboard and admin actions. */
 export function sanitizeBranding(patch: BrandingPatch): Record<string, unknown> {
@@ -29,5 +30,15 @@ export function sanitizeBranding(patch: BrandingPatch): Record<string, unknown> 
     out.coperto_label = patch.coperto_label.trim().slice(0, 40) || "Coperto";
   if (typeof patch.accetta_mancia === "boolean")
     out.accetta_mancia = patch.accetta_mancia;
+  if ("colore_secondario" in patch) {
+    if (!patch.colore_secondario) out.colore_secondario = null;
+    else if (/^#[0-9a-fA-F]{6}$/.test(patch.colore_secondario))
+      out.colore_secondario = patch.colore_secondario.toLowerCase();
+  }
+  if (patch.layout !== undefined) out.layout = sanitizeLayout(patch.layout);
+  if ("google_review_url" in patch)
+    out.google_review_url = patch.google_review_url
+      ? String(patch.google_review_url).trim().slice(0, 300)
+      : null;
   return out;
 }

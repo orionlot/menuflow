@@ -65,6 +65,8 @@ export interface ItemPatch {
   descrizione_i18n?: Record<string, string>;
   allergeni?: string[];
   opzioni?: ItemOption[];
+  consigliato?: boolean;
+  scorta?: number | null;
 }
 
 export function sanitizeOpzioni(raw: unknown): ItemOption[] {
@@ -114,5 +116,9 @@ export function sanitizeItemPatch(patch: ItemPatch): ItemPatch {
   if (Array.isArray(patch.allergeni))
     out.allergeni = patch.allergeni.filter((a) => ALLERGENI_BY_ID.has(a)).slice(0, 14);
   if (Array.isArray(patch.opzioni)) out.opzioni = sanitizeOpzioni(patch.opzioni);
+  if (typeof patch.consigliato === "boolean") out.consigliato = patch.consigliato;
+  if ("scorta" in patch)
+    out.scorta =
+      patch.scorta == null ? null : Math.max(0, Math.floor(Number(patch.scorta) || 0));
   return out;
 }

@@ -44,6 +44,7 @@ interface ItemHandlers {
   setOpenOptions: (id: string | null) => void;
   save: (id: string, patch: ItemPatch) => void;
   toggle: (item: MenuItem) => void;
+  toggleConsigliato: (item: MenuItem) => void;
   remove: (id: string) => void;
   uploadPhoto: (item: MenuItem, file: File) => void;
   toggleAllergen: (item: MenuItem, id: string) => void;
@@ -120,6 +121,10 @@ export default function MenuManager({
     patchLocal(item.id, { disponibile: !item.disponibile });
     save(item.id, { disponibile: !item.disponibile });
   }
+  function toggleConsigliato(item: MenuItem) {
+    patchLocal(item.id, { consigliato: !item.consigliato });
+    save(item.id, { consigliato: !item.consigliato });
+  }
   function remove(id: string) {
     if (!confirm("Eliminare questa voce?")) return;
     setItems((prev) => prev.filter((i) => i.id !== id));
@@ -189,6 +194,7 @@ export default function MenuManager({
     setOpenOptions,
     save,
     toggle,
+    toggleConsigliato,
     remove,
     uploadPhoto,
     toggleAllergen,
@@ -474,6 +480,16 @@ function SortableItem({ item, h }: { item: MenuItem; h: ItemHandlers }) {
               }`}
             >
               {item.disponibile ? "Disponibile" : "Esaurito"}
+            </button>
+            <button
+              onClick={() => h.toggleConsigliato(item)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                item.consigliato
+                  ? "bg-amber-100 text-amber-700"
+                  : "bg-neutral-100 text-neutral-400"
+              }`}
+            >
+              {item.consigliato ? "★ Consigliato" : "☆ Consiglia"}
             </button>
             <button
               onClick={() => h.remove(item.id)}

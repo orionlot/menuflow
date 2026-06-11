@@ -42,6 +42,10 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/api")) {
     return NextResponse.next();
   }
+  // Public self-service signup — never rewrite to a tenant.
+  if (pathname.startsWith("/onboarding")) {
+    return NextResponse.next();
+  }
 
   const host = (request.headers.get("host") ?? "").split(":")[0].toLowerCase();
   const identifier = tenantIdentifier(host);

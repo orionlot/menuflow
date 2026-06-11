@@ -61,6 +61,12 @@ export default async function DashboardLayout({
               >
                 QR
               </Link>
+              <Link
+                href="/dashboard/funzionalita"
+                className="text-neutral-600 hover:text-black"
+              >
+                Funzionalità
+              </Link>
             </nav>
           </div>
           <form action={signOut}>

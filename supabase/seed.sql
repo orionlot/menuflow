@@ -1,5 +1,9 @@
 -- Seed data for local development. owner_id is linked afterwards by
 -- scripts/seed-users.mjs (which creates the auth users via the admin API).
+-- telegram_chat_* are left null here on purpose: a fake chat id makes the bot
+-- call Telegram and get "400 chat not found" (notifications silently fail).
+-- seed-users.mjs fills them from TELEGRAM_CHAT_* in .env.local, so your real
+-- chat ids survive a `db:reset`.
 
 -- ── Restaurant 1: Pizzeria Mario — base plan, NO online payments (case A) ──
 insert into public.restaurants
@@ -8,7 +12,7 @@ insert into public.restaurants
 values
   ('11111111-1111-1111-1111-111111111111', 'pizzeria-mario', 'Pizzeria da Mario',
    'Forno a legna dal 1987', '#c8453b', 'light', 'base', false, '{it}', false,
-   '123456789', true)
+   null, true)
 on conflict (id) do nothing;
 
 insert into public.menu_items (restaurant_id, categoria, nome, descrizione, prezzo, disponibile, ordine) values
@@ -29,7 +33,7 @@ insert into public.restaurants
 values
   ('22222222-2222-2222-2222-222222222222', 'bar-luna', 'Bar Luna',
    'Cocktail & Vini', '#caa45d', 'dark', 'plus', true, '{it,en}', true,
-   '987654321', '987654322', true)
+   null, null, true)
 on conflict (id) do nothing;
 
 insert into public.menu_items (restaurant_id, categoria, nome, nome_i18n, descrizione, descrizione_i18n, prezzo, disponibile, ordine) values

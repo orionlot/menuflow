@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeBranding } from "@/lib/branding";
+import { sanitizeFunzionalita } from "@/lib/config/features";
 import { sanitizeItemPatch, sanitizeAggiunte, type ItemPatch } from "@/lib/menu";
 import type { BrandingPatch, CategoryAddon } from "@/types/db";
 
@@ -73,6 +74,20 @@ export async function updateAggiunte(aggiunte: CategoryAddon[]) {
   revalidatePath("/[domain]", "page");
 }
 
+/** Restaurateur toggles their own feature switches (entitlement is enforced in UI
+ *  and re-checked server-side wherever a feature actually acts). */
+export async function updateFunzionalita(funzionalita: Record<string, boolean>) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ funzionalita: sanitizeFunzionalita(funzionalita) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/funzionalita");
+  revalidatePath("/[domain]", "page");
+}
+
 export async function deleteItem(itemId: string) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("menu_items").delete().eq("id", itemId);
@@ -104,6 +119,22 @@ export async function toggleScontrino(orderId: string, value: boolean) {
     .eq("id", orderId);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/reconciliation");
+}
+
+/** Notifiche: mark the owner's unread orders as seen. Without `ids`, marks all
+ *  currently-unread orders. RLS + the explicit restaurant filter scope it. */
+export async function markOrdersRead(ids?: string[]) {
+  const restaurantId = await ownerRestaurantId();
+  const supabase = await createSupabaseServerClient();
+  let q = supabase
+    .from("orders")
+    .update({ visto_at: new Date().toISOString() })
+    .eq("restaurant_id", restaurantId)
+    .is("visto_at", null);
+  if (ids && ids.length) q = q.in("id", ids.slice(0, 500));
+  const { error } = await q;
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/ordini");
 }
 
 /** Kitchen: cook marks an order ready (rings the bell for waiters). */

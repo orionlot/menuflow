@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import type { ItemOption, MenuItem, PublicRestaurant } from "@/types/db";
 import { formatEUR } from "@/lib/config/plans";
 import { brandPalette } from "@/lib/brand";
+import { resolveLayout, FONT_VARS } from "@/lib/config/layout";
 import { effectiveOptions } from "@/lib/menu";
 import { ALLERGENI_BY_ID } from "@/lib/config/allergeni";
 
@@ -38,8 +39,16 @@ export default function MenuClient({
   tenant: PublicRestaurant;
   items: MenuItem[];
 }) {
-  const p = brandPalette(tenant.colore_primario, tenant.tema);
+  const layout = resolveLayout(tenant.layout);
+  const p = brandPalette(tenant.colore_primario, tenant.tema, tenant.colore_secondario);
   const dark = tenant.tema === "dark";
+  const radius = layout.bordi === "squadrati" ? 6 : 18;
+  const compact = layout.densita === "compatta";
+  const photoTop = layout.foto_pos === "sopra";
+  const minimalHeader = layout.intestazione === "minimal";
+  const headBg = minimalHeader ? p.pageBg : p.headerBg;
+  const headText = minimalHeader ? p.text : p.headerText;
+  const headSub = minimalHeader ? p.textMuted : p.headerSub;
 
   const [lang, setLang] = useState<string>(tenant.lingue?.[0] ?? "it");
   const [cart, setCart] = useState<Record<string, CartLine>>({});
@@ -253,15 +262,33 @@ export default function MenuClient({
   const tavoloMissing = !tavolo.trim();
 
   return (
-    <div style={{ background: p.pageBg, color: p.text, minHeight: "100vh" }} className="font-sans">
+    <div
+      style={
+        {
+          background: p.pageBg,
+          color: p.text,
+          minHeight: "100vh",
+          "--font-display": FONT_VARS[layout.font].display,
+          "--font-body": FONT_VARS[layout.font].body,
+        } as CSSProperties
+      }
+      className="font-sans"
+    >
       <div className="mx-auto w-full max-w-[480px] pb-32">
         {/* Header */}
         <header
-          className={dark ? "px-5 pb-6 pt-7" : "rounded-b-[30px] px-5 pb-6 pt-8"}
+          className={
+            minimalHeader
+              ? "px-5 pb-4 pt-6"
+              : dark
+                ? "px-5 pb-6 pt-7"
+                : "rounded-b-[30px] px-5 pb-6 pt-8"
+          }
           style={{
-            background: p.headerBg,
-            color: p.headerText,
-            borderBottom: dark ? `1px solid ${p.surfaceBorder}` : undefined,
+            background: headBg,
+            color: headText,
+            borderBottom:
+              minimalHeader || dark ? `1px solid ${p.surfaceBorder}` : undefined,
           }}
         >
           <div className="flex items-center justify-between gap-3">
@@ -297,7 +324,7 @@ export default function MenuClient({
                 {tenant.sottotitolo && (
                   <p
                     className={dark ? "text-[11px] uppercase tracking-[0.22em]" : "text-sm"}
-                    style={{ color: p.headerSub }}
+                    style={{ color: headSub }}
                   >
                     {tenant.sottotitolo}
                   </p>
@@ -311,7 +338,7 @@ export default function MenuClient({
                 className="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold outline-none"
                 style={{
                   background: dark ? p.chipBg : "rgba(255,255,255,0.2)",
-                  color: p.headerText,
+                  color: headText,
                   border: dark ? `1px solid ${p.surfaceBorder}` : "none",
                 }}
               >
@@ -400,122 +427,148 @@ export default function MenuClient({
 
         {/* Items */}
         <main className="px-5 pt-3">
-          <ul className="space-y-3">
+          <ul className={compact ? "space-y-2" : "space-y-3"}>
             {shown.map((item, idx) => {
               const sold = !item.disponibile;
               const qty = qtyForItem(item.id);
               const hasOpts = effectiveOptions(item, tenant.aggiunte).length > 0;
+              const showPhoto =
+                !layout.foto_categorie_nascoste.includes(item.categoria) &&
+                (!dark || !!item.foto_url);
+              const photoRadius = Math.max(radius - 4, 2);
+              const photo = showPhoto ? (
+                item.foto_url ? (
+                  <Image
+                    src={item.foto_url}
+                    alt={t(item.nome, item.nome_i18n)}
+                    width={photoTop ? 480 : 64}
+                    height={photoTop ? 200 : 64}
+                    className={
+                      photoTop ? "h-32 w-full object-cover" : "h-16 w-16 shrink-0 object-cover"
+                    }
+                    style={{ borderRadius: photoRadius }}
+                  />
+                ) : (
+                  <div
+                    className={
+                      photoTop
+                        ? "flex h-28 w-full items-center justify-center font-display text-3xl"
+                        : "flex h-16 w-16 shrink-0 items-center justify-center font-display text-xl"
+                    }
+                    style={{ background: p.tint, color: p.brand, borderRadius: photoRadius }}
+                  >
+                    {item.nome.charAt(0)}
+                  </div>
+                )
+              ) : null;
               return (
                 <li
                   key={item.id}
-                  className="mf-up flex items-start gap-3"
+                  className="mf-up"
                   style={{
                     animationDelay: `${Math.min(idx * 45, 300)}ms`,
                     opacity: sold ? 0.5 : 1,
                     ...(dark
-                      ? { borderBottom: `1px solid ${p.surfaceBorder}`, paddingBottom: "16px" }
+                      ? {
+                          borderBottom: `1px solid ${p.surfaceBorder}`,
+                          paddingBottom: compact ? "12px" : "16px",
+                        }
                       : {
                           background: p.surface,
                           border: `1px solid ${p.surfaceBorder}`,
-                          borderRadius: "18px",
-                          padding: "12px",
+                          borderRadius: radius,
+                          padding: compact ? "9px" : "12px",
                           boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
                         }),
                   }}
                 >
-                  {(!dark || item.foto_url) &&
-                    (item.foto_url ? (
-                      <Image
-                        src={item.foto_url}
-                        alt={t(item.nome, item.nome_i18n)}
-                        width={64}
-                        height={64}
-                        className="h-16 w-16 shrink-0 rounded-xl object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl font-display text-xl"
-                        style={{ background: p.tint, color: p.brand }}
-                      >
-                        {item.nome.charAt(0)}
-                      </div>
-                    ))}
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-display text-[1.05rem] font-semibold leading-tight">
-                        {t(item.nome, item.nome_i18n)}
-                      </h3>
-                      {sold && (
-                        <span
-                          className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                          style={{ background: p.surfaceBorder, color: p.textMuted }}
-                        >
-                          Esaurito
-                        </span>
-                      )}
-                    </div>
-                    {(item.descrizione || item.descrizione_i18n?.[lang]) && (
-                      <p className="mt-0.5 text-sm leading-snug" style={{ color: p.textMuted }}>
-                        {t(item.descrizione ?? "", item.descrizione_i18n)}
-                      </p>
-                    )}
-                    {item.allergeni?.length > 0 && (
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {item.allergeni.map((a) => (
+                  {photoTop && photo}
+                  <div className={`flex items-start gap-3${photoTop && photo ? " mt-3" : ""}`}>
+                    {!photoTop && photo}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-display text-[1.05rem] font-semibold leading-tight">
+                          {t(item.nome, item.nome_i18n)}
+                        </h3>
+                        {sold && (
                           <span
-                            key={a}
-                            title={ALLERGENI_BY_ID.get(a)?.label ?? a}
-                            className="rounded px-1.5 py-0.5 text-[10px] font-medium"
-                            style={{ background: p.tint, color: p.textMuted }}
+                            className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                            style={{ background: p.surfaceBorder, color: p.textMuted }}
                           >
-                            {ALLERGENI_BY_ID.get(a)?.short ?? a}
+                            Esaurito
                           </span>
-                        ))}
+                        )}
+                        {tenant.funzioni_attive?.piatto_consigliato && item.consigliato && (
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                            style={{ background: p.accent, color: p.onAccent }}
+                          >
+                            ★ Consigliato
+                          </span>
+                        )}
+                      </div>
+                      {(item.descrizione || item.descrizione_i18n?.[lang]) && (
+                        <p className="mt-0.5 text-sm leading-snug" style={{ color: p.textMuted }}>
+                          {t(item.descrizione ?? "", item.descrizione_i18n)}
+                        </p>
+                      )}
+                      {item.allergeni?.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {item.allergeni.map((a) => (
+                            <span
+                              key={a}
+                              title={ALLERGENI_BY_ID.get(a)?.label ?? a}
+                              className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                              style={{ background: p.tint, color: p.textMuted }}
+                            >
+                              {ALLERGENI_BY_ID.get(a)?.short ?? a}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="mt-1.5 font-display text-base font-semibold" style={{ color: p.price }}>
+                        {formatEUR(Math.round(item.prezzo * 100))}
+                        {hasOpts && (
+                          <span className="ml-1 text-xs font-normal" style={{ color: p.textMuted }}>
+                            + opzioni
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {!sold && backend !== "down" && (
+                      <div className="shrink-0 self-center">
+                        {qty > 0 && !hasOpts ? (
+                          <div
+                            className="flex items-center gap-2 rounded-full px-1.5 py-1"
+                            style={{ background: p.tint }}
+                          >
+                            <Round bg={p.accent} fg={p.onAccent} onClick={() => setQty(item.id, qty - 1)}>
+                              −
+                            </Round>
+                            <span className="w-4 text-center text-sm font-bold">{qty}</span>
+                            <Round bg={p.accent} fg={p.onAccent} onClick={() => addLine(item, [])}>
+                              +
+                            </Round>
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <Round bg={p.accent} fg={p.onAccent} onClick={() => tapAdd(item)}>
+                              +
+                            </Round>
+                            {qty > 0 && (
+                              <span
+                                className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
+                                style={{ background: p.text, color: p.pageBg }}
+                              >
+                                {qty}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
-                    <div className="mt-1.5 font-display text-base font-semibold" style={{ color: p.price }}>
-                      {formatEUR(Math.round(item.prezzo * 100))}
-                      {hasOpts && (
-                        <span className="ml-1 text-xs font-normal" style={{ color: p.textMuted }}>
-                          + opzioni
-                        </span>
-                      )}
-                    </div>
                   </div>
-
-                  {!sold && backend !== "down" && (
-                    <div className="shrink-0 self-center">
-                      {qty > 0 && !hasOpts ? (
-                        <div
-                          className="flex items-center gap-2 rounded-full px-1.5 py-1"
-                          style={{ background: p.tint }}
-                        >
-                          <Round bg={p.brand} fg={p.onBrand} onClick={() => setQty(item.id, qty - 1)}>
-                            −
-                          </Round>
-                          <span className="w-4 text-center text-sm font-bold">{qty}</span>
-                          <Round bg={p.brand} fg={p.onBrand} onClick={() => addLine(item, [])}>
-                            +
-                          </Round>
-                        </div>
-                      ) : (
-                        <div className="relative">
-                          <Round bg={p.brand} fg={p.onBrand} onClick={() => tapAdd(item)}>
-                            +
-                          </Round>
-                          {qty > 0 && (
-                            <span
-                              className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
-                              style={{ background: p.text, color: p.pageBg }}
-                            >
-                              {qty}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </li>
               );
             })}
@@ -534,7 +587,7 @@ export default function MenuClient({
           <button
             onClick={() => setSheet(true)}
             className="mf-up pointer-events-auto flex w-full max-w-[480px] items-center justify-between rounded-2xl px-5 py-3.5 font-semibold shadow-2xl"
-            style={{ background: p.brand, color: p.onBrand }}
+            style={{ background: p.accent, color: p.onAccent }}
           >
             <span className="uppercase tracking-wide">Vedi ordine</span>
             <span className="rounded-full px-3 py-1 text-sm" style={{ background: "rgba(0,0,0,0.16)" }}>
@@ -722,7 +775,7 @@ export default function MenuClient({
                 onClick={submit}
                 disabled={submitting || count === 0 || tavoloMissing || copertiMissing}
                 className="w-full rounded-xl py-3.5 text-center font-semibold disabled:opacity-50"
-                style={{ background: p.brand, color: p.onBrand }}
+                style={{ background: p.accent, color: p.onAccent }}
               >
                 {submitting
                   ? "Invio…"
@@ -785,6 +838,17 @@ export default function MenuClient({
             >
               Stato: {status === "Pronto" ? "🔔 Pronto!" : status === "In preparazione" ? "👩‍🍳 In preparazione" : status}
             </div>
+          )}
+          {tenant.funzioni_attive?.recensioni && tenant.google_review_url && (
+            <a
+              href={tenant.google_review_url}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 block w-full rounded-xl py-3 text-center font-semibold"
+              style={{ background: p.tint, color: p.text }}
+            >
+              ⭐ Ti è piaciuto? Lascia una recensione
+            </a>
           )}
           <button
             onClick={() => {

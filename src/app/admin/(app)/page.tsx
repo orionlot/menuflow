@@ -1,16 +1,20 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PLANS } from "@/lib/config/plans";
+import { resolveLayout } from "@/lib/config/layout";
+import { FEATURES, isEntitled } from "@/lib/config/features";
 import { buildTenantUrl } from "@/lib/urls";
 import { appOrigin } from "@/lib/origin";
 import type { Restaurant } from "@/types/db";
 import BrandingForm from "@/components/BrandingForm";
+import FeaturesAdmin from "./FeaturesAdmin";
 import {
   addInitialMenuItem,
   createRestaurant,
   setAttivo,
   updateRestaurant,
   updateRestaurantBranding,
+  updateRestaurantFunzionalita,
 } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
@@ -168,18 +172,40 @@ export default async function AdminHome() {
               <div className="mt-3">
                 <BrandingForm
                   restaurantId={r.id}
+                  categories={[]}
                   initial={{
                     nome: r.nome,
                     sottotitolo: r.sottotitolo,
                     colore_primario: r.colore_primario,
+                    colore_secondario: r.colore_secondario,
                     tema: r.tema,
+                    layout: resolveLayout(r.layout),
                     logo_url: r.logo_url,
                     coperto: r.coperto,
                     coperto_modalita: r.coperto_modalita,
                     coperto_label: r.coperto_label,
                     accetta_mancia: r.accetta_mancia,
+                    google_review_url: r.google_review_url,
                   }}
                   action={updateRestaurantBranding.bind(null, r.id)}
+                />
+              </div>
+            </details>
+
+            <details className="mt-3 text-sm">
+              <summary className="cursor-pointer text-neutral-500">
+                Funzionalità (disponibilità)
+              </summary>
+              <div className="mt-3">
+                <FeaturesAdmin
+                  restaurantId={r.id}
+                  action={updateRestaurantFunzionalita}
+                  features={FEATURES.map((f) => ({
+                    id: f.id,
+                    nome: f.nome,
+                    pianoMinimo: f.pianoMinimo,
+                    available: isEntitled(r, f.id),
+                  }))}
                 />
               </div>
             </details>

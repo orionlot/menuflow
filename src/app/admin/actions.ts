@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sanitizeBranding } from "@/lib/branding";
+import { sanitizeFunzionalita } from "@/lib/config/features";
 import { sanitizeItemPatch, sanitizeAggiunte, type ItemPatch } from "@/lib/menu";
 import type { BrandingPatch, CategoryAddon, PlanId } from "@/types/db";
 
@@ -184,6 +185,21 @@ export async function updateRestaurantBranding(
   const { error } = await admin
     .from("restaurants")
     .update(clean)
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin");
+}
+
+/** Admin grants/revokes feature availability per tenant (overrides the plan). */
+export async function updateRestaurantFunzionalita(
+  restaurantId: string,
+  funzionalitaAdmin: Record<string, boolean>,
+) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ funzionalita_admin: sanitizeFunzionalita(funzionalitaAdmin) })
     .eq("id", restaurantId);
   if (error) throw new Error(error.message);
   revalidatePath("/admin");

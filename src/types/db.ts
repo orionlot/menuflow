@@ -14,6 +14,18 @@ export type PlanId = "base" | "plus" | "pro";
 /** How the cover charge is applied. */
 export type CopertoModalita = "nessuno" | "persona" | "ordine" | "servizio";
 
+/** Per-tenant menu layout choices (Module 1 — Aspetto). Stored as jsonb;
+ *  defaults + validation live in src/lib/config/layout.ts. */
+export interface MenuLayout {
+  bordi: "arrotondati" | "squadrati";
+  foto_pos: "lato" | "sopra";
+  /** Categories whose product photos are hidden on the public menu. */
+  foto_categorie_nascoste: string[];
+  intestazione: "banner" | "minimal";
+  densita: "comoda" | "compatta";
+  font: "classico" | "moderno" | "elegante" | "tondo";
+}
+
 export interface Restaurant {
   id: string;
   slug: string;
@@ -21,7 +33,9 @@ export interface Restaurant {
   sottotitolo: string | null;
   logo_url: string | null;
   colore_primario: string;
+  colore_secondario: string | null;
   tema: "light" | "dark";
+  layout: MenuLayout;
   piano: PlanId;
   multilingua: boolean;
   lingue: string[];
@@ -37,6 +51,9 @@ export interface Restaurant {
   coperto_label: string;
   accetta_mancia: boolean;
   aggiunte: CategoryAddon[];
+  funzionalita: Record<string, boolean>;
+  funzionalita_admin: Record<string, boolean>;
+  google_review_url: string | null;
   attivo: boolean;
   owner_id: string | null;
   created_at: string;
@@ -54,7 +71,9 @@ export type PublicRestaurant = Pick<
   | "sottotitolo"
   | "logo_url"
   | "colore_primario"
+  | "colore_secondario"
   | "tema"
+  | "layout"
   | "piano"
   | "multilingua"
   | "lingue"
@@ -64,8 +83,12 @@ export type PublicRestaurant = Pick<
   | "coperto_label"
   | "accetta_mancia"
   | "aggiunte"
+  | "google_review_url"
   | "attivo"
->;
+> & {
+  /** Effective on/off per feature (plan ∪ admin entitlement, then owner switch). */
+  funzioni_attive: Record<string, boolean>;
+};
 
 /** A choice within an option group, e.g. "+ Bacon" with a price delta. */
 export interface OptionChoice {
@@ -100,6 +123,8 @@ export interface MenuItem {
   ordine: number;
   allergeni: string[];
   opzioni: ItemOption[];
+  consigliato: boolean;
+  scorta: number | null;
   created_at: string;
 }
 
@@ -133,6 +158,7 @@ export interface Order {
   stripe_payment_intent: string | null;
   pronto_at: string | null;
   servito_at: string | null;
+  visto_at: string | null;
   created_at: string;
 }
 
@@ -146,10 +172,13 @@ export interface BrandingPatch {
   nome?: string;
   sottotitolo?: string | null;
   colore_primario?: string;
+  colore_secondario?: string | null;
   tema?: "light" | "dark";
+  layout?: Partial<MenuLayout>;
   logo_url?: string | null;
   coperto?: number;
   coperto_modalita?: CopertoModalita;
   coperto_label?: string;
   accetta_mancia?: boolean;
+  google_review_url?: string | null;
 }
