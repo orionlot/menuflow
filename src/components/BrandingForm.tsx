@@ -42,12 +42,6 @@ export default function BrandingForm({
   const [tema, setTema] = useState<"light" | "dark">(initial.tema);
   const [layout, setLayout] = useState<MenuLayout>(initial.layout ?? DEFAULT_LAYOUT);
   const [logoUrl, setLogoUrl] = useState<string | null>(initial.logo_url);
-  const [coperto, setCoperto] = useState(String(initial.coperto ?? 0));
-  const [copertoMode, setCopertoMode] = useState<CopertoModalita>(
-    initial.coperto_modalita ?? "nessuno",
-  );
-  const [copertoLabel, setCopertoLabel] = useState(initial.coperto_label || "Coperto");
-  const [mancia, setMancia] = useState(Boolean(initial.accetta_mancia));
   const [reviewUrl, setReviewUrl] = useState(initial.google_review_url ?? "");
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
@@ -107,10 +101,6 @@ export default function BrandingForm({
           tema,
           layout,
           logo_url: logoUrl,
-          coperto: Math.max(0, parseFloat(coperto) || 0),
-          coperto_modalita: copertoMode,
-          coperto_label: copertoLabel.trim() || "Coperto",
-          accetta_mancia: mancia,
           google_review_url: reviewUrl.trim() || null,
         });
         setMsg("Salvato ✓");
@@ -336,64 +326,6 @@ export default function BrandingForm({
               </div>
             )}
           </div>
-        </div>
-
-        {/* Coperto */}
-        <div className="rounded-lg border border-neutral-200 p-3">
-          <div className="mb-2 text-xs font-medium text-neutral-500">Coperto</div>
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <label className="mb-1 block text-[11px] text-neutral-400">Modalità</label>
-              <select
-                value={copertoMode}
-                onChange={(e) => setCopertoMode(e.target.value as CopertoModalita)}
-                className="rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-              >
-                <option value="nessuno">Nessuno</option>
-                <option value="persona">Per persona</option>
-                <option value="ordine">Fisso per ordine</option>
-                <option value="servizio">Servizio %</option>
-              </select>
-            </div>
-            {copertoMode !== "nessuno" && (
-              <>
-                <div>
-                  <label className="mb-1 block text-[11px] text-neutral-400">
-                    {copertoMode === "servizio"
-                      ? "Percentuale (%)"
-                      : copertoMode === "ordine"
-                        ? "Importo (€ a ordine)"
-                        : "Importo (€ a persona)"}
-                  </label>
-                  <input
-                    type="number"
-                    step={copertoMode === "servizio" ? "1" : "0.5"}
-                    min="0"
-                    value={coperto}
-                    onChange={(e) => setCoperto(e.target.value)}
-                    className="w-32 rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-[11px] text-neutral-400">Etichetta</label>
-                  <input
-                    value={copertoLabel}
-                    onChange={(e) => setCopertoLabel(e.target.value)}
-                    placeholder="Coperto"
-                    className="w-40 rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          <label className="mt-3 flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={mancia}
-              onChange={(e) => setMancia(e.target.checked)}
-            />
-            Accetta mancia (solo con pagamenti online)
-          </label>
         </div>
 
         <div>
