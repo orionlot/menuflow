@@ -8,6 +8,7 @@ import { appOrigin } from "@/lib/origin";
 import type { Restaurant } from "@/types/db";
 import BrandingForm from "@/components/BrandingForm";
 import FeaturesAdmin from "./FeaturesAdmin";
+import EmbedSnippet from "./EmbedSnippet";
 import {
   addInitialMenuItem,
   createRestaurant,
@@ -218,6 +219,15 @@ export default async function AdminHome() {
                     available: isEntitled(r, f.id),
                   }))}
                 />
+              </div>
+            </details>
+
+            <details className="mt-3 text-sm">
+              <summary className="cursor-pointer text-neutral-500">
+                Incorpora (iframe)
+              </summary>
+              <div className="mt-3">
+                <EmbedSnippet url={buildTenantUrl(origin, r.slug)} nome={r.nome} />
               </div>
             </details>
 
