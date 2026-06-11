@@ -1,65 +1,118 @@
-import Image from "next/image";
+import Link from "next/link";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isSupabaseConfigured } from "@/lib/env";
+import { buildTenantUrl } from "@/lib/urls";
+import { appOrigin } from "@/lib/origin";
+import { PLANS, formatEUR, MULTILINGUA_ADDON } from "@/lib/config/plans";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+async function getTenants() {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("restaurants")
+      .select("slug, nome, piano, pagamenti_attivi, attivo")
+      .order("created_at", { ascending: true });
+    return data ?? [];
+  } catch {
+    return null;
+  }
+}
+
+export default async function Home() {
+  const tenants = await getTenants();
+  const origin = await appOrigin();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="mx-auto max-w-3xl px-6 py-16">
+      <header className="mb-10">
+        <h1 className="text-4xl font-bold tracking-tight">MenuFlow</h1>
+        <p className="mt-2 text-lg text-neutral-600">
+          Menu digitali e ordini al tavolo per ristoranti e bar. Una sola
+          piattaforma, ogni locale è un sottodominio.
+        </p>
+      </header>
+
+      <section className="mb-12">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+          Locali (ambiente di sviluppo)
+        </h2>
+        {tenants === null ? (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+            Backend non raggiungibile. Avvia Supabase con{" "}
+            <code className="rounded bg-amber-100 px-1">npm run db:start</code> e
+            ricarica.
+          </div>
+        ) : tenants.length === 0 ? (
+          <p className="text-neutral-500">
+            Nessun locale ancora. Crea il primo da /admin.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        ) : (
+          <ul className="space-y-3">
+            {tenants.map((t) => (
+              <li
+                key={t.slug}
+                className="flex items-center justify-between rounded-lg border border-neutral-200 p-4"
+              >
+                <div>
+                  <a
+                    href={buildTenantUrl(origin, t.slug)}
+                    className="font-medium text-blue-600 hover:underline"
+                  >
+                    {t.nome}
+                  </a>
+                  <div className="text-xs text-neutral-500">
+                    /{t.slug} · piano {t.piano}
+                    {t.pagamenti_attivi ? " · pagamenti ON" : ""}
+                    {!t.attivo ? " · SOSPESO" : ""}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="mb-12">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+          Aree riservate
+        </h2>
+        <div className="flex gap-3">
+          <Link
+            href="/dashboard"
+            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            Dashboard ristoratore
+          </Link>
+          <Link
+            href="/admin"
+            className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-100"
           >
-            Documentation
-          </a>
+            Admin
+          </Link>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+          Piani
+        </h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {Object.values(PLANS).map((p) => (
+            <div key={p.id} className="rounded-lg border border-neutral-200 p-4">
+              <div className="font-semibold">{p.label}</div>
+              <div className="text-2xl font-bold">{formatEUR(p.priceCents)}</div>
+              <div className="text-xs text-neutral-500">/mese</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-xs text-neutral-500">
+          Add-on {MULTILINGUA_ADDON.label}:{" "}
+          {formatEUR(MULTILINGUA_ADDON.priceCents)}/mese.
+        </p>
+      </section>
+    </main>
   );
 }

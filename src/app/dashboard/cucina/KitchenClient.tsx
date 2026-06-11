@@ -1,0 +1,333 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  markOrderReady,
+  markOrderServed,
+  undoOrderReady,
+} from "@/app/dashboard/actions";
+
+interface KItem {
+  item_id?: string;
+  nome: string;
+  qta: number;
+  prezzo: number;
+}
+interface KOrder {
+  id: string;
+  tavolo: string | null;
+  items: KItem[];
+  totale: number;
+  note: string | null;
+  created_at: string;
+  pronto_at: string | null;
+  stato: string;
+}
+
+export default function KitchenClient({
+  restaurantName,
+  restaurantId,
+}: {
+  restaurantName: string;
+  restaurantId: string;
+}) {
+  const [orders, setOrders] = useState<KOrder[]>([]);
+  const [audioOn, setAudioOn] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  const ac = useRef<AudioContext | null>(null);
+  const seen = useRef<Set<string>>(new Set());
+  const firstLoad = useRef(true);
+  const audioOnRef = useRef(false);
+
+  // ── Audio (Web Audio API; no asset files) ──────────────────────────
+  const enableAudio = useCallback(() => {
+    if (!ac.current) {
+      const Ctor =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
+      ac.current = new Ctor();
+    }
+    void ac.current.resume();
+    audioOnRef.current = true;
+    setAudioOn(true);
+  }, []);
+
+  const ringBell = useCallback((offset = 0) => {
+    const ctx = ac.current;
+    if (!ctx) return;
+    const base = ctx.currentTime + offset;
+    const strike = (t: number) => {
+      ([
+        [880, 0.55],
+        [1760, 0.28],
+        [2637, 0.14],
+      ] as const).forEach(([f, v]) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "sine";
+        o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(v, t + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+        o.connect(g).connect(ctx.destination);
+        o.start(t);
+        o.stop(t + 1.6);
+      });
+    };
+    strike(base);
+    strike(base + 0.17); // double "din-din" campanella
+  }, []);
+
+  const chime = useCallback(() => {
+    const ctx = ac.current;
+    if (!ctx) return;
+    const n = ctx.currentTime;
+    ([
+      [660, 0],
+      [990, 0.12],
+    ] as const).forEach(([f, t]) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "triangle";
+      o.frequency.value = f;
+      const s = n + t;
+      g.gain.setValueAtTime(0.0001, s);
+      g.gain.exponentialRampToValueAtTime(0.4, s + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, s + 0.28);
+      o.connect(g).connect(ctx.destination);
+      o.start(s);
+      o.stop(s + 0.32);
+    });
+  }, []);
+
+  // ── Polling ────────────────────────────────────────────────────────
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/dashboard/kitchen", { cache: "no-store" });
+      const data = await res.json();
+      if (!data.ok) return;
+      const incoming: KOrder[] = data.orders;
+      const fresh = incoming.filter(
+        (o) => !o.pronto_at && !seen.current.has(o.id),
+      );
+      if (!firstLoad.current && fresh.length && audioOnRef.current) chime();
+      incoming.forEach((o) => seen.current.add(o.id));
+      firstLoad.current = false;
+      setOrders(incoming);
+    } catch {
+      /* keep last state on transient errors */
+    }
+  }, [chime]);
+
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 8000); // safety-net poll; realtime does the rest
+    const c = setInterval(() => setNow(Date.now()), 15000);
+    return () => {
+      clearInterval(t);
+      clearInterval(c);
+    };
+  }, [load]);
+
+  // Realtime: react instantly to new/changed orders (the chime fires via load()).
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    const ch = supabase
+      .channel(`kitchen-${restaurantId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders", filter: `restaurant_id=eq.${restaurantId}` },
+        () => load(),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [restaurantId, load]);
+
+  // ── Actions (optimistic) ───────────────────────────────────────────
+  function setReady(o: KOrder) {
+    ringBell();
+    setOrders((prev) =>
+      prev.map((x) =>
+        x.id === o.id ? { ...x, pronto_at: new Date().toISOString() } : x,
+      ),
+    );
+    void markOrderReady(o.id).then(load);
+  }
+  function setServed(o: KOrder) {
+    setOrders((prev) => prev.filter((x) => x.id !== o.id));
+    void markOrderServed(o.id).then(load);
+  }
+  function undo(o: KOrder) {
+    setOrders((prev) =>
+      prev.map((x) => (x.id === o.id ? { ...x, pronto_at: null } : x)),
+    );
+    void undoOrderReady(o.id).then(load);
+  }
+
+  const toPrepare = orders.filter((o) => !o.pronto_at);
+  const ready = orders.filter((o) => o.pronto_at);
+
+  const mins = (iso: string) => Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000));
+
+  return (
+    <div className="min-h-screen bg-[#0f1115] text-neutral-100">
+      {/* Header */}
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-neutral-800 bg-[#14171c] px-5 py-3">
+        <div className="flex items-baseline gap-3">
+          <Link href="/dashboard" className="text-sm text-neutral-400 hover:text-white">
+            ← Dashboard
+          </Link>
+          <h1 className="text-lg font-bold">Cucina · {restaurantName}</h1>
+        </div>
+        <div className="flex items-center gap-3 text-sm">
+          <span className="rounded-full bg-neutral-800 px-3 py-1">
+            {toPrepare.length} da preparare · {ready.length} pronti
+          </span>
+          {audioOn ? (
+            <button
+              onClick={() => ringBell()}
+              className="rounded-full bg-neutral-800 px-3 py-1 hover:bg-neutral-700"
+              title="Prova la campanella"
+            >
+              🔔 Prova suono
+            </button>
+          ) : (
+            <button
+              onClick={enableAudio}
+              className="rounded-full bg-amber-500 px-3 py-1 font-semibold text-black hover:bg-amber-400"
+            >
+              🔔 Attiva audio
+            </button>
+          )}
+        </div>
+      </header>
+
+      {!audioOn && (
+        <div className="bg-amber-500/15 px-5 py-2 text-center text-sm text-amber-300">
+          Attiva l&apos;audio per sentire la campanella quando un ordine è pronto
+          (richiesto dal browser un clic per abilitare il suono).
+        </div>
+      )}
+
+      <main className="px-4 py-5 sm:px-6">
+        {orders.length === 0 ? (
+          <div className="flex min-h-[60vh] flex-col items-center justify-center text-center text-neutral-500">
+            <div className="text-6xl">🍽️</div>
+            <p className="mt-4 text-xl">Nessun ordine in cucina</p>
+            <p className="mt-1 text-sm">I nuovi ordini compaiono qui automaticamente.</p>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* DA PREPARARE */}
+            <section>
+              <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-neutral-400">
+                Da preparare ({toPrepare.length})
+              </h2>
+              {toPrepare.length === 0 ? (
+                <p className="text-neutral-600">Tutto preparato 👏</p>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                  {toPrepare.map((o) => {
+                    const m = mins(o.created_at);
+                    const urgent = m >= 10 ? "ring-2 ring-red-500" : m >= 5 ? "ring-2 ring-amber-400" : "";
+                    return (
+                      <article
+                        key={o.id}
+                        className={`flex flex-col overflow-hidden rounded-2xl bg-white text-neutral-900 shadow-lg ${urgent}`}
+                      >
+                        <div className="flex items-center justify-between bg-neutral-900 px-4 py-3 text-white">
+                          <span className="text-2xl font-extrabold">
+                            Tavolo {o.tavolo ?? "—"}
+                          </span>
+                          <span
+                            className={`text-sm font-semibold ${
+                              m >= 10 ? "text-red-400" : m >= 5 ? "text-amber-300" : "text-neutral-300"
+                            }`}
+                          >
+                            {m === 0 ? "ora" : `${m} min fa`}
+                          </span>
+                        </div>
+                        <ul className="flex-1 space-y-1.5 px-4 py-3">
+                          {o.items.map((it, i) => (
+                            <li key={`${o.id}-${i}`} className="flex items-baseline gap-2 text-xl">
+                              <span className="min-w-[2.2rem] font-extrabold text-neutral-900">
+                                {it.qta}×
+                              </span>
+                              <span>{it.nome}</span>
+                            </li>
+                          ))}
+                          {o.note && (
+                            <li className="mt-2 rounded-lg bg-amber-100 px-3 py-2 text-base font-medium text-amber-900">
+                              📝 {o.note}
+                            </li>
+                          )}
+                        </ul>
+                        <button
+                          onClick={() => setReady(o)}
+                          className="bg-green-600 py-4 text-xl font-bold text-white hover:bg-green-700 active:bg-green-800"
+                        >
+                          ✓ PRONTO
+                        </button>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            {/* PRONTI */}
+            {ready.length > 0 && (
+              <section>
+                <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-green-400">
+                  Pronti — da servire ({ready.length})
+                </h2>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                  {ready.map((o) => (
+                    <article
+                      key={o.id}
+                      className="flex flex-col overflow-hidden rounded-2xl border-2 border-green-500 bg-green-50 text-neutral-900 shadow-lg"
+                    >
+                      <div className="flex items-center justify-between bg-green-600 px-4 py-3 text-white">
+                        <span className="text-2xl font-extrabold">
+                          Tavolo {o.tavolo ?? "—"}
+                        </span>
+                        <span className="text-sm font-bold">PRONTO 🔔</span>
+                      </div>
+                      <ul className="flex-1 space-y-1 px-4 py-3">
+                        {o.items.map((it, i) => (
+                          <li key={`${o.id}-${i}`} className="text-lg">
+                            <span className="font-bold">{it.qta}×</span> {it.nome}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="flex">
+                        <button
+                          onClick={() => undo(o)}
+                          className="w-1/3 border-r border-green-200 bg-white py-3 text-sm font-medium text-neutral-500 hover:bg-neutral-50"
+                        >
+                          ↶ Annulla
+                        </button>
+                        <button
+                          onClick={() => setServed(o)}
+                          className="w-2/3 bg-neutral-900 py-3 text-lg font-bold text-white hover:bg-neutral-700"
+                        >
+                          Ritirato dal cameriere
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

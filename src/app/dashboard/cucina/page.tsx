@@ -1,0 +1,13 @@
+import { requireOwner } from "@/lib/auth";
+import KitchenClient from "./KitchenClient";
+
+export const dynamic = "force-dynamic";
+
+// Full-screen Kitchen Display — sits OUTSIDE the (app) layout so it has no
+// dashboard chrome and uses the whole viewport. Still guarded by requireOwner.
+export default async function CucinaPage() {
+  const { restaurant } = await requireOwner();
+  return (
+    <KitchenClient restaurantName={restaurant.nome} restaurantId={restaurant.id} />
+  );
+}
