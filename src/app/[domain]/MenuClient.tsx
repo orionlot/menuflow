@@ -6,6 +6,7 @@ import type { ItemOption, MenuItem, PublicRestaurant } from "@/types/db";
 import { formatEUR } from "@/lib/config/plans";
 import { brandPalette } from "@/lib/brand";
 import { resolveLayout, FONT_VARS } from "@/lib/config/layout";
+import { isOpenNow, orariLabel } from "@/lib/orari";
 import { effectiveOptions } from "@/lib/menu";
 import { ALLERGENI, ALLERGENI_BY_ID } from "@/lib/config/allergeni";
 
@@ -264,6 +265,8 @@ export default function MenuClient({
 
   const initial = tenant.nome.trim().charAt(0).toUpperCase();
   const tavoloMissing = !tavolo.trim();
+  const closed = Boolean(tenant.funzioni_attive?.orari) && !isOpenNow(tenant.orari);
+  const ordersBlocked = backend === "down" || closed;
 
   return (
     <div
@@ -447,6 +450,22 @@ export default function MenuClient({
           </div>
         )}
 
+        {closed && backend !== "down" && (
+          <div className="px-5 pt-2">
+            <div
+              className="rounded-xl px-4 py-3 text-center text-sm font-semibold"
+              style={{
+                background: "rgba(245, 158, 11, 0.14)",
+                color: dark ? "#fbbf24" : "#92400e",
+                border: "1px solid rgba(245,158,11,0.4)",
+              }}
+            >
+              Siamo chiusi
+              {orariLabel(tenant.orari) ? ` · Aperto ${orariLabel(tenant.orari)}` : ""}
+            </div>
+          </div>
+        )}
+
         {/* Items */}
         <main className="px-5 pt-3">
           <ul className={compact ? "space-y-2" : "space-y-3"}>
@@ -581,7 +600,7 @@ export default function MenuClient({
                       </div>
                     </div>
 
-                    {!sold && backend !== "down" && (
+                    {!sold && !ordersBlocked && (
                       <div className="shrink-0 self-center">
                         {qty > 0 && !hasOpts ? (
                           <div
@@ -627,7 +646,7 @@ export default function MenuClient({
       </div>
 
       {/* Vedi ordine bar */}
-      {backend !== "down" && count > 0 && !sheet && !done && !pending && !optItem && (
+      {!ordersBlocked && count > 0 && !sheet && !done && !pending && !optItem && (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center p-4">
           <button
             onClick={() => setSheet(true)}

@@ -26,6 +26,13 @@ export interface MenuLayout {
   font: "classico" | "moderno" | "elegante" | "tondo";
 }
 
+/** Opening hours (Fase 4). giorni: 0=Dom..6=Sab; empty/null = sempre aperto. */
+export interface Orari {
+  giorni: number[];
+  da: string;
+  a: string;
+}
+
 export interface Restaurant {
   id: string;
   slug: string;
@@ -54,6 +61,7 @@ export interface Restaurant {
   funzionalita: Record<string, boolean>;
   funzionalita_admin: Record<string, boolean>;
   google_review_url: string | null;
+  orari: Orari | null;
   attivo: boolean;
   owner_id: string | null;
   created_at: string;
@@ -84,6 +92,7 @@ export type PublicRestaurant = Pick<
   | "accetta_mancia"
   | "aggiunte"
   | "google_review_url"
+  | "orari"
   | "attivo"
 > & {
   /** Effective on/off per feature (plan ∪ admin entitlement, then owner switch). */

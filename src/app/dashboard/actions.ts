@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeBranding } from "@/lib/branding";
 import { sanitizeFunzionalita } from "@/lib/config/features";
+import { sanitizeOrari } from "@/lib/orari";
 import { sanitizeItemPatch, sanitizeAggiunte, type ItemPatch } from "@/lib/menu";
 import type { BrandingPatch, CategoryAddon } from "@/types/db";
 
@@ -82,6 +83,18 @@ export async function updateFunzionalita(funzionalita: Record<string, boolean>) 
   const { error } = await admin
     .from("restaurants")
     .update({ funzionalita: sanitizeFunzionalita(funzionalita) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/funzionalita");
+  revalidatePath("/[domain]", "page");
+}
+
+export async function updateOrari(orari: unknown) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ orari: sanitizeOrari(orari) })
     .eq("id", restaurantId);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/funzionalita");

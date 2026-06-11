@@ -4,6 +4,7 @@ import { priceCartServerSide } from "@/lib/pricing";
 import { notifyNewOrder } from "@/lib/telegram";
 import { isStripeConfigured } from "@/lib/env";
 import { isFeatureOn } from "@/lib/config/features";
+import { isOpenNow } from "@/lib/orari";
 import { createConnectPaymentIntent } from "@/lib/stripe/connect";
 import type { Order, Restaurant } from "@/types/db";
 
@@ -64,6 +65,12 @@ export async function POST(req: Request) {
     if (!restaurant.attivo) {
       return NextResponse.json(
         { ok: false, error: "Servizio temporaneamente non disponibile." },
+        { status: 409 },
+      );
+    }
+    if (isFeatureOn(restaurant, "orari") && !isOpenNow(restaurant.orari)) {
+      return NextResponse.json(
+        { ok: false, error: "Siamo chiusi: ordini non disponibili in questo momento." },
         { status: 409 },
       );
     }

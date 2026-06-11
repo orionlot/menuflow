@@ -1,8 +1,9 @@
 import { requireOwner } from "@/lib/auth";
 import { FEATURES, isEntitled, isFeatureOn } from "@/lib/config/features";
-import { updateFunzionalita, updateBranding } from "@/app/dashboard/actions";
+import { updateFunzionalita, updateBranding, updateOrari } from "@/app/dashboard/actions";
 import FeaturesOwner from "./FeaturesOwner";
 import ServiceSettings from "./ServiceSettings";
+import OrariSettings from "./OrariSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,9 @@ export default async function FunzionalitaPage() {
           }}
           action={updateBranding}
         />
+        <div className="mt-3">
+          <OrariSettings initial={restaurant.orari} action={updateOrari} />
+        </div>
       </section>
 
       <section>
