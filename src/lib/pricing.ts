@@ -30,6 +30,7 @@ export async function priceCartServerSide(
   restaurantId: string,
   cart: IncomingCartLine[],
   aggiunte: CategoryAddon[] = [],
+  opts: { enforceScorte?: boolean } = {},
 ): Promise<PricedCart> {
   if (!Array.isArray(cart) || cart.length === 0) {
     throw new Error("Carrello vuoto.");
@@ -38,7 +39,7 @@ export async function priceCartServerSide(
   const ids = [...new Set(cart.map((l) => l.item_id))];
   const { data: items, error } = await admin
     .from("menu_items")
-    .select("id, nome, prezzo, disponibile, restaurant_id, categoria, opzioni")
+    .select("id, nome, prezzo, disponibile, restaurant_id, categoria, opzioni, scorta")
     .in("id", ids)
     .eq("restaurant_id", restaurantId);
 
@@ -57,6 +58,16 @@ export async function priceCartServerSide(
     const qta = Number(line.qta);
     if (!Number.isInteger(qta) || qta < 1 || qta > 99) {
       throw new Error(`Quantità non valida per ${item.nome}`);
+    }
+
+    // Stock check (only when the "scorte" feature is on for this tenant).
+    const scorta = (item as { scorta?: number | null }).scorta;
+    if (opts.enforceScorte && scorta != null && qta > scorta) {
+      throw new Error(
+        scorta > 0
+          ? `Scorte insufficienti per ${item.nome}: ne restano ${scorta}.`
+          : `Voce esaurita: ${item.nome}`,
+      );
     }
 
     // ── Validate & price options against the DB definition ──

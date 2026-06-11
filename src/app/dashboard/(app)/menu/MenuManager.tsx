@@ -39,6 +39,7 @@ export interface MenuActions {
 
 /** Handlers passed down to each sortable item row. */
 interface ItemHandlers {
+  scorteOn: boolean;
   otherLangs: string[];
   openOptionsId: string | null;
   setOpenOptions: (id: string | null) => void;
@@ -55,11 +56,13 @@ export default function MenuManager({
   restaurant,
   initialItems,
   initialAggiunte,
+  scorteOn,
   actions,
 }: {
   restaurant: MiniRestaurant;
   initialItems: MenuItem[];
   initialAggiunte: CategoryAddon[];
+  scorteOn: boolean;
   actions: MenuActions;
 }) {
   const router = useRouter();
@@ -189,6 +192,7 @@ export default function MenuManager({
   }
 
   const handlers: ItemHandlers = {
+    scorteOn,
     otherLangs,
     openOptionsId: openOptions,
     setOpenOptions,
@@ -384,6 +388,26 @@ function SortableItem({ item, h }: { item: MenuItem; h: ItemHandlers }) {
                 />
                 <span className="text-sm text-neutral-500">€</span>
               </div>
+              {h.scorteOn && (
+                <div
+                  className="flex items-center gap-1"
+                  title="Scorte di oggi (vuoto = illimitate)"
+                >
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="∞"
+                    defaultValue={item.scorta ?? ""}
+                    onBlur={(e) => {
+                      const raw = e.target.value.trim();
+                      const v = raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0);
+                      if (v !== item.scorta) h.save(item.id, { scorta: v });
+                    }}
+                    className="w-16 rounded-md border border-neutral-300 px-2 py-1 text-sm"
+                  />
+                  <span className="text-xs text-neutral-500">scorte</span>
+                </div>
+              )}
             </div>
 
             <input

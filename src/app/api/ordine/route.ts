@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { priceCartServerSide } from "@/lib/pricing";
 import { notifyNewOrder } from "@/lib/telegram";
 import { isStripeConfigured } from "@/lib/env";
+import { isFeatureOn } from "@/lib/config/features";
 import { createConnectPaymentIntent } from "@/lib/stripe/connect";
 import type { Order, Restaurant } from "@/types/db";
 
@@ -82,6 +83,7 @@ export async function POST(req: Request) {
       restaurant.id,
       body.items ?? [],
       restaurant.aggiunte ?? [],
+      { enforceScorte: isFeatureOn(restaurant, "scorte") },
     );
 
     const note = clean(body.note, 280);
@@ -139,6 +141,27 @@ export async function POST(req: Request) {
 
     // ── Case A: no online payments → order is valid now, notify Orders bot ──
     if (!payments) {
+      // Decrement stock for items that track it.
+      if (isFeatureOn(restaurant, "scorte")) {
+        const ids = lines.map((l) => l.item_id);
+        const { data: stock } = await admin
+          .from("menu_items")
+          .select("id, scorta")
+          .in("id", ids);
+        const byId = new Map(
+          (stock ?? []).map((s) => [s.id as string, s.scorta as number | null]),
+        );
+        await Promise.all(
+          lines
+            .filter((l) => byId.get(l.item_id) != null)
+            .map((l) =>
+              admin
+                .from("menu_items")
+                .update({ scorta: Math.max(0, (byId.get(l.item_id) as number) - l.qta) })
+                .eq("id", l.item_id),
+            ),
+        );
+      }
       await notifyNewOrder(restaurant, order);
       return NextResponse.json({ ok: true, mode: "placed", orderId: order.id });
     }

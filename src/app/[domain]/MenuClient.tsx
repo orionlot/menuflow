@@ -7,7 +7,7 @@ import { formatEUR } from "@/lib/config/plans";
 import { brandPalette } from "@/lib/brand";
 import { resolveLayout, FONT_VARS } from "@/lib/config/layout";
 import { effectiveOptions } from "@/lib/menu";
-import { ALLERGENI_BY_ID } from "@/lib/config/allergeni";
+import { ALLERGENI, ALLERGENI_BY_ID } from "@/lib/config/allergeni";
 
 const MAINTENANCE_MSG =
   "App momentaneamente in manutenzione — Si prega di rivolgersi allo staff per l'ordinazione";
@@ -49,6 +49,8 @@ export default function MenuClient({
   const headBg = minimalHeader ? p.pageBg : p.headerBg;
   const headText = minimalHeader ? p.text : p.headerText;
   const headSub = minimalHeader ? p.textMuted : p.headerSub;
+  const scorteOn = Boolean(tenant.funzioni_attive?.scorte);
+  const allergyOn = Boolean(tenant.funzioni_attive?.profilo_allergie);
 
   const [lang, setLang] = useState<string>(tenant.lingue?.[0] ?? "it");
   const [cart, setCart] = useState<Record<string, CartLine>>({});
@@ -65,6 +67,8 @@ export default function MenuClient({
   const [done, setDone] = useState<null | { mode: string; orderId?: string }>(null);
   const [pending, setPending] = useState<null | { orderId: string; sim: boolean }>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [allergyOpen, setAllergyOpen] = useState(false);
+  const [myAllergens, setMyAllergens] = useState<string[]>([]);
 
   // Prefill table number from QR (?tavolo=) without forcing the page dynamic.
   useEffect(() => {
@@ -375,6 +379,24 @@ export default function MenuClient({
               })}
             </div>
 
+            {allergyOn && (
+              <div className="px-5 pb-2">
+                <button
+                  onClick={() => setAllergyOpen(true)}
+                  className="rounded-lg px-3 py-1.5 text-xs font-semibold"
+                  style={{
+                    background: myAllergens.length ? "#fee2e2" : p.tint,
+                    color: myAllergens.length ? "#b91c1c" : p.textMuted,
+                    border: `1px solid ${myAllergens.length ? "#fca5a5" : p.surfaceBorder}`,
+                  }}
+                >
+                  {myAllergens.length
+                    ? `⚠ Le mie allergie (${myAllergens.length})`
+                    : "Imposta le mie allergie"}
+                </button>
+              </div>
+            )}
+
             {allergeniInCategory.length > 0 && (
               <div className="px-5 pb-2">
                 <button
@@ -429,9 +451,13 @@ export default function MenuClient({
         <main className="px-5 pt-3">
           <ul className={compact ? "space-y-2" : "space-y-3"}>
             {shown.map((item, idx) => {
-              const sold = !item.disponibile;
+              const sold = !item.disponibile || (scorteOn && item.scorta === 0);
               const qty = qtyForItem(item.id);
               const hasOpts = effectiveOptions(item, tenant.aggiunte).length > 0;
+              const myHits =
+                allergyOn && myAllergens.length
+                  ? (item.allergeni ?? []).filter((a) => myAllergens.includes(a))
+                  : [];
               const showPhoto =
                 !layout.foto_categorie_nascoste.includes(item.categoria) &&
                 (!dark || !!item.foto_url);
@@ -504,6 +530,25 @@ export default function MenuClient({
                             style={{ background: p.accent, color: p.onAccent }}
                           >
                             ★ Consigliato
+                          </span>
+                        )}
+                        {scorteOn &&
+                          item.scorta != null &&
+                          item.scorta > 0 &&
+                          item.scorta <= 5 && (
+                            <span
+                              className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                              style={{ background: "#fef3c7", color: "#92400e" }}
+                            >
+                              Ultime {item.scorta}
+                            </span>
+                          )}
+                        {myHits.length > 0 && (
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                            style={{ background: "#fee2e2", color: "#b91c1c" }}
+                          >
+                            ⚠ Allergeni
                           </span>
                         )}
                       </div>
@@ -609,6 +654,71 @@ export default function MenuClient({
             setOptItem(null);
           }}
         />
+      )}
+
+      {/* Allergy profile sheet */}
+      {allergyOpen && (
+        <div
+          className="mf-fade fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+          onClick={() => setAllergyOpen(false)}
+        >
+          <div
+            className="mf-sheet flex max-h-[85vh] w-full max-w-[480px] flex-col rounded-t-3xl sm:rounded-3xl"
+            style={{ background: p.surface, color: p.text }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="flex items-center justify-between rounded-t-3xl px-5 py-4"
+              style={{ background: p.headerBg, color: p.headerText }}
+            >
+              <h2 className="font-display text-lg font-bold">Le mie allergie</h2>
+              <button
+                onClick={() => setAllergyOpen(false)}
+                className="text-2xl leading-none opacity-80"
+                aria-label="Chiudi"
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <p className="text-sm" style={{ color: p.textMuted }}>
+                Seleziona i tuoi allergeni: le voci che li contengono verranno segnalate con ⚠.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {ALLERGENI.map((a) => {
+                  const on = myAllergens.includes(a.id);
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() =>
+                        setMyAllergens((s) =>
+                          s.includes(a.id) ? s.filter((x) => x !== a.id) : [...s, a.id],
+                        )
+                      }
+                      className="rounded-full px-3 py-1.5 text-sm"
+                      style={{
+                        background: on ? "#fee2e2" : p.tint,
+                        color: on ? "#b91c1c" : p.text,
+                        border: `1px solid ${on ? "#fca5a5" : p.surfaceBorder}`,
+                      }}
+                    >
+                      {a.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="border-t px-5 py-4" style={{ borderColor: p.surfaceBorder }}>
+              <button
+                onClick={() => setAllergyOpen(false)}
+                className="w-full rounded-xl py-3 font-semibold"
+                style={{ background: p.brand, color: p.onBrand }}
+              >
+                Fatto
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Cart sheet */}

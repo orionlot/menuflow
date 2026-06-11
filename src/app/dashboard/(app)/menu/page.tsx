@@ -2,6 +2,7 @@ import { requireOwner } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { MenuItem } from "@/types/db";
 import MenuManager from "./MenuManager";
+import { isFeatureOn } from "@/lib/config/features";
 import {
   createItem,
   updateItem,
@@ -31,6 +32,7 @@ export default async function MenuPage() {
       }}
       initialItems={(data as MenuItem[]) ?? []}
       initialAggiunte={restaurant.aggiunte ?? []}
+      scorteOn={isFeatureOn(restaurant, "scorte")}
       actions={{
         createItem,
         updateItem,

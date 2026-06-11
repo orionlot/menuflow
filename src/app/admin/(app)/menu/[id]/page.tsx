@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { MenuItem, Restaurant } from "@/types/db";
 import MenuManager from "@/app/dashboard/(app)/menu/MenuManager";
+import { isFeatureOn } from "@/lib/config/features";
 import {
   adminCreateItem,
   adminUpdateItem,
@@ -51,6 +52,7 @@ export default async function AdminMenuPage({
         }}
         initialItems={(data as MenuItem[]) ?? []}
         initialAggiunte={restaurant.aggiunte ?? []}
+        scorteOn={isFeatureOn(restaurant, "scorte")}
         actions={{
           createItem: adminCreateItem.bind(null, restaurant.id),
           updateItem: adminUpdateItem,
