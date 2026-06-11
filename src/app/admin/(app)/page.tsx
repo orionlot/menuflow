@@ -156,6 +156,17 @@ export default async function AdminHome() {
                 />{" "}
                 Pagamenti
               </label>
+              <label
+                className="flex items-center gap-1 text-sm"
+                title="Pagamenti simulati (finti). Disattiva per incassare davvero via Stripe."
+              >
+                <input
+                  type="checkbox"
+                  name="pagamenti_test"
+                  defaultChecked={r.pagamenti_test}
+                />{" "}
+                Test (finti)
+              </label>
               <label className="flex items-center gap-1 text-sm">
                 <input type="checkbox" name="attivo" defaultChecked={r.attivo} />{" "}
                 Attivo

@@ -135,6 +135,7 @@ export async function updateRestaurant(formData: FormData) {
       multilingua,
       lingue: multilingua ? ["it", "en"] : ["it"],
       pagamenti_attivi: bool(formData.get("pagamenti_attivi")),
+      pagamenti_test: bool(formData.get("pagamenti_test")),
       attivo: bool(formData.get("attivo")),
     })
     .eq("id", id);

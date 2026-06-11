@@ -6,16 +6,12 @@ import { isStripeConfigured } from "@/lib/env";
 export const dynamic = "force-dynamic";
 
 /**
- * DEV ONLY. Simulates a successful Stripe Connect payment webhook so the full
- * paid → Payments-bot → reconciliation flow can be tested locally without
- * Stripe keys. Disabled in production and whenever Stripe IS configured (in
- * that case the real webhook is the only source of truth — briefing §6).
+ * Simulates a successful Stripe Connect payment so the full paid → Payments-bot
+ * → reconciliation flow can be tested without charging. Allowed when the order's
+ * restaurant is in admin-controlled "test" mode, or in local dev without Stripe
+ * configured. NEVER allowed for a restaurant running real payments.
  */
 export async function POST(req: Request) {
-  if (process.env.NODE_ENV === "production" || isStripeConfigured()) {
-    return NextResponse.json({ ok: false, error: "Non disponibile." }, { status: 403 });
-  }
-
   let orderId: string | undefined;
   try {
     orderId = (await req.json())?.orderId;
@@ -27,6 +23,26 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
+  const { data: ord } = await admin
+    .from("orders")
+    .select("restaurant_id")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!ord) {
+    return NextResponse.json({ ok: false, error: "Ordine non trovato." }, { status: 404 });
+  }
+  const { data: rest } = await admin
+    .from("restaurants")
+    .select("pagamenti_test")
+    .eq("id", ord.restaurant_id)
+    .maybeSingle();
+
+  const testMode = Boolean(rest?.pagamenti_test);
+  const allowed = testMode || (process.env.NODE_ENV !== "production" && !isStripeConfigured());
+  if (!allowed) {
+    return NextResponse.json({ ok: false, error: "Non disponibile." }, { status: 403 });
+  }
+
   const order = await markOrderPaid(admin, { orderId });
   if (!order) {
     return NextResponse.json({ ok: false, error: "Ordine non trovato." }, { status: 404 });

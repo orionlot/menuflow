@@ -47,6 +47,7 @@ export interface Restaurant {
   multilingua: boolean;
   lingue: string[];
   pagamenti_attivi: boolean;
+  pagamenti_test: boolean;
   stripe_connect_id: string | null;
   stripe_customer_id: string | null;
   telegram_chat_ordini: string | null;

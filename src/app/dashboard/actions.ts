@@ -101,6 +101,47 @@ export async function updateOrari(orari: unknown) {
   revalidatePath("/[domain]", "page");
 }
 
+/** Restaurateur connects their own Stripe Connect account (Plus/Pro only) so
+ *  table payments land on their account. They paste their acct_… id. */
+export async function connectStripe(accountId: string) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non autenticato.");
+  const { data: r } = await supabase
+    .from("restaurants")
+    .select("id, piano")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!r) throw new Error("Nessun ristorante associato.");
+  if (r.piano !== "plus" && r.piano !== "pro")
+    throw new Error("I pagamenti al tavolo sono disponibili dal piano Plus.");
+  const id = String(accountId ?? "").trim();
+  if (!/^acct_[A-Za-z0-9]+$/.test(id))
+    throw new Error("ID Stripe non valido: deve iniziare con acct_.");
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ stripe_connect_id: id, pagamenti_attivi: true })
+    .eq("id", r.id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/funzionalita");
+  revalidatePath("/[domain]", "page");
+}
+
+export async function disconnectStripe() {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ stripe_connect_id: null, pagamenti_attivi: false })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/funzionalita");
+  revalidatePath("/[domain]", "page");
+}
+
 export async function deleteItem(itemId: string) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("menu_items").delete().eq("id", itemId);

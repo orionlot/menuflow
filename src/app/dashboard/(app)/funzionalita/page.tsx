@@ -1,9 +1,16 @@
 import { requireOwner } from "@/lib/auth";
 import { FEATURES, isEntitled, isFeatureOn } from "@/lib/config/features";
-import { updateFunzionalita, updateBranding, updateOrari } from "@/app/dashboard/actions";
+import {
+  updateFunzionalita,
+  updateBranding,
+  updateOrari,
+  connectStripe,
+  disconnectStripe,
+} from "@/app/dashboard/actions";
 import FeaturesOwner from "./FeaturesOwner";
 import ServiceSettings from "./ServiceSettings";
 import OrariSettings from "./OrariSettings";
+import PagamentiSettings from "./PagamentiSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +49,18 @@ export default async function FunzionalitaPage() {
         <div className="mt-3">
           <OrariSettings initial={restaurant.orari} action={updateOrari} />
         </div>
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-sm font-semibold text-neutral-700">Pagamenti</h2>
+        <PagamentiSettings
+          piano={restaurant.piano}
+          stripeConnectId={restaurant.stripe_connect_id}
+          pagamentiAttivi={restaurant.pagamenti_attivi}
+          pagamentiTest={restaurant.pagamenti_test}
+          connect={connectStripe}
+          disconnect={disconnectStripe}
+        />
       </section>
 
       <section>

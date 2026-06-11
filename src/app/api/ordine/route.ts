@@ -175,7 +175,7 @@ export async function POST(req: Request) {
 
     // ── Case B: payments on → order NOT valid until Stripe webhook confirms ──
     // Do NOT notify here; the Payments bot fires only from the webhook.
-    if (isStripeConfigured() && restaurant.stripe_connect_id) {
+    if (!restaurant.pagamenti_test && isStripeConfigured() && restaurant.stripe_connect_id) {
       const pi = await createConnectPaymentIntent({
         amountCents: Math.round(totale * 100),
         connectedAccountId: restaurant.stripe_connect_id,
@@ -198,14 +198,15 @@ export async function POST(req: Request) {
       });
     }
 
-    // Stripe not configured (local/stub): allow a dev-only simulation of the
-    // payment webhook so the full paid→notify→reconcile flow is testable.
+    // Test mode (or no real Stripe): allow the simulated payment so the full
+    // paid→notify→reconcile flow is testable without charging the customer.
     return NextResponse.json({
       ok: true,
       mode: "payment",
       orderId: order.id,
       stripeConfigured: false,
-      devSimulateAvailable: process.env.NODE_ENV !== "production",
+      devSimulateAvailable:
+        restaurant.pagamenti_test || process.env.NODE_ENV !== "production",
     });
   } catch (err) {
     const message =
