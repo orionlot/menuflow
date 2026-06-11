@@ -41,10 +41,12 @@ export default function OrdiniClient({
   initialOrders,
   day,
   stampaOn,
+  riepilogoOn,
 }: {
   initialOrders: Order[];
   day: string;
   stampaOn: boolean;
+  riepilogoOn: boolean;
 }) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [soundOn, setSoundOn] = useState(false);
@@ -92,6 +94,9 @@ export default function OrdiniClient({
   }, [day]);
 
   const unread = orders.filter((o) => !o.visto_at);
+  const sales = orders.filter((o) => o.stato === "ricevuto" || o.stato === "pagato");
+  const incassoCents = sales.reduce((s, o) => s + Math.round(Number(o.totale) * 100), 0);
+  const daBattere = sales.filter((o) => o.stato === "pagato" && !o.scontrino_registrato).length;
 
   function enableSound() {
     try {
@@ -120,6 +125,12 @@ export default function OrdiniClient({
 
   return (
     <div>
+      {riepilogoOn && (
+        <div className="mb-3 rounded-xl border border-neutral-200 bg-white p-3 text-sm">
+          <span className="font-semibold">Riepilogo di oggi:</span> {sales.length} ordini · incasso{" "}
+          {formatEUR(incassoCents)} · {daBattere} scontrini da battere
+        </div>
+      )}
       <div className="mb-3 flex flex-wrap items-center gap-3">
         {soundOn ? (
           <span className="text-sm text-neutral-500">🔔 Avvisi sonori attivi</span>
@@ -180,6 +191,11 @@ export default function OrdiniClient({
                     <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ${b.cls}`}>
                       {b.text}
                     </span>
+                    {o.voto ? (
+                      <span className="ml-2 text-xs font-semibold text-amber-600">
+                        ★ {o.voto}/5
+                      </span>
+                    ) : null}
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <span className="font-semibold">

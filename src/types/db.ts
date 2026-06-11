@@ -168,6 +168,7 @@ export interface Order {
   pronto_at: string | null;
   servito_at: string | null;
   visto_at: string | null;
+  voto: number | null;
   created_at: string;
 }
 

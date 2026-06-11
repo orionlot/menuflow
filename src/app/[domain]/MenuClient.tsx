@@ -70,6 +70,7 @@ export default function MenuClient({
   const [status, setStatus] = useState<string | null>(null);
   const [allergyOpen, setAllergyOpen] = useState(false);
   const [myAllergens, setMyAllergens] = useState<string[]>([]);
+  const [voted, setVoted] = useState<number | null>(null);
 
   // Prefill table number from QR (?tavolo=) without forcing the page dynamic.
   useEffect(() => {
@@ -260,6 +261,20 @@ export default function MenuClient({
       setCart({});
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function sendVoto(n: number) {
+    if (!done?.orderId) return;
+    setVoted(n);
+    try {
+      await fetch(`/api/ordine/${done.orderId}/voto`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voto: n }),
+      });
+    } catch {
+      /* ignore */
     }
   }
 
@@ -968,6 +983,27 @@ export default function MenuClient({
               Stato: {status === "Pronto" ? "🔔 Pronto!" : status === "In preparazione" ? "👩‍🍳 In preparazione" : status}
             </div>
           )}
+          {tenant.funzioni_attive?.feedback && (
+            <div className="mt-4">
+              <div className="text-sm" style={{ color: p.textMuted }}>
+                {voted ? "Grazie per il tuo voto!" : "Com’è andata?"}
+              </div>
+              <div className="mt-1 flex justify-center gap-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    disabled={voted != null}
+                    onClick={() => sendVoto(n)}
+                    className="text-2xl"
+                    style={{ color: voted != null && n <= voted ? "#f59e0b" : p.textMuted }}
+                    aria-label={`${n} stelle`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {tenant.funzioni_attive?.recensioni && tenant.google_review_url && (
             <a
               href={tenant.google_review_url}
@@ -983,6 +1019,7 @@ export default function MenuClient({
             onClick={() => {
               setDone(null);
               setStatus(null);
+              setVoted(null);
             }}
             className="mt-4 w-full rounded-xl py-3.5 font-semibold"
             style={{ background: p.brand, color: p.onBrand }}

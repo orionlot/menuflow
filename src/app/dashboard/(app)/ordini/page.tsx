@@ -55,6 +55,7 @@ export default async function OrdiniPage({
         initialOrders={orders}
         day={day}
         stampaOn={isFeatureOn(restaurant, "stampa")}
+        riepilogoOn={isFeatureOn(restaurant, "riepilogo")}
       />
     </div>
   );
