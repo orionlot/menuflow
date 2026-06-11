@@ -2,6 +2,7 @@ import { requireOwner } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Order } from "@/types/db";
 import OrdiniClient from "./OrdiniClient";
+import { isFeatureOn } from "@/lib/config/features";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,11 @@ export default async function OrdiniPage({
         </form>
       </div>
 
-      <OrdiniClient initialOrders={orders} day={day} />
+      <OrdiniClient
+        initialOrders={orders}
+        day={day}
+        stampaOn={isFeatureOn(restaurant, "stampa")}
+      />
     </div>
   );
 }

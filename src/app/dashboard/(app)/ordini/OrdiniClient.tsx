@@ -40,9 +40,11 @@ function playBeep(ctxRef: { current: AudioContext | null }) {
 export default function OrdiniClient({
   initialOrders,
   day,
+  stampaOn,
 }: {
   initialOrders: Order[];
   day: string;
+  stampaOn: boolean;
 }) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [soundOn, setSoundOn] = useState(false);
@@ -179,9 +181,19 @@ export default function OrdiniClient({
                       {b.text}
                     </span>
                   </div>
-                  <span className="shrink-0 font-semibold">
-                    {formatEUR(Math.round(Number(o.totale) * 100))}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className="font-semibold">
+                      {formatEUR(Math.round(Number(o.totale) * 100))}
+                    </span>
+                    {stampaOn && (
+                      <button
+                        onClick={() => window.open(`/dashboard/stampa/${o.id}`, "_blank")}
+                        className="text-xs text-neutral-500 hover:underline"
+                      >
+                        🖨 Stampa
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <ul className="mt-2 space-y-0.5 border-t border-neutral-100 pl-1 pt-2 text-sm">
