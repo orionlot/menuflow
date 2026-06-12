@@ -34,6 +34,7 @@ export interface MenuActions {
   updateItem: (id: string, patch: ItemPatch) => Promise<void>;
   duplicateItem: (id: string) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
+  importItems?: (csv: string) => Promise<{ added: number; skipped: number }>;
   updateAggiunte: (aggiunte: CategoryAddon[]) => Promise<void>;
   reorder: (updates: { id: string; ordine: number }[]) => Promise<void>;
 }
@@ -147,6 +148,32 @@ export default function MenuManager({
       router.refresh();
     });
   }
+  function downloadTemplate() {
+    const csv =
+      "categoria,nome,descrizione,prezzo,disponibile,allergeni\n" +
+      "Antipasti,Bruschette,Pane e pomodoro,5.50,si,glutine\n" +
+      "Pizze,Margherita,,7.00,si,glutine|latte\n";
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "modello-menu.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  function importCsv(file: File) {
+    const fn = actions.importItems;
+    if (!fn) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      run(async () => {
+        const res = await fn(text);
+        setError(`Importate ${res.added} voci (${res.skipped} righe ignorate).`);
+        router.refresh();
+      });
+    };
+    reader.readAsText(file);
+  }
   function toggleAllergen(item: MenuItem, id: string) {
     const set = new Set(item.allergeni ?? []);
     if (set.has(id)) set.delete(id);
@@ -216,15 +243,40 @@ export default function MenuManager({
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold">Gestione menu</h1>
-        <button
-          onClick={add}
-          disabled={pending}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-60"
-        >
-          + Aggiungi voce
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {actions.importItems && (
+            <>
+              <button
+                onClick={downloadTemplate}
+                className="rounded-lg border border-neutral-300 px-3 py-2 text-sm hover:bg-neutral-50"
+              >
+                Scarica modello
+              </button>
+              <label className="cursor-pointer rounded-lg border border-neutral-300 px-3 py-2 text-sm hover:bg-neutral-50">
+                Importa CSV
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) importCsv(f);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </>
+          )}
+          <button
+            onClick={add}
+            disabled={pending}
+            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-60"
+          >
+            + Aggiungi voce
+          </button>
+        </div>
       </div>
 
       {error && (

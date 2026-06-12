@@ -9,6 +9,7 @@ import { sanitizeFunzionalita } from "@/lib/config/features";
 import { sanitizeOrari } from "@/lib/orari";
 import { notifyTest } from "@/lib/telegram";
 import { sanitizeItemPatch, sanitizeAggiunte, type ItemPatch } from "@/lib/menu";
+import { parseCsv, rowsToItemPatches } from "@/lib/csv";
 import type { BrandingPatch, CategoryAddon } from "@/types/db";
 
 export type { ItemPatch };
@@ -68,6 +69,30 @@ export async function duplicateItem(itemId: string) {
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/menu");
   revalidatePath("/[domain]", "page");
+}
+
+/** Bulk-import menu items from a CSV string (owner). RLS scopes the inserts. */
+export async function importItems(
+  csvText: string,
+): Promise<{ added: number; skipped: number }> {
+  const restaurantId = await ownerRestaurantId();
+  const { patches, skipped } = rowsToItemPatches(parseCsv(String(csvText ?? "")));
+  if (!patches.length) return { added: 0, skipped };
+  const supabase = await createSupabaseServerClient();
+  const rows = patches.slice(0, 500).map((p) => ({
+    restaurant_id: restaurantId,
+    categoria: p.categoria ?? "Senza categoria",
+    nome: p.nome ?? "Voce",
+    descrizione: p.descrizione ?? null,
+    prezzo: p.prezzo ?? 0,
+    disponibile: p.disponibile ?? true,
+    allergeni: p.allergeni ?? [],
+  }));
+  const { error } = await supabase.from("menu_items").insert(rows);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/menu");
+  revalidatePath("/[domain]", "page");
+  return { added: rows.length, skipped };
 }
 
 export async function createItem(patch: ItemPatch) {
