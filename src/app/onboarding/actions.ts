@@ -1,8 +1,10 @@
 "use server";
 
+import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PLANS, type PlanId } from "@/lib/config/plans";
+import { hitRateLimit } from "@/lib/ratelimit";
 
 const RESERVED = new Set([
   "admin",
@@ -46,6 +48,10 @@ const STARTER_MENU = [
  * Stripe Billing is wired later, activation moves to the payment webhook.
  */
 export async function registraLocale(input: RegistraInput): Promise<RegistraResult> {
+  const ip = (await headers()).get("x-forwarded-for") ?? "anon";
+  if (!hitRateLimit(`signup:${ip}`, 3, 600_000)) {
+    return { ok: false, error: "Troppi tentativi: riprova tra qualche minuto." };
+  }
   const nome = String(input?.nome ?? "").trim().slice(0, 80);
   const slug = String(input?.slug ?? "").trim().toLowerCase();
   const email = String(input?.email ?? "").trim().toLowerCase();

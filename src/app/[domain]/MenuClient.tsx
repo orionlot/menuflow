@@ -8,6 +8,7 @@ import { brandPalette } from "@/lib/brand";
 import { resolveLayout, FONT_VARS } from "@/lib/config/layout";
 import { isOpenNow, orariLabel } from "@/lib/orari";
 import { effectiveOptions } from "@/lib/menu";
+import HelpButton from "./HelpButton";
 import { ALLERGENI, ALLERGENI_BY_ID } from "@/lib/config/allergeni";
 
 const MAINTENANCE_MSG =
@@ -703,6 +704,24 @@ export default function MenuClient({
               {count} {count === 1 ? "piatto" : "piatti"} · {formatEUR(totalCents)}
             </span>
           </button>
+        </div>
+      )}
+
+      {/* Serve aiuto — chiama cameriere / chiedi il conto */}
+      {backend !== "down" && !sheet && !done && !pending && !optItem && !allergyOpen && (
+        <div className="fixed bottom-4 left-4 z-30">
+          <HelpButton
+            slug={tenant.slug}
+            tavolo={tavolo}
+            p={{
+              surface: p.surface,
+              text: p.text,
+              brand: p.accent,
+              onBrand: p.onAccent,
+              surfaceBorder: p.surfaceBorder,
+              textMuted: p.textMuted,
+            }}
+          />
         </div>
       )}
 

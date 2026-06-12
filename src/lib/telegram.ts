@@ -46,9 +46,17 @@ async function send(
   }
 }
 
+/** Escape user-supplied text before putting it in an HTML (parse_mode) message. */
+function escapeHtml(s: unknown): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function itemsBlock(order: Pick<Order, "items">): string {
   return order.items
-    .map((i) => `• ${i.qta}× ${i.nome} — ${formatEUR(Math.round(i.prezzo * 100))}`)
+    .map((i) => `• ${i.qta}× ${escapeHtml(i.nome)} — ${formatEUR(Math.round(i.prezzo * 100))}`)
     .join("\n");
 }
 
@@ -60,9 +68,9 @@ export async function notifyNewOrder(
   const text = [
     `🧾 <b>NUOVO ORDINE</b>`,
     `━━━━━━━━━━━━━━━━━━`,
-    `Tavolo ${order.tavolo ?? "—"}  ·  <b>${formatEUR(Math.round(order.totale * 100))}</b>`,
+    `Tavolo ${escapeHtml(order.tavolo ?? "—")}  ·  <b>${formatEUR(Math.round(order.totale * 100))}</b>`,
     itemsBlock(order),
-    order.note ? `\n📝 ${order.note}` : "",
+    order.note ? `\n📝 ${escapeHtml(order.note)}` : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -91,7 +99,7 @@ export async function notifyPaidOrder(
   const text = [
     `🟢💶 <b>PAGATO IN APP — DA REGISTRARE</b>`,
     `━━━━━━━━━━━━━━━━━━`,
-    `Tavolo ${order.tavolo ?? "—"}  ·  <b>${formatEUR(Math.round(order.totale * 100))}</b>`,
+    `Tavolo ${escapeHtml(order.tavolo ?? "—")}  ·  <b>${formatEUR(Math.round(order.totale * 100))}</b>`,
     itemsBlock(order),
     `━━━━━━━━━━━━━━━━━━`,
     `⚠️ Battere scontrino — ore ${hhmm}`,
@@ -115,7 +123,25 @@ export async function notifyTest(
   await send(
     process.env.TELEGRAM_BOT_ORDINI_TOKEN,
     restaurant.telegram_chat_ordini,
-    `✅ <b>Notifica di prova</b>\nSe leggi questo messaggio, il bot Ordini di “${restaurant.nome}” è collegato correttamente.`,
+    `✅ <b>Notifica di prova</b>\nSe leggi questo messaggio, il bot Ordini di “${escapeHtml(restaurant.nome)}” è collegato correttamente.`,
+    restaurant.telegram_topic_ordini,
+  );
+}
+
+/** Bot ORDINI: a customer at a table calls the waiter / asks for the bill. */
+export async function notifyServiceRequest(
+  restaurant: Pick<Restaurant, "telegram_chat_ordini" | "telegram_topic_ordini">,
+  tavolo: string,
+  tipo: "cameriere" | "conto",
+) {
+  const text =
+    tipo === "conto"
+      ? `🧾 <b>RICHIESTA CONTO</b>\nTavolo ${escapeHtml(tavolo)}`
+      : `🔔 <b>CHIAMATA CAMERIERE</b>\nTavolo ${escapeHtml(tavolo)}`;
+  await send(
+    process.env.TELEGRAM_BOT_ORDINI_TOKEN,
+    restaurant.telegram_chat_ordini,
+    text,
     restaurant.telegram_topic_ordini,
   );
 }
