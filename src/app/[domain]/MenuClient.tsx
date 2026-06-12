@@ -515,6 +515,7 @@ export default function MenuClient({
                 allergyOn && myAllergens.length
                   ? (item.allergeni ?? []).filter((a) => myAllergens.includes(a))
                   : [];
+              const allergyHit = myHits.length > 0;
               const showPhoto =
                 !layout.foto_categorie_nascoste.includes(item.categoria) &&
                 (!dark || !!item.foto_url);
@@ -552,13 +553,20 @@ export default function MenuClient({
                     animationDelay: `${Math.min(idx * 45, 300)}ms`,
                     opacity: sold ? 0.5 : 1,
                     ...(dark
-                      ? {
-                          borderBottom: `1px solid ${p.surfaceBorder}`,
-                          paddingBottom: compact ? "12px" : "16px",
-                        }
+                      ? allergyHit
+                        ? {
+                            background: "rgba(220,38,38,0.12)",
+                            border: "1px solid rgba(248,113,113,0.35)",
+                            borderRadius: radius,
+                            padding: compact ? "9px" : "12px",
+                          }
+                        : {
+                            borderBottom: `1px solid ${p.surfaceBorder}`,
+                            paddingBottom: compact ? "12px" : "16px",
+                          }
                       : {
-                          background: p.surface,
-                          border: `1px solid ${p.surfaceBorder}`,
+                          background: allergyHit ? "#fdf2f1" : p.surface,
+                          border: `1px solid ${allergyHit ? "#f1cfcb" : p.surfaceBorder}`,
                           borderRadius: radius,
                           padding: compact ? "9px" : "12px",
                           boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
