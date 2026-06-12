@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { priceCartServerSide } from "@/lib/pricing";
+import { computeCopertoCents, computeManciaCents } from "@/lib/pricing-core";
 import { notifyNewOrder } from "@/lib/telegram";
 import { isStripeConfigured } from "@/lib/env";
 import { isFeatureOn } from "@/lib/config/features";
@@ -101,9 +102,8 @@ export async function POST(req: Request) {
     const payments = restaurant.pagamenti_attivi;
 
     // Coperto: applied server-side per the restaurant's configured mode.
-    const copertoAmount = Math.max(0, Number(restaurant.coperto || 0));
+    // "persona" needs a valid cover count from the client; validate it here.
     let coperti: number | null = null;
-    let copertoCents = 0;
     if (restaurant.coperto_modalita === "persona") {
       const c = Number(body.coperti);
       if (!Number.isInteger(c) || c < 1 || c > 50) {
@@ -113,18 +113,18 @@ export async function POST(req: Request) {
         );
       }
       coperti = c;
-      copertoCents = Math.round(copertoAmount * 100) * c;
-    } else if (restaurant.coperto_modalita === "ordine") {
-      copertoCents = Math.round(copertoAmount * 100);
-    } else if (restaurant.coperto_modalita === "servizio") {
-      copertoCents = Math.round((itemsTotaleCents * copertoAmount) / 100);
     }
-
-    let manciaCents = 0;
-    if (payments && restaurant.accetta_mancia) {
-      const m = Math.round(Number(body.mancia) * 100);
-      if (Number.isFinite(m) && m > 0) manciaCents = Math.min(m, 100000); // cap €1000
-    }
+    const copertoCents = computeCopertoCents(
+      restaurant.coperto_modalita,
+      restaurant.coperto,
+      coperti ?? 0,
+      itemsTotaleCents,
+    );
+    const manciaCents = computeManciaCents(
+      payments,
+      restaurant.accetta_mancia,
+      body.mancia,
+    );
 
     const totaleCents = itemsTotaleCents + copertoCents + manciaCents;
     const totale = totaleCents / 100;
