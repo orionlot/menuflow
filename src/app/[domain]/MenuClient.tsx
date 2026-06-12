@@ -36,9 +36,11 @@ function lineKey(itemId: string, chosen: Chosen[]): string {
 export default function MenuClient({
   tenant,
   items,
+  popolari = [],
 }: {
   tenant: PublicRestaurant;
   items: MenuItem[];
+  popolari?: string[];
 }) {
   const layout = resolveLayout(tenant.layout);
   const p = brandPalette(tenant.colore_primario, tenant.tema, tenant.colore_secondario);
@@ -70,6 +72,7 @@ export default function MenuClient({
   const [status, setStatus] = useState<string | null>(null);
   const [allergyOpen, setAllergyOpen] = useState(false);
   const [myAllergens, setMyAllergens] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
   const [voted, setVoted] = useState<number | null>(null);
 
   // Prefill table number from QR (?tavolo=) without forcing the page dynamic.
@@ -125,7 +128,10 @@ export default function MenuClient({
   }, [items]);
   const [activeCat, setActiveCat] = useState<string>(categories[0] ?? "");
 
-  const shown = items.filter((i) => i.categoria === (activeCat || categories[0]));
+  const q = query.trim().toLowerCase();
+  const shown = (
+    q ? items : items.filter((i) => i.categoria === (activeCat || categories[0]))
+  ).filter((i) => !q || t(i.nome, i.nome_i18n).toLowerCase().includes(q));
   const lines = Object.values(cart).filter((l) => l.qta > 0);
   const count = lines.reduce((s, l) => s + l.qta, 0);
   const itemsCents = lines.reduce((s, l) => s + l.unitCents * l.qta, 0);
@@ -450,6 +456,22 @@ export default function MenuClient({
           </div>
         )}
 
+        {items.length > 5 && (
+          <div className="px-5 pt-2">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Cerca un piatto…"
+              className="w-full rounded-full px-4 py-2 text-sm outline-none"
+              style={{
+                background: p.surface,
+                color: p.text,
+                border: `1px solid ${p.surfaceBorder}`,
+              }}
+            />
+          </div>
+        )}
+
         {backend === "down" && (
           <div className="px-5 pt-2">
             <div
@@ -564,6 +586,14 @@ export default function MenuClient({
                             style={{ background: p.accent, color: p.onAccent }}
                           >
                             ★ Consigliato
+                          </span>
+                        )}
+                        {popolari.includes(item.id) && (
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                            style={{ background: "#fff7ed", color: "#c2410c" }}
+                          >
+                            🔥 Più ordinato
                           </span>
                         )}
                         {scorteOn &&

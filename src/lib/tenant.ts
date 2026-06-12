@@ -85,3 +85,30 @@ export async function getMenuItems(restaurantId: string): Promise<MenuItem[]> {
     .order("created_at", { ascending: true });
   return (data as MenuItem[]) ?? [];
 }
+
+/** Top-selling item ids over the last `days` (≥3 sales), for "più ordinati" badges. */
+export async function getPopularItemIds(
+  restaurantId: string,
+  days = 30,
+  limit = 4,
+): Promise<string[]> {
+  const admin = createAdminClient();
+  const since = new Date(Date.now() - days * 86_400_000).toISOString();
+  const { data } = await admin
+    .from("orders")
+    .select("items")
+    .eq("restaurant_id", restaurantId)
+    .in("stato", ["ricevuto", "pagato"])
+    .gte("created_at", since);
+  const counts = new Map<string, number>();
+  for (const o of (data ?? []) as { items: { item_id: string; qta: number }[] }[]) {
+    for (const it of o.items ?? []) {
+      if (it.item_id) counts.set(it.item_id, (counts.get(it.item_id) ?? 0) + (it.qta || 1));
+    }
+  }
+  return [...counts.entries()]
+    .filter(([, c]) => c >= 3)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([id]) => id);
+}
