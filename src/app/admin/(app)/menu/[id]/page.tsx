@@ -9,6 +9,7 @@ import {
   adminDeleteItem,
   adminUpdateAggiunte,
   adminReorderItems,
+  adminDuplicateItem,
 } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +58,7 @@ export default async function AdminMenuPage({
           createItem: adminCreateItem.bind(null, restaurant.id),
           updateItem: adminUpdateItem,
           deleteItem: adminDeleteItem,
+          duplicateItem: adminDuplicateItem,
           updateAggiunte: adminUpdateAggiunte.bind(null, restaurant.id),
           reorder: adminReorderItems,
         }}

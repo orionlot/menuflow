@@ -40,6 +40,36 @@ export async function updateItem(itemId: string, patch: ItemPatch) {
   revalidatePath("/[domain]", "page"); // instant sold-out/price on public menu
 }
 
+/** Duplicate a menu item ("… (copia)"). RLS scopes it to the owner's items. */
+export async function duplicateItem(itemId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data: item } = await supabase
+    .from("menu_items")
+    .select("*")
+    .eq("id", itemId)
+    .single();
+  if (!item) throw new Error("Voce non trovata.");
+  const { error } = await supabase.from("menu_items").insert({
+    restaurant_id: item.restaurant_id,
+    categoria: item.categoria,
+    nome: `${item.nome} (copia)`,
+    nome_i18n: item.nome_i18n ?? {},
+    descrizione: item.descrizione ?? null,
+    descrizione_i18n: item.descrizione_i18n ?? {},
+    prezzo: item.prezzo,
+    foto_url: item.foto_url ?? null,
+    disponibile: item.disponibile,
+    ordine: (item.ordine ?? 0) + 1,
+    allergeni: item.allergeni ?? [],
+    opzioni: item.opzioni ?? [],
+    consigliato: false,
+    scorta: item.scorta ?? null,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/menu");
+  revalidatePath("/[domain]", "page");
+}
+
 export async function createItem(patch: ItemPatch) {
   const restaurantId = await ownerRestaurantId();
   const supabase = await createSupabaseServerClient();

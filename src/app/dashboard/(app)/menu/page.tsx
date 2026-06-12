@@ -9,6 +9,7 @@ import {
   deleteItem,
   updateAggiunte,
   reorderItems,
+  duplicateItem,
 } from "@/app/dashboard/actions";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,7 @@ export default async function MenuPage() {
         createItem,
         updateItem,
         deleteItem,
+        duplicateItem,
         updateAggiunte,
         reorder: reorderItems,
       }}

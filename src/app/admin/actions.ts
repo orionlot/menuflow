@@ -206,6 +206,35 @@ export async function updateRestaurantFunzionalita(
   revalidatePath("/admin");
 }
 
+export async function adminDuplicateItem(itemId: string) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  const { data: item } = await admin
+    .from("menu_items")
+    .select("*")
+    .eq("id", itemId)
+    .single();
+  if (!item) throw new Error("Voce non trovata.");
+  const { error } = await admin.from("menu_items").insert({
+    restaurant_id: item.restaurant_id,
+    categoria: item.categoria,
+    nome: `${item.nome} (copia)`,
+    nome_i18n: item.nome_i18n ?? {},
+    descrizione: item.descrizione ?? null,
+    descrizione_i18n: item.descrizione_i18n ?? {},
+    prezzo: item.prezzo,
+    foto_url: item.foto_url ?? null,
+    disponibile: item.disponibile,
+    ordine: (item.ordine ?? 0) + 1,
+    allergeni: item.allergeni ?? [],
+    opzioni: item.opzioni ?? [],
+    consigliato: false,
+    scorta: item.scorta ?? null,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin");
+}
+
 export async function adminSignOut() {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();

@@ -32,6 +32,7 @@ type MiniRestaurant = { id: string; multilingua: boolean; lingue: string[] };
 export interface MenuActions {
   createItem: (patch: ItemPatch) => Promise<void>;
   updateItem: (id: string, patch: ItemPatch) => Promise<void>;
+  duplicateItem: (id: string) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
   updateAggiunte: (aggiunte: CategoryAddon[]) => Promise<void>;
   reorder: (updates: { id: string; ordine: number }[]) => Promise<void>;
@@ -46,6 +47,7 @@ interface ItemHandlers {
   save: (id: string, patch: ItemPatch) => void;
   toggle: (item: MenuItem) => void;
   toggleConsigliato: (item: MenuItem) => void;
+  duplicate: (id: string) => void;
   remove: (id: string) => void;
   uploadPhoto: (item: MenuItem, file: File) => void;
   toggleAllergen: (item: MenuItem, id: string) => void;
@@ -139,6 +141,12 @@ export default function MenuManager({
       router.refresh();
     });
   }
+  function duplicate(id: string) {
+    run(async () => {
+      await actions.duplicateItem(id);
+      router.refresh();
+    });
+  }
   function toggleAllergen(item: MenuItem, id: string) {
     const set = new Set(item.allergeni ?? []);
     if (set.has(id)) set.delete(id);
@@ -199,6 +207,7 @@ export default function MenuManager({
     save,
     toggle,
     toggleConsigliato,
+    duplicate,
     remove,
     uploadPhoto,
     toggleAllergen,
@@ -514,6 +523,12 @@ function SortableItem({ item, h }: { item: MenuItem; h: ItemHandlers }) {
               }`}
             >
               {item.consigliato ? "★ Consigliato" : "☆ Consiglia"}
+            </button>
+            <button
+              onClick={() => h.duplicate(item.id)}
+              className="text-xs text-neutral-500 hover:underline"
+            >
+              Duplica
             </button>
             <button
               onClick={() => h.remove(item.id)}
