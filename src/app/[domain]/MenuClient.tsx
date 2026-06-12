@@ -16,22 +16,112 @@ const MAINTENANCE_MSG =
 
 const ALL_CAT = "__all__";
 
-/** A small emoji marker for a category section header (by keyword, with fallback). */
-function catIcon(name: string): string {
+/** A monochrome line icon (currentColor) for a category section header. */
+function catIcon(name: string) {
   const n = name.toLowerCase();
-  if (/aperitiv|cocktail|spritz|drink|bar/.test(n)) return "🍸";
-  if (/caff|coffe|colazion|breakfast/.test(n)) return "☕";
-  if (/panin|sandwich|burger|toast|hamburg|wrap/.test(n)) return "🥪";
-  if (/pizz/.test(n)) return "🍕";
-  if (/antipast|starter|stuzzic|finger/.test(n)) return "🥗";
-  if (/prim|past|risott|zupp|gnocch|lasagn/.test(n)) return "🍝";
-  if (/second|carne|pesce|griglia|grill|bistecc/.test(n)) return "🍖";
-  if (/contorn|verdur|insalat/.test(n)) return "🥗";
-  if (/dolc|dessert|tort|gelat|tiramis/.test(n)) return "🍰";
-  if (/vin|wine|cantina/.test(n)) return "🍷";
-  if (/birr|beer/.test(n)) return "🍺";
-  if (/bevand|bibit|soft|succh|acqua|drink/.test(n)) return "🥤";
-  return "🍽️";
+  const svg = (children: React.ReactNode) => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {children}
+    </svg>
+  );
+  if (/aperitiv|cocktail|spritz|drink|bar/.test(n))
+    return svg(
+      <>
+        <path d="M5 4h14" />
+        <path d="M5 4l7 8 7-8" />
+        <path d="M12 12v6" />
+        <path d="M8 21h8" />
+      </>,
+    );
+  if (/vin|wine|cantina/.test(n))
+    return svg(
+      <>
+        <path d="M8 21h8" />
+        <path d="M12 15v6" />
+        <path d="M7 3h10l-1 6a4 4 0 0 1-8 0z" />
+      </>,
+    );
+  if (/birr|beer/.test(n))
+    return svg(
+      <>
+        <path d="M5 8h11v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z" />
+        <path d="M16 10h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2" />
+        <path d="M8 8V6a2 2 0 0 1 4 0v2" />
+      </>,
+    );
+  if (/caff|coffe|colazion|breakfast/.test(n))
+    return svg(
+      <>
+        <path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z" />
+        <path d="M17 9h1.5a2.5 2.5 0 0 1 0 5H17" />
+        <path d="M8 3v2" />
+        <path d="M12 3v2" />
+      </>,
+    );
+  if (/panin|sandwich|burger|toast|hamburg|wrap/.test(n))
+    return svg(
+      <>
+        <path d="M3 11a9 9 0 0 1 18 0" />
+        <path d="M3 11h18" />
+        <path d="M4 15h16" />
+        <path d="M4 15a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3" />
+      </>,
+    );
+  if (/pizz/.test(n))
+    return svg(
+      <>
+        <path d="M3 8l9 13 9-13a32 32 0 0 0-18 0z" />
+        <circle cx="10" cy="11" r="1" />
+        <circle cx="13" cy="14" r="1" />
+      </>,
+    );
+  if (/prim|past|risott|zupp|gnocch|lasagn/.test(n))
+    return svg(
+      <>
+        <path d="M3 12h18a9 9 0 0 1-18 0z" />
+        <path d="M8 8c0-1.5 1-1.5 1-3" />
+        <path d="M12 7c0-1.5 1-1.5 1-3" />
+      </>,
+    );
+  if (/dolc|dessert|tort|gelat|tiramis/.test(n))
+    return svg(
+      <>
+        <path d="M7 10a5 5 0 0 1 10 0" />
+        <path d="M7 10l5 11 5-11z" />
+      </>,
+    );
+  if (/antipast|starter|stuzzic|finger|contorn|verdur|insalat/.test(n))
+    return svg(
+      <>
+        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+        <path d="M2 21c0-3 1.85-5.36 5.08-6" />
+      </>,
+    );
+  if (/bevand|bibit|soft|succh|acqua/.test(n))
+    return svg(
+      <>
+        <path d="M6 8h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z" />
+        <path d="M10 8l1-5h5" />
+      </>,
+    );
+  // Fallback: fork & knife (utensils)
+  return svg(
+    <>
+      <path d="M5 3v6a2 2 0 0 0 4 0V3" />
+      <path d="M7 9v12" />
+      <path d="M17 3c-1.7 0-3 2.2-3 5s1.3 4 3 4" />
+      <path d="M17 3v18" />
+    </>,
+  );
 }
 
 type Backend = "checking" | "ok" | "down";
@@ -798,7 +888,11 @@ export default function MenuClient({
               return (
                 <section key={cat} className="mb-6">
                   <div className="mb-3 flex items-center gap-2">
-                    <span className="text-xl" aria-hidden>
+                    <span
+                      className="flex h-6 w-6 items-center justify-center"
+                      style={{ color: p.accent }}
+                      aria-hidden
+                    >
                       {catIcon(cat)}
                     </span>
                     <h2
@@ -808,7 +902,7 @@ export default function MenuClient({
                       {cat}
                     </h2>
                     <span className="ml-auto text-xs" style={{ color: p.textMuted }}>
-                      {its.length} {its.length === 1 ? "articolo" : "articoli"}
+                      {its.length} {its.length === 1 ? "prodotto" : "prodotti"}
                     </span>
                   </div>
                   <ul className="space-y-3">{its.map((it, i) => renderItem(it, i))}</ul>
@@ -855,7 +949,7 @@ export default function MenuClient({
             <span className="flex min-w-0 flex-1 flex-col items-start leading-tight">
               <span className="font-display text-base font-bold">Vedi ordine</span>
               <span className="text-xs opacity-85">
-                {count} {count === 1 ? "articolo" : "articoli"} · {formatEUR(totalCents)}
+                {count} {count === 1 ? "prodotto" : "prodotti"} · {formatEUR(totalCents)}
               </span>
             </span>
             <span
