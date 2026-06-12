@@ -18,7 +18,7 @@ function clean(s: unknown, max = 280): string | null {
 }
 
 export async function POST(req: Request) {
-  if (!hitRateLimit(`ordine:${req.headers.get("x-forwarded-for") ?? "anon"}`, 60, 60_000)) {
+  if (!(await hitRateLimit(`ordine:${req.headers.get("x-forwarded-for") ?? "anon"}`, 60, 60_000))) {
     return NextResponse.json({ ok: false, error: "Troppe richieste." }, { status: 429 });
   }
   let admin;

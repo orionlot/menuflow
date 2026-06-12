@@ -10,7 +10,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  if (!hitRateLimit(`voto:${req.headers.get("x-forwarded-for") ?? "anon"}`, 10, 60_000)) {
+  if (!(await hitRateLimit(`voto:${req.headers.get("x-forwarded-for") ?? "anon"}`, 10, 60_000))) {
     return NextResponse.json({ ok: false, error: "Troppe richieste." }, { status: 429 });
   }
   let body: { voto?: number };

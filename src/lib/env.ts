@@ -37,4 +37,17 @@ export function isTelegramConfigured(): boolean {
   );
 }
 
+/**
+ * Distributed rate-limit store (Upstash Redis REST). Optional: when unset, the
+ * limiter degrades to a per-instance in-memory window — fine for local/dev, but
+ * weak under horizontal scale on Vercel (each instance counts on its own).
+ */
+export const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL ?? "";
+export const UPSTASH_REDIS_REST_TOKEN =
+  process.env.UPSTASH_REDIS_REST_TOKEN ?? "";
+
+export function isRateLimitStoreConfigured(): boolean {
+  return Boolean(UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN);
+}
+
 export const STORAGE_BUCKET = "menu-photos";

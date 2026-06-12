@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 /** Customer at a table calls the waiter / asks for the bill → Orders bot. */
 export async function POST(req: Request) {
-  if (!hitRateLimit(`chiamata:${req.headers.get("x-forwarded-for") ?? "anon"}`, 6, 60_000)) {
+  if (!(await hitRateLimit(`chiamata:${req.headers.get("x-forwarded-for") ?? "anon"}`, 6, 60_000))) {
     return NextResponse.json({ ok: false, error: "Troppe richieste." }, { status: 429 });
   }
 

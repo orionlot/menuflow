@@ -49,7 +49,7 @@ const STARTER_MENU = [
  */
 export async function registraLocale(input: RegistraInput): Promise<RegistraResult> {
   const ip = (await headers()).get("x-forwarded-for") ?? "anon";
-  if (!hitRateLimit(`signup:${ip}`, 3, 600_000)) {
+  if (!(await hitRateLimit(`signup:${ip}`, 3, 600_000))) {
     return { ok: false, error: "Troppi tentativi: riprova tra qualche minuto." };
   }
   const nome = String(input?.nome ?? "").trim().slice(0, 80);
