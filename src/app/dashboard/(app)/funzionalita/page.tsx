@@ -6,11 +6,15 @@ import {
   updateOrari,
   connectStripe,
   disconnectStripe,
+  updateTelegram,
+  testTelegram,
 } from "@/app/dashboard/actions";
+import { isTelegramConfigured } from "@/lib/env";
 import FeaturesOwner from "./FeaturesOwner";
 import ServiceSettings from "./ServiceSettings";
 import OrariSettings from "./OrariSettings";
 import PagamentiSettings from "./PagamentiSettings";
+import TelegramSettings from "./TelegramSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +64,17 @@ export default async function FunzionalitaPage() {
           pagamentiTest={restaurant.pagamenti_test}
           connect={connectStripe}
           disconnect={disconnectStripe}
+        />
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-sm font-semibold text-neutral-700">Notifiche Telegram</h2>
+        <TelegramSettings
+          chatOrdini={restaurant.telegram_chat_ordini}
+          chatPagamenti={restaurant.telegram_chat_pagamenti}
+          tokenConfigured={isTelegramConfigured()}
+          update={updateTelegram}
+          test={testTelegram}
         />
       </section>
 

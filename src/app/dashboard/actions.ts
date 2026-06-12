@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeBranding } from "@/lib/branding";
 import { sanitizeFunzionalita } from "@/lib/config/features";
 import { sanitizeOrari } from "@/lib/orari";
+import { notifyTest } from "@/lib/telegram";
 import { sanitizeItemPatch, sanitizeAggiunte, type ItemPatch } from "@/lib/menu";
 import type { BrandingPatch, CategoryAddon } from "@/types/db";
 
@@ -140,6 +141,36 @@ export async function disconnectStripe() {
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/funzionalita");
   revalidatePath("/[domain]", "page");
+}
+
+/** Restaurateur sets their own Telegram chat ids (autonomous). */
+export async function updateTelegram(chatOrdini: string, chatPagamenti: string) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({
+      telegram_chat_ordini: String(chatOrdini ?? "").trim() || null,
+      telegram_chat_pagamenti: String(chatPagamenti ?? "").trim() || null,
+    })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/funzionalita");
+}
+
+/** Sends a test notification to the Orders bot. Returns whether it stubbed
+ *  (token or chat missing) so the UI can explain. */
+export async function testTelegram(): Promise<{ stub: boolean }> {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("restaurants")
+    .select("nome, telegram_chat_ordini, telegram_topic_ordini")
+    .eq("id", restaurantId)
+    .single();
+  if (!data) throw new Error("Locale non trovato.");
+  await notifyTest(data as Parameters<typeof notifyTest>[0]);
+  return { stub: !data.telegram_chat_ordini || !process.env.TELEGRAM_BOT_ORDINI_TOKEN };
 }
 
 export async function deleteItem(itemId: string) {

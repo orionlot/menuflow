@@ -104,3 +104,18 @@ export async function notifyPaidOrder(
     restaurant.telegram_topic_pagamenti,
   );
 }
+
+/** Sends a test message to the Orders bot to confirm the chat is connected. */
+export async function notifyTest(
+  restaurant: Pick<
+    Restaurant,
+    "nome" | "telegram_chat_ordini" | "telegram_topic_ordini"
+  >,
+) {
+  await send(
+    process.env.TELEGRAM_BOT_ORDINI_TOKEN,
+    restaurant.telegram_chat_ordini,
+    `✅ <b>Notifica di prova</b>\nSe leggi questo messaggio, il bot Ordini di “${restaurant.nome}” è collegato correttamente.`,
+    restaurant.telegram_topic_ordini,
+  );
+}
