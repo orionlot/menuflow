@@ -23,15 +23,20 @@ export async function markOrderPaid(
   if (!order) return null;
   if (order.stato === "pagato") return order; // already processed
 
+  // Race-safe transition: the `neq("stato","pagato")` filter means only ONE of
+  // two concurrent webhook deliveries actually flips the row (Postgres serialises
+  // the row lock). The loser matches 0 rows and returns below WITHOUT notifying,
+  // so the Payments bot fires exactly once even under duplicate delivery.
   const { data: updatedRow } = await admin
     .from("orders")
     .update({ stato: "pagato", pagato_at: new Date().toISOString() })
     .eq("id", order.id)
+    .neq("stato", "pagato")
     .select("*")
-    .single();
+    .maybeSingle();
   const updated = updatedRow as Order | null;
 
-  if (!updated) return null;
+  if (!updated) return order; // already paid by a concurrent delivery — don't re-notify
 
   const { data: restaurantRow } = await admin
     .from("restaurants")
