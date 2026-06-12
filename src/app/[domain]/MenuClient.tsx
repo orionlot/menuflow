@@ -14,6 +14,26 @@ import { ALLERGENI, ALLERGENI_BY_ID } from "@/lib/config/allergeni";
 const MAINTENANCE_MSG =
   "App momentaneamente in manutenzione — Si prega di rivolgersi allo staff per l'ordinazione";
 
+const ALL_CAT = "__all__";
+
+/** A small emoji marker for a category section header (by keyword, with fallback). */
+function catIcon(name: string): string {
+  const n = name.toLowerCase();
+  if (/aperitiv|cocktail|spritz|drink|bar/.test(n)) return "🍸";
+  if (/caff|coffe|colazion|breakfast/.test(n)) return "☕";
+  if (/panin|sandwich|burger|toast|hamburg|wrap/.test(n)) return "🥪";
+  if (/pizz/.test(n)) return "🍕";
+  if (/antipast|starter|stuzzic|finger/.test(n)) return "🥗";
+  if (/prim|past|risott|zupp|gnocch|lasagn/.test(n)) return "🍝";
+  if (/second|carne|pesce|griglia|grill|bistecc/.test(n)) return "🍖";
+  if (/contorn|verdur|insalat/.test(n)) return "🥗";
+  if (/dolc|dessert|tort|gelat|tiramis/.test(n)) return "🍰";
+  if (/vin|wine|cantina/.test(n)) return "🍷";
+  if (/birr|beer/.test(n)) return "🍺";
+  if (/bevand|bibit|soft|succh|acqua|drink/.test(n)) return "🥤";
+  return "🍽️";
+}
+
 type Backend = "checking" | "ok" | "down";
 type Chosen = { gruppo: string; scelta: string; prezzo: number };
 interface CartLine {
@@ -61,7 +81,6 @@ export default function MenuClient({
   const [tavolo, setTavolo] = useState("");
   const [note, setNote] = useState("");
   const [coperti, setCoperti] = useState(0);
-  const [allOpen, setAllOpen] = useState(false);
   const [manciaCents, setManciaCents] = useState(0);
   const [backend, setBackend] = useState<Backend>("checking");
   const [sheet, setSheet] = useState(false);
@@ -130,9 +149,16 @@ export default function MenuClient({
   const [activeCat, setActiveCat] = useState<string>(categories[0] ?? "");
 
   const q = query.trim().toLowerCase();
-  const shown = (
-    q ? items : items.filter((i) => i.categoria === (activeCat || categories[0]))
-  ).filter((i) => !q || t(i.nome, i.nome_i18n).toLowerCase().includes(q));
+  const searching = q.length > 0;
+  const matches = (i: MenuItem) =>
+    t(i.nome, i.nome_i18n).toLowerCase().includes(q) ||
+    t(i.descrizione ?? "", i.descrizione_i18n).toLowerCase().includes(q);
+  const shown = searching ? items.filter(matches) : [];
+  const visibleCats = searching
+    ? []
+    : activeCat === ALL_CAT
+      ? categories
+      : [activeCat || categories[0]];
   const lines = Object.values(cart).filter((l) => l.qta > 0);
   const count = lines.reduce((s, l) => s + l.qta, 0);
   const itemsCents = lines.reduce((s, l) => s + l.unitCents * l.qta, 0);
@@ -151,11 +177,6 @@ export default function MenuClient({
   const copertiMissing = cMode === "persona" && coperti < 1;
   const tipEligible = tenant.pagamenti_attivi && tenant.accetta_mancia;
   const totalCents = itemsCents + copertoCents + (tipEligible ? manciaCents : 0);
-
-  // Allergens present in the active category (for the legend accordion).
-  const allergeniInCategory = Array.from(
-    new Set(shown.flatMap((i) => i.allergeni ?? [])),
-  );
 
   const qtyForItem = (id: string) =>
     lines.filter((l) => l.item_id === id).reduce((s, l) => s + l.qta, 0);
@@ -289,6 +310,227 @@ export default function MenuClient({
   const tavoloMissing = !tavolo.trim();
   const closed = Boolean(tenant.funzioni_attive?.orari) && !isOpenNow(tenant.orari);
   const ordersBlocked = backend === "down" || closed;
+  const tuttoOn = activeCat === ALL_CAT;
+
+  const renderItem = (item: MenuItem, idx: number) => {
+    const sold = !item.disponibile || (scorteOn && item.scorta === 0);
+    const qty = qtyForItem(item.id);
+    const hasOpts = effectiveOptions(item, tenant.aggiunte).length > 0;
+    const myHits =
+      allergyOn && myAllergens.length
+        ? (item.allergeni ?? []).filter((a) => myAllergens.includes(a))
+        : [];
+    const allergyHit = myHits.length > 0;
+    const showPhoto =
+      !layout.foto_categorie_nascoste.includes(item.categoria) &&
+      (!dark || !!item.foto_url);
+    const photoRadius = Math.max(radius - 4, 4);
+    const desc = t(item.descrizione ?? "", item.descrizione_i18n);
+    const recommended = Boolean(
+      tenant.funzioni_attive?.piatto_consigliato && item.consigliato,
+    );
+    const popular = popolari.includes(item.id);
+    const lowStock =
+      scorteOn && item.scorta != null && item.scorta > 0 && item.scorta <= 5;
+
+    const addControl =
+      sold || ordersBlocked ? null : qty > 0 && !hasOpts ? (
+        <div
+          className="flex items-center gap-1.5 rounded-full p-1"
+          style={{ border: `1px solid ${p.accent}` }}
+        >
+          <Round bg="transparent" fg={p.accent} onClick={() => setQty(item.id, qty - 1)}>
+            −
+          </Round>
+          <span className="w-5 text-center text-sm font-bold">{qty}</span>
+          <Round bg={p.accent} fg={p.onAccent} onClick={() => addLine(item, [])}>
+            +
+          </Round>
+        </div>
+      ) : (
+        <button
+          onClick={() => tapAdd(item)}
+          className="relative inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold"
+          style={{ background: p.accent, color: p.onAccent }}
+        >
+          <span className="text-base leading-none">+</span> Aggiungi
+          {qty > 0 && (
+            <span
+              className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
+              style={{ background: p.text, color: p.pageBg }}
+            >
+              {qty}
+            </span>
+          )}
+        </button>
+      );
+
+    return (
+      <li
+        key={item.id}
+        className="mf-up overflow-hidden"
+        style={{
+          animationDelay: `${Math.min(idx * 45, 300)}ms`,
+          opacity: sold ? 0.5 : 1,
+          background: allergyHit
+            ? dark
+              ? "rgba(220,38,38,0.12)"
+              : "#fdf2f1"
+            : p.surface,
+          border: `1px solid ${
+            allergyHit ? (dark ? "rgba(248,113,113,0.35)" : "#f1cfcb") : p.surfaceBorder
+          }`,
+          borderRadius: radius,
+          boxShadow: dark ? "none" : "0 1px 2px rgba(0,0,0,0.04)",
+        }}
+      >
+        {photoTop &&
+          showPhoto &&
+          (item.foto_url ? (
+            <Image
+              src={item.foto_url}
+              alt={t(item.nome, item.nome_i18n)}
+              width={480}
+              height={200}
+              className="h-36 w-full object-cover"
+            />
+          ) : (
+            <div
+              className="flex h-28 w-full items-center justify-center font-display text-3xl"
+              style={{ background: p.tint, color: p.brand }}
+            >
+              {item.nome.charAt(0)}
+            </div>
+          ))}
+        <div className={`flex gap-3 ${compact ? "p-2.5" : "p-3"}`}>
+          {!photoTop &&
+            showPhoto &&
+            (item.foto_url ? (
+              <Image
+                src={item.foto_url}
+                alt={t(item.nome, item.nome_i18n)}
+                width={120}
+                height={120}
+                className="shrink-0 object-cover"
+                style={{ width: 96, height: 96, borderRadius: photoRadius }}
+              />
+            ) : (
+              <div
+                className="flex shrink-0 items-center justify-center font-display text-2xl"
+                style={{
+                  width: 96,
+                  height: 96,
+                  background: p.tint,
+                  color: p.brand,
+                  borderRadius: photoRadius,
+                }}
+              >
+                {item.nome.charAt(0)}
+              </div>
+            ))}
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex items-start gap-2">
+              <h3 className="min-w-0 flex-1 font-display text-[1.05rem] font-semibold leading-tight">
+                {t(item.nome, item.nome_i18n)}
+              </h3>
+              {recommended && (
+                <span
+                  className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px]"
+                  style={{ border: `1px solid ${p.accent}`, color: p.accent }}
+                  title="Consigliato"
+                >
+                  ★
+                </span>
+              )}
+              {sold && (
+                <span
+                  className="mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                  style={{ background: p.surfaceBorder, color: p.textMuted }}
+                >
+                  Esaurito
+                </span>
+              )}
+            </div>
+
+            {(popular || lowStock) && (
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                {popular && (
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                    style={{ background: "#fff7ed", color: "#c2410c" }}
+                  >
+                    🔥 Più ordinato
+                  </span>
+                )}
+                {lowStock && (
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                    style={{ background: "#fef3c7", color: "#92400e" }}
+                  >
+                    Ultime {item.scorta}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {desc && (
+              <p className="mt-1 text-sm leading-snug" style={{ color: p.textMuted }}>
+                {desc}
+              </p>
+            )}
+
+            <div className="my-2" style={{ borderTop: `1px dashed ${p.surfaceBorder}` }} />
+
+            {item.allergeni?.length > 0 && (
+              <div
+                className="mb-2 flex flex-wrap items-center gap-1.5 text-[11px]"
+                style={{ color: p.textMuted }}
+              >
+                {item.allergeni.map((a) => {
+                  const hit = myHits.includes(a);
+                  return (
+                    <span
+                      key={a}
+                      className="rounded px-1.5 py-0.5 font-semibold"
+                      style={
+                        hit
+                          ? {
+                              border: "1px solid #fca5a5",
+                              color: "#b91c1c",
+                              background: "#fee2e2",
+                            }
+                          : { border: `1px solid ${p.accent}`, color: p.accent }
+                      }
+                    >
+                      {ALLERGENI_BY_ID.get(a)?.short ?? a}
+                    </span>
+                  );
+                })}
+                <span>
+                  contiene{" "}
+                  {item.allergeni
+                    .map((a) => (ALLERGENI_BY_ID.get(a)?.label ?? a).toLowerCase())
+                    .join(", ")}
+                </span>
+              </div>
+            )}
+
+            <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+              <div className="font-display text-base font-bold" style={{ color: p.price }}>
+                {formatEUR(Math.round(item.prezzo * 100))}
+                {hasOpts && (
+                  <span className="ml-1 text-xs font-normal" style={{ color: p.textMuted }}>
+                    + opzioni
+                  </span>
+                )}
+              </div>
+              {addControl}
+            </div>
+          </div>
+        </div>
+      </li>
+    );
+  };
 
   return (
     <div
@@ -385,8 +627,19 @@ export default function MenuClient({
         {categories.length > 0 && (
           <div className="sticky top-0 z-20" style={{ background: p.pageBg }}>
             <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 py-3">
+              <button
+                onClick={() => setActiveCat(ALL_CAT)}
+                className="shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition"
+                style={{
+                  background: tuttoOn ? p.chipActiveBg : p.chipBg,
+                  color: tuttoOn ? p.chipActiveText : p.chipText,
+                  border: tuttoOn ? "none" : `1px solid ${p.surfaceBorder}`,
+                }}
+              >
+                Tutto
+              </button>
               {categories.map((c) => {
-                const on = c === (activeCat || categories[0]);
+                const on = !tuttoOn && c === (activeCat || categories[0]);
                 return (
                   <button
                     key={c}
@@ -408,50 +661,54 @@ export default function MenuClient({
               <div className="px-5 pb-2">
                 <button
                   onClick={() => setAllergyOpen(true)}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold"
-                  style={{
-                    background: myAllergens.length ? "#fee2e2" : p.tint,
-                    color: myAllergens.length ? "#b91c1c" : p.textMuted,
-                    border: `1px solid ${myAllergens.length ? "#fca5a5" : p.surfaceBorder}`,
-                  }}
+                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left"
+                  style={{ background: p.tint, border: `1px solid ${p.surfaceBorder}` }}
                 >
-                  {myAllergens.length
-                    ? `⚠ Le mie allergie (${myAllergens.length})`
-                    : "Imposta le mie allergie"}
-                </button>
-              </div>
-            )}
-
-            {allergeniInCategory.length > 0 && (
-              <div className="px-5 pb-2">
-                <button
-                  onClick={() => setAllOpen((o) => !o)}
-                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium"
-                  style={{ background: p.tint, color: p.textMuted }}
-                  aria-expanded={allOpen}
-                >
-                  <span>
-                    ⓘ Allergeni in &ldquo;{activeCat || categories[0]}&rdquo; (
-                    {allergeniInCategory.length})
-                  </span>
-                  <span>{allOpen ? "▲" : "▼"}</span>
-                </button>
-                {allOpen && (
-                  <ul
-                    className="mf-fade mt-1.5 space-y-1 rounded-lg px-3 py-2 text-sm"
-                    style={{ background: p.surface, border: `1px solid ${p.surfaceBorder}` }}
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                    style={{ border: `1px solid ${p.accent}`, color: p.accent }}
                   >
-                    {allergeniInCategory.map((id) => (
-                      <li key={id} style={{ color: p.text }}>
-                        <b style={{ color: p.brand }}>
-                          {ALLERGENI_BY_ID.get(id)?.short ?? id}
-                        </b>
-                        {" — "}
-                        {ALLERGENI_BY_ID.get(id)?.label ?? id}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+                      <path d="M2 21c0-3 1.85-5.36 5.08-6" />
+                    </svg>
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className="block font-display text-sm font-bold"
+                      style={{ color: p.text }}
+                    >
+                      Allergeni e preferenze alimentari
+                    </span>
+                    <span className="block text-xs" style={{ color: p.textMuted }}>
+                      {myAllergens.length
+                        ? `${myAllergens.length} selezionate · tocca per modificare`
+                        : "Filtra i piatti in base alle tue esigenze"}
+                    </span>
+                  </span>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ color: p.textMuted }}
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
               </div>
             )}
           </div>
@@ -459,17 +716,37 @@ export default function MenuClient({
 
         {items.length > 5 && (
           <div className="px-5 pt-2">
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cerca un piatto…"
-              className="w-full rounded-full px-4 py-2 text-sm outline-none"
-              style={{
-                background: p.surface,
-                color: p.text,
-                border: `1px solid ${p.surfaceBorder}`,
-              }}
-            />
+            <div className="relative">
+              <span
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2"
+                style={{ color: p.textMuted }}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </span>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Cerca nel menu…"
+                className="w-full rounded-full py-2.5 pl-11 pr-4 text-sm outline-none"
+                style={{
+                  background: p.surface,
+                  color: p.text,
+                  border: `1px solid ${p.surfaceBorder}`,
+                }}
+              />
+            </div>
           </div>
         )}
 
@@ -506,204 +783,38 @@ export default function MenuClient({
 
         {/* Items */}
         <main className="px-5 pt-3">
-          <ul className={compact ? "space-y-2" : "space-y-3"}>
-            {shown.map((item, idx) => {
-              const sold = !item.disponibile || (scorteOn && item.scorta === 0);
-              const qty = qtyForItem(item.id);
-              const hasOpts = effectiveOptions(item, tenant.aggiunte).length > 0;
-              const myHits =
-                allergyOn && myAllergens.length
-                  ? (item.allergeni ?? []).filter((a) => myAllergens.includes(a))
-                  : [];
-              const allergyHit = myHits.length > 0;
-              const showPhoto =
-                !layout.foto_categorie_nascoste.includes(item.categoria) &&
-                (!dark || !!item.foto_url);
-              const photoRadius = Math.max(radius - 4, 2);
-              const photo = showPhoto ? (
-                item.foto_url ? (
-                  <Image
-                    src={item.foto_url}
-                    alt={t(item.nome, item.nome_i18n)}
-                    width={photoTop ? 480 : 64}
-                    height={photoTop ? 200 : 64}
-                    className={
-                      photoTop ? "h-32 w-full object-cover" : "h-16 w-16 shrink-0 object-cover"
-                    }
-                    style={{ borderRadius: photoRadius }}
-                  />
-                ) : (
-                  <div
-                    className={
-                      photoTop
-                        ? "flex h-28 w-full items-center justify-center font-display text-3xl"
-                        : "flex h-16 w-16 shrink-0 items-center justify-center font-display text-xl"
-                    }
-                    style={{ background: p.tint, color: p.brand, borderRadius: photoRadius }}
-                  >
-                    {item.nome.charAt(0)}
-                  </div>
-                )
-              ) : null;
+          {searching ? (
+            shown.length ? (
+              <ul className="space-y-3">{shown.map((it, i) => renderItem(it, i))}</ul>
+            ) : (
+              <p className="py-10 text-center text-sm" style={{ color: p.textMuted }}>
+                Nessun piatto trovato.
+              </p>
+            )
+          ) : (
+            visibleCats.map((cat) => {
+              const its = items.filter((i) => i.categoria === cat);
+              if (!its.length) return null;
               return (
-                <li
-                  key={item.id}
-                  className="mf-up"
-                  style={{
-                    animationDelay: `${Math.min(idx * 45, 300)}ms`,
-                    opacity: sold ? 0.5 : 1,
-                    ...(dark
-                      ? allergyHit
-                        ? {
-                            background: "rgba(220,38,38,0.12)",
-                            border: "1px solid rgba(248,113,113,0.35)",
-                            borderRadius: radius,
-                            padding: compact ? "9px" : "12px",
-                          }
-                        : {
-                            borderBottom: `1px solid ${p.surfaceBorder}`,
-                            paddingBottom: compact ? "12px" : "16px",
-                          }
-                      : {
-                          background: allergyHit ? "#fdf2f1" : p.surface,
-                          border: `1px solid ${allergyHit ? "#f1cfcb" : p.surfaceBorder}`,
-                          borderRadius: radius,
-                          padding: compact ? "9px" : "12px",
-                          boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-                        }),
-                  }}
-                >
-                  {photoTop && photo}
-                  <div className={`flex items-start gap-3${photoTop && photo ? " mt-3" : ""}`}>
-                    {!photoTop && photo}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start gap-2">
-                        <h3 className="min-w-0 flex-1 font-display text-[1.05rem] font-semibold leading-tight">
-                          {t(item.nome, item.nome_i18n)}
-                        </h3>
-                        {sold && (
-                          <span
-                            className="mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                            style={{ background: p.surfaceBorder, color: p.textMuted }}
-                          >
-                            Esaurito
-                          </span>
-                        )}
-                      </div>
-                      {((tenant.funzioni_attive?.piatto_consigliato && item.consigliato) ||
-                        popolari.includes(item.id) ||
-                        (scorteOn &&
-                          item.scorta != null &&
-                          item.scorta > 0 &&
-                          item.scorta <= 5)) && (
-                        <div className="mt-1 flex items-center gap-1.5 overflow-hidden">
-                          {tenant.funzioni_attive?.piatto_consigliato && item.consigliato && (
-                            <span
-                              className="shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold"
-                              style={{ background: p.accent, color: p.onAccent }}
-                            >
-                              ★ Consigliato
-                            </span>
-                          )}
-                          {popolari.includes(item.id) && (
-                            <span
-                              className="shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold"
-                              style={{ background: "#fff7ed", color: "#c2410c" }}
-                            >
-                              🔥 Più ordinato
-                            </span>
-                          )}
-                          {scorteOn &&
-                            item.scorta != null &&
-                            item.scorta > 0 &&
-                            item.scorta <= 5 && (
-                              <span
-                                className="shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold"
-                                style={{ background: "#fef3c7", color: "#92400e" }}
-                              >
-                                Ultime {item.scorta}
-                              </span>
-                            )}
-                        </div>
-                      )}
-                      {(item.descrizione || item.descrizione_i18n?.[lang]) && (
-                        <p className="mt-0.5 text-sm leading-snug" style={{ color: p.textMuted }}>
-                          {t(item.descrizione ?? "", item.descrizione_i18n)}
-                        </p>
-                      )}
-                      {item.allergeni?.length > 0 && (
-                        <div className="mt-1.5 flex flex-wrap gap-1">
-                          {item.allergeni.map((a) => {
-                            const hit = myHits.includes(a);
-                            return (
-                              <span
-                                key={a}
-                                title={ALLERGENI_BY_ID.get(a)?.label ?? a}
-                                className="rounded px-1.5 py-0.5 text-[10px] font-medium"
-                                style={
-                                  hit
-                                    ? { background: "#fee2e2", color: "#b91c1c" }
-                                    : { background: p.tint, color: p.textMuted }
-                                }
-                              >
-                                {hit ? "⚠ " : ""}
-                                {ALLERGENI_BY_ID.get(a)?.short ?? a}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      )}
-                      <div className="mt-1.5 font-display text-base font-semibold" style={{ color: p.price }}>
-                        {formatEUR(Math.round(item.prezzo * 100))}
-                        {hasOpts && (
-                          <span className="ml-1 text-xs font-normal" style={{ color: p.textMuted }}>
-                            + opzioni
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {!sold && !ordersBlocked && (
-                      <div className="shrink-0 self-center">
-                        {qty > 0 && !hasOpts ? (
-                          <div
-                            className="flex items-center gap-2 rounded-full px-1.5 py-1"
-                            style={{ background: p.tint }}
-                          >
-                            <Round bg={p.accent} fg={p.onAccent} onClick={() => setQty(item.id, qty - 1)}>
-                              −
-                            </Round>
-                            <span className="w-4 text-center text-sm font-bold">{qty}</span>
-                            <Round bg={p.accent} fg={p.onAccent} onClick={() => addLine(item, [])}>
-                              +
-                            </Round>
-                          </div>
-                        ) : (
-                          <div className="relative">
-                            <Round bg={p.accent} fg={p.onAccent} onClick={() => tapAdd(item)}>
-                              +
-                            </Round>
-                            {qty > 0 && (
-                              <span
-                                className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
-                                style={{ background: p.text, color: p.pageBg }}
-                              >
-                                {qty}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                <section key={cat} className="mb-6">
+                  <div className="mb-3 flex items-center gap-2">
+                    <span className="text-xl" aria-hidden>
+                      {catIcon(cat)}
+                    </span>
+                    <h2
+                      className="font-display text-xl font-bold"
+                      style={{ color: p.text }}
+                    >
+                      {cat}
+                    </h2>
+                    <span className="ml-auto text-xs" style={{ color: p.textMuted }}>
+                      {its.length} {its.length === 1 ? "articolo" : "articoli"}
+                    </span>
                   </div>
-                </li>
+                  <ul className="space-y-3">{its.map((it, i) => renderItem(it, i))}</ul>
+                </section>
               );
-            })}
-          </ul>
-          {shown.length === 0 && (
-            <p className="py-10 text-center text-sm" style={{ color: p.textMuted }}>
-              Nessuna voce in questa categoria.
-            </p>
+            })
           )}
         </main>
       </div>
@@ -713,12 +824,57 @@ export default function MenuClient({
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center p-4">
           <button
             onClick={() => setSheet(true)}
-            className="mf-up pointer-events-auto flex w-full max-w-[480px] items-center justify-between rounded-2xl px-5 py-3.5 font-semibold shadow-2xl"
+            className="mf-up pointer-events-auto flex w-full max-w-[480px] items-center gap-3 rounded-2xl px-3 py-3 shadow-2xl"
             style={{ background: p.accent, color: p.onAccent }}
           >
-            <span className="uppercase tracking-wide">Vedi ordine</span>
-            <span className="rounded-full px-3 py-1 text-sm" style={{ background: "rgba(0,0,0,0.16)" }}>
-              {count} {count === 1 ? "piatto" : "piatti"} · {formatEUR(totalCents)}
+            <span
+              className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+              style={{ background: "rgba(255,255,255,0.22)" }}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+                <path d="M3 6h18" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+              <span
+                className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold"
+                style={{ background: dark ? "#0e1013" : "#211b15", color: "#fff" }}
+              >
+                {count}
+              </span>
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col items-start leading-tight">
+              <span className="font-display text-base font-bold">Vedi ordine</span>
+              <span className="text-xs opacity-85">
+                {count} {count === 1 ? "articolo" : "articoli"} · {formatEUR(totalCents)}
+              </span>
+            </span>
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+              style={{ background: "rgba(0,0,0,0.2)" }}
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
             </span>
           </button>
         </div>
