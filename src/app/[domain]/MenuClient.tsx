@@ -569,71 +569,80 @@ export default function MenuClient({
                   <div className={`flex items-start gap-3${photoTop && photo ? " mt-3" : ""}`}>
                     {!photoTop && photo}
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-display text-[1.05rem] font-semibold leading-tight">
+                      <div className="flex items-start gap-2">
+                        <h3 className="min-w-0 flex-1 font-display text-[1.05rem] font-semibold leading-tight">
                           {t(item.nome, item.nome_i18n)}
                         </h3>
                         {sold && (
                           <span
-                            className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                            className="mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
                             style={{ background: p.surfaceBorder, color: p.textMuted }}
                           >
                             Esaurito
                           </span>
                         )}
-                        {tenant.funzioni_attive?.piatto_consigliato && item.consigliato && (
-                          <span
-                            className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                            style={{ background: p.accent, color: p.onAccent }}
-                          >
-                            ★ Consigliato
-                          </span>
-                        )}
-                        {popolari.includes(item.id) && (
-                          <span
-                            className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                            style={{ background: "#fff7ed", color: "#c2410c" }}
-                          >
-                            🔥 Più ordinato
-                          </span>
-                        )}
-                        {scorteOn &&
+                      </div>
+                      {((tenant.funzioni_attive?.piatto_consigliato && item.consigliato) ||
+                        popolari.includes(item.id) ||
+                        (scorteOn &&
                           item.scorta != null &&
                           item.scorta > 0 &&
-                          item.scorta <= 5 && (
+                          item.scorta <= 5)) && (
+                        <div className="mt-1 flex items-center gap-1.5 overflow-hidden">
+                          {tenant.funzioni_attive?.piatto_consigliato && item.consigliato && (
                             <span
-                              className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                              style={{ background: "#fef3c7", color: "#92400e" }}
+                              className="shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold"
+                              style={{ background: p.accent, color: p.onAccent }}
                             >
-                              Ultime {item.scorta}
+                              ★ Consigliato
                             </span>
                           )}
-                        {myHits.length > 0 && (
-                          <span
-                            className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                            style={{ background: "#fee2e2", color: "#b91c1c" }}
-                          >
-                            ⚠ Allergeni
-                          </span>
-                        )}
-                      </div>
+                          {popolari.includes(item.id) && (
+                            <span
+                              className="shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold"
+                              style={{ background: "#fff7ed", color: "#c2410c" }}
+                            >
+                              🔥 Più ordinato
+                            </span>
+                          )}
+                          {scorteOn &&
+                            item.scorta != null &&
+                            item.scorta > 0 &&
+                            item.scorta <= 5 && (
+                              <span
+                                className="shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold"
+                                style={{ background: "#fef3c7", color: "#92400e" }}
+                              >
+                                Ultime {item.scorta}
+                              </span>
+                            )}
+                        </div>
+                      )}
                       {(item.descrizione || item.descrizione_i18n?.[lang]) && (
                         <p className="mt-0.5 text-sm leading-snug" style={{ color: p.textMuted }}>
                           {t(item.descrizione ?? "", item.descrizione_i18n)}
                         </p>
                       )}
                       {item.allergeni?.length > 0 && (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {item.allergeni.map((a) => (
-                            <span
-                              key={a}
-                              title={ALLERGENI_BY_ID.get(a)?.label ?? a}
-                              className="rounded px-1.5 py-0.5 text-[10px] font-medium"
-                              style={{ background: p.tint, color: p.textMuted }}
-                            >
-                              {ALLERGENI_BY_ID.get(a)?.short ?? a}
-                            </span>
-                          ))}
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {item.allergeni.map((a) => {
+                            const hit = myHits.includes(a);
+                            return (
+                              <span
+                                key={a}
+                                title={ALLERGENI_BY_ID.get(a)?.label ?? a}
+                                className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                                style={
+                                  hit
+                                    ? { background: "#fee2e2", color: "#b91c1c" }
+                                    : { background: p.tint, color: p.textMuted }
+                                }
+                              >
+                                {hit ? "⚠ " : ""}
+                                {ALLERGENI_BY_ID.get(a)?.short ?? a}
+                              </span>
+                            );
+                          })}
                         </div>
                       )}
                       <div className="mt-1.5 font-display text-base font-semibold" style={{ color: p.price }}>
