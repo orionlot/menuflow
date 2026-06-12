@@ -6,7 +6,11 @@
  * UI/flows that don't depend on them keep working.
  */
 
-export const ROOT_DOMAIN = process.env.ROOT_DOMAIN ?? "menuflow.it";
+// Root domain for this deployment. Still overridable via the ROOT_DOMAIN env
+// var, but we hardcode the production fallback so the live site resolves tenants
+// correctly even if the platform env var isn't applied. Local dev keeps
+// ROOT_DOMAIN=menuflow.it in .env.local (and uses *.localhost regardless).
+export const ROOT_DOMAIN = process.env.ROOT_DOMAIN ?? "metaslash.it";
 
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 export const SUPABASE_ANON_KEY =
