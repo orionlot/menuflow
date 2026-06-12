@@ -422,43 +422,54 @@ export default function MenuClient({
     const popular = popolari.includes(item.id);
     const lowStock =
       scorteOn && item.scorta != null && item.scorta > 0 && item.scorta <= 5;
+    const tappable = !sold && !ordersBlocked;
 
-    const addControl =
-      sold || ordersBlocked ? null : qty > 0 && !hasOpts ? (
-        <div
-          className="flex items-center gap-1.5 rounded-full p-1"
-          style={{ border: `1px solid ${p.accent}` }}
+    const addControl = !tappable ? null : qty > 0 && !hasOpts ? (
+      <div
+        className="flex items-center gap-1 rounded-full p-1"
+        style={{ border: `1px solid ${p.accent}` }}
+      >
+        <Round
+          bg="transparent"
+          fg={p.accent}
+          label={`Togli un ${item.nome}`}
+          onClick={() => setQty(item.id, qty - 1)}
         >
-          <Round bg="transparent" fg={p.accent} onClick={() => setQty(item.id, qty - 1)}>
-            −
-          </Round>
-          <span className="w-5 text-center text-sm font-bold">{qty}</span>
-          <Round bg={p.accent} fg={p.onAccent} onClick={() => addLine(item, [])}>
-            +
-          </Round>
-        </div>
-      ) : (
-        <button
-          onClick={() => tapAdd(item)}
-          className="relative inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold"
-          style={{ background: p.accent, color: p.onAccent }}
+          −
+        </Round>
+        <span className="w-5 text-center text-sm font-bold tabular-nums">{qty}</span>
+        <Round
+          bg={p.accent}
+          fg={p.onAccent}
+          label={`Aggiungi un ${item.nome}`}
+          onClick={() => addLine(item, [])}
         >
-          <span className="text-base leading-none">+</span> Aggiungi
-          {qty > 0 && (
-            <span
-              className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
-              style={{ background: p.text, color: p.pageBg }}
-            >
-              {qty}
-            </span>
-          )}
-        </button>
-      );
+          +
+        </Round>
+      </div>
+    ) : (
+      <button
+        onClick={() => tapAdd(item)}
+        aria-label={`Aggiungi ${item.nome}`}
+        className="relative inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-bold transition active:scale-95"
+        style={{ background: p.accent, color: p.onAccent }}
+      >
+        <span className="text-base leading-none">+</span> Aggiungi
+        {qty > 0 && (
+          <span
+            className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
+            style={{ background: p.text, color: p.pageBg }}
+          >
+            {qty}
+          </span>
+        )}
+      </button>
+    );
 
     return (
       <li
         key={item.id}
-        className="mf-up overflow-hidden"
+        className="mf-up overflow-hidden transition"
         style={{
           animationDelay: `${Math.min(idx * 45, 300)}ms`,
           opacity: sold ? 0.5 : 1,
@@ -471,150 +482,158 @@ export default function MenuClient({
             allergyHit ? (dark ? "rgba(248,113,113,0.35)" : "#f1cfcb") : p.surfaceBorder
           }`,
           borderRadius: radius,
-          boxShadow: dark ? "none" : "0 1px 2px rgba(0,0,0,0.04)",
+          boxShadow: dark ? "none" : "0 1px 3px rgba(0,0,0,0.05)",
         }}
       >
-        {photoTop &&
-          showPhoto &&
-          (item.foto_url ? (
-            <Image
-              src={item.foto_url}
-              alt={t(item.nome, item.nome_i18n)}
-              width={480}
-              height={200}
-              className="h-36 w-full object-cover"
-            />
-          ) : (
-            <div
-              className="flex h-28 w-full items-center justify-center font-display text-3xl"
-              style={{ background: p.tint, color: p.brand }}
-            >
-              {item.nome.charAt(0)}
-            </div>
-          ))}
-        <div className={`flex gap-3 ${compact ? "p-2.5" : "p-3"}`}>
-          {!photoTop &&
+        <div
+          onClick={tappable ? () => tapAdd(item) : undefined}
+          className="transition active:opacity-90"
+          style={{ cursor: tappable ? "pointer" : "default" }}
+        >
+          {photoTop &&
             showPhoto &&
             (item.foto_url ? (
               <Image
                 src={item.foto_url}
                 alt={t(item.nome, item.nome_i18n)}
-                width={120}
-                height={120}
-                className="shrink-0 object-cover"
-                style={{ width: 96, height: 96, borderRadius: photoRadius }}
+                width={480}
+                height={240}
+                className="h-44 w-full object-cover"
               />
             ) : (
               <div
-                className="flex shrink-0 items-center justify-center font-display text-2xl"
-                style={{
-                  width: 96,
-                  height: 96,
-                  background: p.tint,
-                  color: p.brand,
-                  borderRadius: photoRadius,
-                }}
+                className="flex h-40 w-full items-center justify-center font-display text-4xl"
+                style={{ background: p.tint, color: p.brand }}
               >
                 {item.nome.charAt(0)}
               </div>
             ))}
-          <div className="flex min-w-0 flex-1 flex-col">
-            <div className="flex items-start gap-2">
-              <h3 className="min-w-0 flex-1 font-display text-[1.05rem] font-semibold leading-tight">
-                {t(item.nome, item.nome_i18n)}
-              </h3>
-              {recommended && (
-                <span
-                  className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px]"
-                  style={{ border: `1px solid ${p.accent}`, color: p.accent }}
-                  title="Consigliato"
+          <div className={`flex gap-3.5 ${compact ? "p-3" : "p-3.5"}`}>
+            {!photoTop &&
+              showPhoto &&
+              (item.foto_url ? (
+                <Image
+                  src={item.foto_url}
+                  alt={t(item.nome, item.nome_i18n)}
+                  width={140}
+                  height={140}
+                  className="shrink-0 self-start object-cover"
+                  style={{ width: 112, height: 112, borderRadius: photoRadius }}
+                />
+              ) : (
+                <div
+                  className="flex shrink-0 self-start items-center justify-center font-display text-3xl"
+                  style={{
+                    width: 112,
+                    height: 112,
+                    background: p.tint,
+                    color: p.brand,
+                    borderRadius: photoRadius,
+                  }}
                 >
-                  ★
-                </span>
-              )}
-              {sold && (
-                <span
-                  className="mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                  style={{ background: p.surfaceBorder, color: p.textMuted }}
-                >
-                  Esaurito
-                </span>
-              )}
-            </div>
-
-            {(popular || lowStock) && (
-              <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                {popular && (
+                  {item.nome.charAt(0)}
+                </div>
+              ))}
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="flex items-start gap-2">
+                <h3 className="min-w-0 flex-1 font-display text-[1.1rem] font-semibold leading-tight">
+                  {t(item.nome, item.nome_i18n)}
+                </h3>
+                {recommended && (
                   <span
-                    className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                    style={{ background: "#fff7ed", color: "#c2410c" }}
+                    className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px]"
+                    style={{ border: `1px solid ${p.accent}`, color: p.accent }}
+                    title="Consigliato"
                   >
-                    🔥 Più ordinato
+                    ★
                   </span>
                 )}
-                {lowStock && (
+                {sold && (
                   <span
-                    className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                    style={{ background: "#fef3c7", color: "#92400e" }}
+                    className="mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                    style={{ background: p.surfaceBorder, color: p.textMuted }}
                   >
-                    Ultime {item.scorta}
+                    Esaurito
                   </span>
                 )}
               </div>
-            )}
 
-            {desc && (
-              <p className="mt-1 text-sm leading-snug" style={{ color: p.textMuted }}>
-                {desc}
-              </p>
-            )}
-
-            <div className="my-2" style={{ borderTop: `1px dashed ${p.surfaceBorder}` }} />
-
-            {item.allergeni?.length > 0 && (
-              <div
-                className="mb-2 flex flex-wrap items-center gap-1.5 text-[11px]"
-                style={{ color: p.textMuted }}
-              >
-                {item.allergeni.map((a) => {
-                  const hit = myHits.includes(a);
-                  return (
+              {(popular || lowStock) && (
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  {popular && (
                     <span
-                      key={a}
-                      className="rounded px-1.5 py-0.5 font-semibold"
-                      style={
-                        hit
-                          ? {
-                              border: "1px solid #fca5a5",
-                              color: "#b91c1c",
-                              background: "#fee2e2",
-                            }
-                          : { border: `1px solid ${p.accent}`, color: p.accent }
-                      }
+                      className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                      style={{ background: "#fff7ed", color: "#c2410c" }}
                     >
-                      {ALLERGENI_BY_ID.get(a)?.short ?? a}
+                      🔥 Più ordinato
                     </span>
-                  );
-                })}
-                <span>
-                  contiene{" "}
-                  {item.allergeni
-                    .map((a) => (ALLERGENI_BY_ID.get(a)?.label ?? a).toLowerCase())
-                    .join(", ")}
-                </span>
-              </div>
-            )}
+                  )}
+                  {lowStock && (
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                      style={{ background: "#fef3c7", color: "#92400e" }}
+                    >
+                      Ultime {item.scorta}
+                    </span>
+                  )}
+                </div>
+              )}
 
-            <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-              <div className="font-display text-base font-bold" style={{ color: p.price }}>
-                {formatEUR(Math.round(item.prezzo * 100))}
-                {hasOpts && (
-                  <span className="ml-1 text-xs font-normal" style={{ color: p.textMuted }}>
-                    + opzioni
+              {desc && (
+                <p className="mt-1.5 text-sm leading-snug" style={{ color: p.textMuted }}>
+                  {desc}
+                </p>
+              )}
+
+              <div className="my-2.5" style={{ borderTop: `1px dashed ${p.surfaceBorder}` }} />
+
+              {item.allergeni?.length > 0 && (
+                <div
+                  className="mb-2.5 flex flex-wrap items-center gap-1.5 text-[11px]"
+                  style={{ color: p.textMuted }}
+                >
+                  {item.allergeni.map((a) => {
+                    const hit = myHits.includes(a);
+                    return (
+                      <span
+                        key={a}
+                        className="rounded px-1.5 py-0.5 font-semibold"
+                        style={
+                          hit
+                            ? {
+                                border: "1px solid #fca5a5",
+                                color: "#b91c1c",
+                                background: "#fee2e2",
+                              }
+                            : { border: `1px solid ${p.accent}`, color: p.accent }
+                        }
+                      >
+                        {ALLERGENI_BY_ID.get(a)?.short ?? a}
+                      </span>
+                    );
+                  })}
+                  <span>
+                    contiene{" "}
+                    {item.allergeni
+                      .map((a) => (ALLERGENI_BY_ID.get(a)?.label ?? a).toLowerCase())
+                      .join(", ")}
                   </span>
+                </div>
+              )}
+
+              <div className="mt-auto flex items-center justify-between gap-2 pt-0.5">
+                <div className="font-display text-lg font-bold" style={{ color: p.price }}>
+                  {formatEUR(Math.round(item.prezzo * 100))}
+                  {hasOpts && (
+                    <span className="ml-1 text-xs font-normal" style={{ color: p.textMuted }}>
+                      + opzioni
+                    </span>
+                  )}
+                </div>
+                {addControl && (
+                  <div onClick={(e) => e.stopPropagation()}>{addControl}</div>
                 )}
               </div>
-              {addControl}
             </div>
           </div>
         </div>
@@ -640,10 +659,10 @@ export default function MenuClient({
         <header
           className={
             minimalHeader
-              ? "px-5 pb-4 pt-6"
+              ? "px-5 pb-3 pt-4"
               : dark
-                ? "px-5 pb-6 pt-7"
-                : "rounded-b-[30px] px-5 pb-6 pt-8"
+                ? "px-5 pb-4 pt-5"
+                : "rounded-b-[24px] px-5 pb-5 pt-6"
           }
           style={{
             background: headBg,
@@ -658,14 +677,14 @@ export default function MenuClient({
                 <Image
                   src={tenant.logo_url}
                   alt={tenant.nome}
-                  width={56}
-                  height={56}
-                  className={`h-14 w-14 shrink-0 object-cover ${dark ? "rounded-xl" : "rounded-full"}`}
+                  width={48}
+                  height={48}
+                  className={`h-11 w-11 shrink-0 object-cover ${dark ? "rounded-xl" : "rounded-full"}`}
                   style={dark ? { border: `2px solid ${p.brand}` } : undefined}
                 />
               ) : (
                 <div
-                  className={`flex h-14 w-14 shrink-0 items-center justify-center font-display text-2xl font-bold ${dark ? "rounded-xl" : "rounded-full"}`}
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center font-display text-xl font-bold ${dark ? "rounded-xl" : "rounded-full"}`}
                   style={
                     dark
                       ? { border: `2px solid ${p.brand}`, color: p.brand }
@@ -678,7 +697,7 @@ export default function MenuClient({
               <div className="min-w-0">
                 <h1
                   className="truncate font-display font-bold leading-tight"
-                  style={{ fontSize: dark ? "1.6rem" : "1.7rem", fontWeight: dark ? 500 : 700 }}
+                  style={{ fontSize: dark ? "1.35rem" : "1.5rem", fontWeight: dark ? 500 : 700 }}
                 >
                   {tenant.nome}
                 </h1>
@@ -749,56 +768,110 @@ export default function MenuClient({
 
             {allergyOn && (
               <div className="px-5 pb-2">
-                <button
-                  onClick={() => setAllergyOpen(true)}
-                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left"
+                <div
+                  className="overflow-hidden rounded-2xl"
                   style={{ background: p.tint, border: `1px solid ${p.surfaceBorder}` }}
                 >
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                    style={{ border: `1px solid ${p.accent}`, color: p.accent }}
+                  <button
+                    onClick={() => setAllergyOpen((o) => !o)}
+                    aria-expanded={allergyOpen}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left"
                   >
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                      style={{ border: `1px solid ${p.accent}`, color: p.accent }}
+                    >
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+                        <path d="M2 21c0-3 1.85-5.36 5.08-6" />
+                      </svg>
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className="block font-display text-sm font-bold"
+                        style={{ color: p.text }}
+                      >
+                        Allergeni e preferenze alimentari
+                      </span>
+                      <span className="block text-xs" style={{ color: p.textMuted }}>
+                        {myAllergens.length
+                          ? `${myAllergens.length} selezionate`
+                          : "Filtra i piatti in base alle tue esigenze"}
+                      </span>
+                    </span>
                     <svg
                       width="18"
                       height="18"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
-                      strokeWidth="1.8"
+                      strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
+                      style={{
+                        color: p.textMuted,
+                        transition: "transform .2s",
+                        transform: allergyOpen ? "rotate(180deg)" : "none",
+                      }}
                     >
-                      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
-                      <path d="M2 21c0-3 1.85-5.36 5.08-6" />
+                      <path d="m6 9 6 6 6-6" />
                     </svg>
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span
-                      className="block font-display text-sm font-bold"
-                      style={{ color: p.text }}
+                  </button>
+                  {allergyOpen && (
+                    <div
+                      className="mf-fade border-t px-4 pb-4 pt-3"
+                      style={{ borderColor: p.surfaceBorder }}
                     >
-                      Allergeni e preferenze alimentari
-                    </span>
-                    <span className="block text-xs" style={{ color: p.textMuted }}>
-                      {myAllergens.length
-                        ? `${myAllergens.length} selezionate · tocca per modificare`
-                        : "Filtra i piatti in base alle tue esigenze"}
-                    </span>
-                  </span>
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ color: p.textMuted }}
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
+                      <p className="text-xs" style={{ color: p.textMuted }}>
+                        Seleziona i tuoi allergeni: i piatti che li contengono verranno evidenziati.
+                      </p>
+                      <div className="mt-2.5 flex flex-wrap gap-2">
+                        {ALLERGENI.map((a) => {
+                          const on = myAllergens.includes(a.id);
+                          return (
+                            <button
+                              key={a.id}
+                              aria-pressed={on}
+                              onClick={() =>
+                                setMyAllergens((s) =>
+                                  s.includes(a.id)
+                                    ? s.filter((x) => x !== a.id)
+                                    : [...s, a.id],
+                                )
+                              }
+                              className="rounded-full px-3 py-1.5 text-sm transition"
+                              style={{
+                                background: on ? "#fee2e2" : p.surface,
+                                color: on ? "#b91c1c" : p.text,
+                                border: `1px solid ${on ? "#fca5a5" : p.surfaceBorder}`,
+                              }}
+                            >
+                              {a.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {myAllergens.length > 0 && (
+                        <button
+                          onClick={() => setMyAllergens([])}
+                          className="mt-3 text-xs font-semibold"
+                          style={{ color: p.accent }}
+                        >
+                          Azzera selezione
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -975,7 +1048,7 @@ export default function MenuClient({
       )}
 
       {/* Serve aiuto — chiama cameriere / chiedi il conto */}
-      {backend !== "down" && !sheet && !done && !pending && !optItem && !allergyOpen && (
+      {backend !== "down" && !sheet && !done && !pending && !optItem && (
         <div className="fixed bottom-4 left-4 z-30">
           <HelpButton
             slug={tenant.slug}
@@ -1007,70 +1080,6 @@ export default function MenuClient({
       )}
 
       {/* Allergy profile sheet */}
-      {allergyOpen && (
-        <div
-          className="mf-fade fixed inset-0 z-50 flex items-end justify-center bg-black/50"
-          onClick={() => setAllergyOpen(false)}
-        >
-          <div
-            className="mf-sheet flex max-h-[85vh] w-full max-w-[480px] flex-col rounded-t-3xl sm:rounded-3xl"
-            style={{ background: p.surface, color: p.text }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              className="flex items-center justify-between rounded-t-3xl px-5 py-4"
-              style={{ background: p.headerBg, color: p.headerText }}
-            >
-              <h2 className="font-display text-lg font-bold">Le mie allergie</h2>
-              <button
-                onClick={() => setAllergyOpen(false)}
-                className="text-2xl leading-none opacity-80"
-                aria-label="Chiudi"
-              >
-                ×
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              <p className="text-sm" style={{ color: p.textMuted }}>
-                Seleziona i tuoi allergeni: le voci che li contengono verranno segnalate con ⚠.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {ALLERGENI.map((a) => {
-                  const on = myAllergens.includes(a.id);
-                  return (
-                    <button
-                      key={a.id}
-                      onClick={() =>
-                        setMyAllergens((s) =>
-                          s.includes(a.id) ? s.filter((x) => x !== a.id) : [...s, a.id],
-                        )
-                      }
-                      className="rounded-full px-3 py-1.5 text-sm"
-                      style={{
-                        background: on ? "#fee2e2" : p.tint,
-                        color: on ? "#b91c1c" : p.text,
-                        border: `1px solid ${on ? "#fca5a5" : p.surfaceBorder}`,
-                      }}
-                    >
-                      {a.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="border-t px-5 py-4" style={{ borderColor: p.surfaceBorder }}>
-              <button
-                onClick={() => setAllergyOpen(false)}
-                className="w-full rounded-xl py-3 font-semibold"
-                style={{ background: p.brand, color: p.onBrand }}
-              >
-                Fatto
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Cart sheet */}
       {sheet && (
         <div
@@ -1353,16 +1362,19 @@ function Round({
   bg,
   fg,
   onClick,
+  label,
 }: {
   children: React.ReactNode;
   bg: string;
   fg: string;
   onClick: () => void;
+  label?: string;
 }) {
   return (
     <button
       onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-full text-lg font-bold leading-none"
+      aria-label={label}
+      className="flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold leading-none transition active:scale-90"
       style={{ background: bg, color: fg }}
     >
       {children}
