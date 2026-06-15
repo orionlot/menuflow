@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { requireOwner } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { buildTenantUrl } from "@/lib/urls";
 import { appOrigin } from "@/lib/origin";
 import { PLANS, MULTILINGUA_ADDON, formatEUR } from "@/lib/config/plans";
+import type { Order } from "@/types/db";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardHome() {
   const { restaurant } = await requireOwner();
@@ -11,8 +15,45 @@ export default async function DashboardHome() {
   const monthly =
     plan.priceCents + (restaurant.multilingua ? MULTILINGUA_ADDON.priceCents : 0);
 
+  // KPI di oggi.
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("orders")
+    .select("totale, stato, scontrino_registrato")
+    .eq("restaurant_id", restaurant.id)
+    .gte("created_at", since.toISOString());
+  const today =
+    (data as Pick<Order, "totale" | "stato" | "scontrino_registrato">[]) ?? [];
+  const valid = today.filter((o) => o.stato === "ricevuto" || o.stato === "pagato");
+  const incassoCents = Math.round(
+    valid.reduce((s, o) => s + Number(o.totale || 0), 0) * 100,
+  );
+  const ordersToday = valid.length;
+  const scontrini = today.filter(
+    (o) => o.stato === "pagato" && !o.scontrino_registrato,
+  ).length;
+
   return (
     <div className="space-y-6">
+      {/* KPI di oggi */}
+      <section>
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+          Oggi
+        </h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <KpiLink href="/dashboard/statistiche" label="Incasso" value={formatEUR(incassoCents)} />
+          <KpiLink href="/dashboard/ordini" label="Ordini" value={String(ordersToday)} />
+          <KpiLink
+            href="/dashboard/reconciliation"
+            label="Scontrini da battere"
+            value={String(scontrini)}
+            tone={scontrini > 0 ? "warn" : undefined}
+          />
+        </div>
+      </section>
+
       <section className="rounded-xl border border-neutral-200 bg-white p-5">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
           Abbonamento
@@ -66,6 +107,35 @@ export default async function DashboardHome() {
         </div>
       </section>
     </div>
+  );
+}
+
+function KpiLink({
+  href,
+  label,
+  value,
+  tone,
+}: {
+  href: string;
+  label: string;
+  value: string;
+  tone?: "warn";
+}) {
+  return (
+    <Link
+      href={href}
+      className="group rounded-xl border border-neutral-200 bg-white p-4 transition hover:border-neutral-300 hover:shadow-sm"
+    >
+      <div className="text-xs text-neutral-500">{label}</div>
+      <div
+        className={`mt-1 text-2xl font-bold ${tone === "warn" ? "text-amber-600" : "text-neutral-900"}`}
+      >
+        {value}
+      </div>
+      <div className="mt-1 text-xs font-medium text-brand opacity-0 transition group-hover:opacity-100">
+        Apri →
+      </div>
+    </Link>
   );
 }
 

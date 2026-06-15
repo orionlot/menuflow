@@ -18,6 +18,13 @@ import TelegramSettings from "./TelegramSettings";
 
 export const dynamic = "force-dynamic";
 
+const TABS = [
+  { href: "#servizio", label: "Servizio" },
+  { href: "#pagamenti", label: "Pagamenti" },
+  { href: "#notifiche", label: "Notifiche" },
+  { href: "#funzioni", label: "Funzioni menu" },
+];
+
 export default async function FunzionalitaPage() {
   const { restaurant } = await requireOwner();
   const features = FEATURES.map((f) => ({
@@ -34,11 +41,25 @@ export default async function FunzionalitaPage() {
       <div>
         <h1 className="mb-1 text-xl font-bold">Funzionalità</h1>
         <p className="text-sm text-neutral-500">
-          Tutte le opzioni del tuo locale in un posto: servizio (coperto e mancia) e funzioni del menu.
+          Tutte le opzioni del tuo locale in un posto: servizio, pagamenti,
+          notifiche e funzioni del menu.
         </p>
       </div>
 
-      <section>
+      {/* Anchor tabs — jump to a section. */}
+      <nav aria-label="Sezioni funzionalità" className="flex flex-wrap gap-2">
+        {TABS.map((t) => (
+          <a
+            key={t.href}
+            href={t.href}
+            className="rounded-full bg-neutral-100 px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-200"
+          >
+            {t.label}
+          </a>
+        ))}
+      </nav>
+
+      <section id="servizio" className="scroll-mt-28">
         <h2 className="mb-2 text-sm font-semibold text-neutral-700">Servizio</h2>
         <ServiceSettings
           initial={{
@@ -55,7 +76,7 @@ export default async function FunzionalitaPage() {
         </div>
       </section>
 
-      <section>
+      <section id="pagamenti" className="scroll-mt-28">
         <h2 className="mb-2 text-sm font-semibold text-neutral-700">Pagamenti</h2>
         <PagamentiSettings
           piano={restaurant.piano}
@@ -67,7 +88,7 @@ export default async function FunzionalitaPage() {
         />
       </section>
 
-      <section>
+      <section id="notifiche" className="scroll-mt-28">
         <h2 className="mb-2 text-sm font-semibold text-neutral-700">Notifiche Telegram</h2>
         <TelegramSettings
           chatOrdini={restaurant.telegram_chat_ordini}
@@ -78,7 +99,7 @@ export default async function FunzionalitaPage() {
         />
       </section>
 
-      <section>
+      <section id="funzioni" className="scroll-mt-28">
         <h2 className="mb-2 text-sm font-semibold text-neutral-700">Funzioni del menu</h2>
         <FeaturesOwner features={features} action={updateFunzionalita} />
       </section>

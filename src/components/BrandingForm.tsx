@@ -137,6 +137,10 @@ export default function BrandingForm({
           </p>
         </div>
 
+        <div className="pt-1 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+          Identità e colori
+        </div>
+
         <div>
           <label className="mb-1 block text-xs font-medium text-neutral-500">
             Nome del locale
@@ -183,25 +187,29 @@ export default function BrandingForm({
             <label className="mb-1 block text-xs font-medium text-neutral-500">
               Colore secondario
             </label>
-            <div className="flex items-center gap-2">
+            <label className="mb-1.5 flex items-center gap-1.5 text-xs text-neutral-600">
               <input
-                type="color"
-                value={secondario || colore}
-                onChange={(e) => setSecondario(e.target.value)}
-                className="h-10 w-12 cursor-pointer rounded border border-neutral-300"
+                type="checkbox"
+                checked={!secondario}
+                onChange={(e) => setSecondario(e.target.checked ? "" : colore)}
               />
-              {secondario ? (
-                <button
-                  type="button"
-                  onClick={() => setSecondario("")}
-                  className="text-xs text-neutral-500 hover:underline"
-                >
-                  usa principale
-                </button>
-              ) : (
-                <span className="text-xs text-neutral-400">= principale</span>
-              )}
-            </div>
+              Usa il colore principale
+            </label>
+            {secondario && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={secondario}
+                  onChange={(e) => setSecondario(e.target.value)}
+                  className="h-10 w-12 cursor-pointer rounded border border-neutral-300"
+                />
+                <input
+                  value={secondario}
+                  onChange={(e) => setSecondario(e.target.value)}
+                  className="w-24 rounded-lg border border-neutral-300 px-2 py-2 text-sm uppercase"
+                />
+              </div>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-neutral-500">
@@ -355,8 +363,8 @@ export default function BrandingForm({
         </div>
       </div>
 
-      {/* Live preview */}
-      <div>
+      {/* Live preview — stays in view while scrolling the controls */}
+      <div className="md:sticky md:top-24 md:self-start">
         <div className="mb-1 text-xs font-medium text-neutral-500">Anteprima</div>
         <div
           className="overflow-hidden font-sans"

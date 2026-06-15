@@ -70,6 +70,10 @@ export default function TelegramSettings({
         <span className="font-mono">api.telegram.org/bot&lt;token&gt;/getUpdates</span> e copia{" "}
         <span className="font-mono">chat.id</span>.
       </p>
+      <p className="mb-3 rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800">
+        ⚠️ Quell&apos;URL contiene il <b>token del bot</b>: non condividerlo né
+        pubblicarlo: chi lo possiede può controllare il bot.
+      </p>
       <div className="grid gap-2 sm:grid-cols-2">
         <label className="text-sm">
           Chat ordini

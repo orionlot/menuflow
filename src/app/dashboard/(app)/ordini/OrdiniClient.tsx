@@ -15,6 +15,23 @@ function statoBadge(o: Order): { text: string; cls: string } {
   return { text: "In preparazione", cls: "bg-blue-100 text-blue-700" };
 }
 
+type StateKey = "in_attesa" | "fallito" | "servito" | "pronto" | "in_preparazione";
+function orderState(o: Order): StateKey {
+  if (o.stato === "in_attesa_pagamento") return "in_attesa";
+  if (o.stato === "fallito") return "fallito";
+  if (o.servito_at) return "servito";
+  if (o.pronto_at) return "pronto";
+  return "in_preparazione";
+}
+const STATE_FILTERS: { key: StateKey | "all"; label: string }[] = [
+  { key: "all", label: "Tutti" },
+  { key: "in_preparazione", label: "In preparazione" },
+  { key: "pronto", label: "Pronto" },
+  { key: "servito", label: "Servito" },
+  { key: "in_attesa", label: "Attesa pagamento" },
+  { key: "fallito", label: "Falliti" },
+];
+
 /** Short "new order" chime via Web Audio — no audio asset, no autoplay issues
  *  (only fires after the user has enabled sound with a click). */
 function playBeep(ctxRef: { current: AudioContext | null }) {
@@ -51,6 +68,7 @@ export default function OrdiniClient({
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [soundOn, setSoundOn] = useState(false);
   const [pending, setPending] = useState(false);
+  const [filter, setFilter] = useState<StateKey | "all">("all");
 
   const knownIds = useRef<Set<string>>(new Set(initialOrders.map((o) => o.id)));
   const audioRef = useRef<AudioContext | null>(null);
@@ -97,6 +115,7 @@ export default function OrdiniClient({
   const sales = orders.filter((o) => o.stato === "ricevuto" || o.stato === "pagato");
   const incassoCents = sales.reduce((s, o) => s + Math.round(Number(o.totale) * 100), 0);
   const daBattere = sales.filter((o) => o.stato === "pagato" && !o.scontrino_registrato).length;
+  const visible = filter === "all" ? orders : orders.filter((o) => orderState(o) === filter);
 
   function enableSound() {
     try {
@@ -161,11 +180,32 @@ export default function OrdiniClient({
         </span>
       </div>
 
+      {orders.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {STATE_FILTERS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              aria-pressed={filter === f.key}
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                filter === f.key
+                  ? "bg-neutral-900 text-white"
+                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {orders.length === 0 ? (
         <p className="text-neutral-500">Nessun ordine in questo giorno.</p>
+      ) : visible.length === 0 ? (
+        <p className="text-neutral-500">Nessun ordine con questo stato.</p>
       ) : (
         <ul className="space-y-3">
-          {orders.map((o) => {
+          {visible.map((o) => {
             const b = statoBadge(o);
             const nuovo = !o.visto_at;
             return (

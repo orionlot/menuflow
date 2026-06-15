@@ -94,12 +94,16 @@ export default function QrClient({ slug, nome }: { slug: string; nome: string })
             />
             <button
               onClick={() => window.print()}
+              title="Apre la stampa: scegli «Salva come PDF» per il foglio completo"
               className="rounded-lg border border-neutral-300 px-3 py-1 hover:bg-neutral-100"
             >
-              Stampa
+              Stampa / Salva PDF (tutti)
             </button>
           </div>
         </div>
+        <h3 className="mb-3 hidden text-lg font-bold print:block">
+          QR tavoli — {nome}
+        </h3>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           {tableQrs.map((t) => (
             <div key={t.n} className="flex flex-col items-center rounded-lg border border-neutral-200 p-3">
