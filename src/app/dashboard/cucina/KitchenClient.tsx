@@ -26,6 +26,10 @@ interface KOrder {
   stato: string;
 }
 
+// Wait-time thresholds (minutes) for the age colour of a "da preparare" card.
+const WARN_MIN = 8;
+const LATE_MIN = 15;
+
 export default function KitchenClient({
   restaurantName,
   restaurantId,
@@ -35,6 +39,7 @@ export default function KitchenClient({
 }) {
   const [orders, setOrders] = useState<KOrder[]>([]);
   const [audioOn, setAudioOn] = useState(false);
+  const [bannerOff, setBannerOff] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   const ac = useRef<AudioContext | null>(null);
@@ -126,7 +131,7 @@ export default function KitchenClient({
   useEffect(() => {
     load();
     const t = setInterval(load, 8000); // safety-net poll; realtime does the rest
-    const c = setInterval(() => setNow(Date.now()), 15000);
+    const c = setInterval(() => setNow(Date.now()), 10000);
     return () => {
       clearInterval(t);
       clearInterval(c);
@@ -173,19 +178,25 @@ export default function KitchenClient({
   const toPrepare = orders.filter((o) => !o.pronto_at);
   const ready = orders.filter((o) => o.pronto_at);
 
-  const mins = (iso: string) => Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000));
+  const mins = (iso: string) =>
+    Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000));
+  const clock = (iso: string) =>
+    new Date(iso).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  // Border/accent colour by wait time.
+  const ageColor = (m: number) =>
+    m >= LATE_MIN ? "#dc2626" : m >= WARN_MIN ? "#d97706" : "#16a34a";
 
   return (
     <div className="min-h-screen bg-[#0f1115] text-neutral-100">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-neutral-800 bg-[#14171c] px-5 py-3">
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-neutral-800 bg-[#14171c] px-4 py-3 sm:px-6">
         <div className="flex items-baseline gap-3">
           <Link href="/dashboard" className="text-sm text-neutral-400 hover:text-white">
             ← Dashboard
           </Link>
           <h1 className="text-lg font-bold">Cucina · {restaurantName}</h1>
         </div>
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center gap-2 text-sm">
           <span className="rounded-full bg-neutral-800 px-3 py-1">
             {toPrepare.length} da preparare · {ready.length} pronti
           </span>
@@ -195,7 +206,7 @@ export default function KitchenClient({
               className="rounded-full bg-neutral-800 px-3 py-1 hover:bg-neutral-700"
               title="Prova la campanella"
             >
-              🔔 Prova suono
+              🔔 Prova
             </button>
           ) : (
             <button
@@ -208,10 +219,25 @@ export default function KitchenClient({
         </div>
       </header>
 
-      {!audioOn && (
-        <div className="bg-amber-500/15 px-5 py-2 text-center text-sm text-amber-300">
-          Attiva l&apos;audio per sentire la campanella quando un ordine è pronto
-          (richiesto dal browser un clic per abilitare il suono).
+      {/* Compact, dismissible audio hint — only until audio is enabled. */}
+      {!audioOn && !bannerOff && (
+        <div className="mx-4 mt-3 flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-300 sm:mx-6">
+          <span className="flex-1">
+            Attiva l&apos;audio per la campanella quando un ordine è pronto.
+          </span>
+          <button
+            onClick={enableAudio}
+            className="rounded-md bg-amber-500 px-2.5 py-1 text-xs font-semibold text-black hover:bg-amber-400"
+          >
+            Attiva
+          </button>
+          <button
+            onClick={() => setBannerOff(true)}
+            aria-label="Nascondi avviso"
+            className="text-lg leading-none text-amber-300/70 hover:text-amber-200"
+          >
+            ×
+          </button>
         </div>
       )}
 
@@ -223,34 +249,45 @@ export default function KitchenClient({
             <p className="mt-1 text-sm">I nuovi ordini compaiono qui automaticamente.</p>
           </div>
         ) : (
-          <div className="space-y-8">
-            {/* DA PREPARARE */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* ── Colonna 1: DA PREPARARE ── */}
             <section>
-              <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-neutral-400">
-                Da preparare ({toPrepare.length})
+              <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-neutral-400">
+                Da preparare
+                <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-xs text-neutral-300">
+                  {toPrepare.length}
+                </span>
               </h2>
               {toPrepare.length === 0 ? (
-                <p className="text-neutral-600">Tutto preparato 👏</p>
+                <p className="rounded-xl border border-dashed border-neutral-700 px-4 py-8 text-center text-neutral-600">
+                  Tutto preparato 👏
+                </p>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                <div
+                  className="grid gap-4"
+                  style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}
+                >
                   {toPrepare.map((o) => {
                     const m = mins(o.created_at);
-                    const urgent = m >= 10 ? "ring-2 ring-red-500" : m >= 5 ? "ring-2 ring-amber-400" : "";
+                    const col = ageColor(m);
                     return (
                       <article
                         key={o.id}
-                        className={`flex flex-col overflow-hidden rounded-2xl bg-white text-neutral-900 shadow-lg ${urgent}`}
+                        className="flex flex-col overflow-hidden rounded-2xl bg-white text-neutral-900 shadow-lg"
+                        style={{ borderLeft: `6px solid ${col}` }}
                       >
-                        <div className="flex items-center justify-between bg-neutral-900 px-4 py-3 text-white">
+                        <div className="flex items-center justify-between gap-2 bg-neutral-900 px-4 py-3 text-white">
                           <span className="text-2xl font-extrabold">
                             Tavolo {o.tavolo ?? "—"}
                           </span>
-                          <span
-                            className={`text-sm font-semibold ${
-                              m >= 10 ? "text-red-400" : m >= 5 ? "text-amber-300" : "text-neutral-300"
-                            }`}
-                          >
-                            {m === 0 ? "ora" : `${m} min fa`}
+                          <span className="text-right text-xs leading-tight">
+                            <span
+                              className="block text-sm font-bold"
+                              style={{ color: col }}
+                            >
+                              {m === 0 ? "adesso" : `${m} min`}
+                            </span>
+                            <span className="text-neutral-400">{clock(o.created_at)}</span>
                           </span>
                         </div>
                         <ul className="flex-1 space-y-1.5 px-4 py-3">
@@ -270,7 +307,7 @@ export default function KitchenClient({
                         </ul>
                         <button
                           onClick={() => setReady(o)}
-                          className="bg-green-600 py-4 text-xl font-bold text-white hover:bg-green-700 active:bg-green-800"
+                          className="min-h-[52px] bg-green-600 py-4 text-xl font-bold text-white hover:bg-green-700 active:bg-green-800"
                         >
                           ✓ PRONTO
                         </button>
@@ -281,23 +318,37 @@ export default function KitchenClient({
               )}
             </section>
 
-            {/* PRONTI */}
-            {ready.length > 0 && (
-              <section>
-                <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-green-400">
-                  Pronti — da servire ({ready.length})
-                </h2>
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {/* ── Colonna 2: PRONTI — DA SERVIRE ── */}
+            <section>
+              <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-green-400">
+                Pronti — da servire
+                <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs text-green-300">
+                  {ready.length}
+                </span>
+              </h2>
+              {ready.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-neutral-700 px-4 py-8 text-center text-neutral-600">
+                  Niente in attesa di essere servito.
+                </p>
+              ) : (
+                <div
+                  className="grid gap-4"
+                  style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}
+                >
                   {ready.map((o) => (
                     <article
                       key={o.id}
-                      className="flex flex-col overflow-hidden rounded-2xl border-2 border-green-500 bg-green-50 text-neutral-900 shadow-lg"
+                      className="flex flex-col overflow-hidden rounded-2xl bg-green-50 text-neutral-900 shadow-lg"
+                      style={{ borderLeft: "6px solid #16a34a" }}
                     >
-                      <div className="flex items-center justify-between bg-green-600 px-4 py-3 text-white">
+                      <div className="flex items-center justify-between gap-2 bg-green-600 px-4 py-3 text-white">
                         <span className="text-2xl font-extrabold">
                           Tavolo {o.tavolo ?? "—"}
                         </span>
-                        <span className="text-sm font-bold">PRONTO 🔔</span>
+                        <span className="text-right text-xs leading-tight">
+                          <span className="block text-sm font-bold">PRONTO 🔔</span>
+                          <span className="text-green-100">dalle {clock(o.created_at)}</span>
+                        </span>
                       </div>
                       <ul className="flex-1 space-y-1 px-4 py-3">
                         {o.items.map((it, i) => (
@@ -309,22 +360,22 @@ export default function KitchenClient({
                       <div className="flex">
                         <button
                           onClick={() => undo(o)}
-                          className="w-1/3 border-r border-green-200 bg-white py-3 text-sm font-medium text-neutral-500 hover:bg-neutral-50"
+                          className="min-h-[48px] w-1/3 border-r border-green-200 bg-white py-3 text-sm font-medium text-neutral-500 hover:bg-neutral-50"
                         >
                           ↶ Annulla
                         </button>
                         <button
                           onClick={() => setServed(o)}
-                          className="w-2/3 bg-neutral-900 py-3 text-lg font-bold text-white hover:bg-neutral-700"
+                          className="min-h-[48px] w-2/3 bg-neutral-900 py-3 text-base font-bold text-white hover:bg-neutral-700"
                         >
-                          Ritirato dal cameriere
+                          Ritirato
                         </button>
                       </div>
                     </article>
                   ))}
                 </div>
-              </section>
-            )}
+              )}
+            </section>
           </div>
         )}
       </main>
