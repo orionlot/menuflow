@@ -4,6 +4,7 @@ import type {
   ComposizioneGruppo,
   ComposizioneScelta,
   ItemOption,
+  TagliaComposizione,
 } from "@/types/db";
 
 /**
@@ -164,4 +165,32 @@ export function sanitizeComposizione(raw: unknown): ComposizioneGruppo[] {
       };
     })
     .filter((g) => g.nome && g.categorie.length && g.ingredienti.length);
+}
+
+/** Sanitize size variants. Caps counts and shapes the per-group max map.
+ *  A size is kept only if it has a name and at least one category. */
+export function sanitizeTaglie(raw: unknown): TagliaComposizione[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .slice(0, 12)
+    .map((t, ti) => {
+      const o = (t ?? {}) as Partial<TagliaComposizione>;
+      const categorie = Array.isArray(o.categorie)
+        ? o.categorie.map((c) => String(c).trim().slice(0, 60)).filter(Boolean).slice(0, 50)
+        : [];
+      const max: Record<string, number> = {};
+      if (o.max && typeof o.max === "object") {
+        for (const [k, v] of Object.entries(o.max).slice(0, 30)) {
+          const n = Math.floor(Number(v));
+          if (Number.isFinite(n) && n >= 0) max[String(k).slice(0, 40)] = Math.min(99, n);
+        }
+      }
+      return {
+        id: String(o.id ?? `t${ti}`).slice(0, 40),
+        nome: String(o.nome ?? "").trim().slice(0, 40),
+        categorie,
+        max,
+      };
+    })
+    .filter((t) => t.nome && t.categorie.length);
 }

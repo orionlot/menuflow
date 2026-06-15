@@ -41,6 +41,7 @@ export async function POST(req: Request) {
       qta: number;
       opzioni?: { gruppo: string; scelta: string }[];
       composizione?: { ingredient_id: string; qta: number }[];
+      taglia_id?: string;
     }[];
   };
   try {
@@ -99,6 +100,7 @@ export async function POST(req: Request) {
       restaurant.aggiunte ?? [],
       { enforceScorte: isFeatureOn(restaurant, "scorte") },
       isFeatureOn(restaurant, "componibili") ? (restaurant.composizione ?? []) : [],
+      isFeatureOn(restaurant, "componibili") ? (restaurant.composizione_taglie ?? []) : [],
     );
 
     const note = clean(body.note, 280);

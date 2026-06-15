@@ -60,6 +60,7 @@ export interface Restaurant {
   accetta_mancia: boolean;
   aggiunte: CategoryAddon[];
   composizione: ComposizioneGruppo[];
+  composizione_taglie: TagliaComposizione[];
   funzionalita: Record<string, boolean>;
   funzionalita_admin: Record<string, boolean>;
   google_review_url: string | null;
@@ -94,6 +95,7 @@ export type PublicRestaurant = Pick<
   | "accetta_mancia"
   | "aggiunte"
   | "composizione"
+  | "composizione_taglie"
   | "google_review_url"
   | "orari"
   | "attivo"
@@ -148,6 +150,15 @@ export interface ComposizioneGruppo {
   ingredienti: ComposizioneScelta[];
 }
 
+/** A size variant for a composable category (e.g. Medium / Large). It caps the
+ *  max per group; the min stays the group's own. Price is unchanged by size. */
+export interface TagliaComposizione {
+  id: string;
+  nome: string; // "Medium", "Large"
+  categorie: string[]; // categories this size applies to (e.g. ["Poke"])
+  max: Record<string, number>; // gruppo_id -> max selections for this size
+}
+
 /** A chosen ingredient (with quantity) on an order line. */
 export interface OrderComposizione {
   ingredient_id: string;
@@ -188,6 +199,7 @@ export interface OrderItem {
   prezzo: number; // unit price INCLUDING chosen option deltas + composition
   opzioni?: OrderItemOption[];
   composizione?: OrderComposizione[];
+  taglia?: string; // chosen size name (e.g. "Large"), display only
 }
 
 export interface Order {

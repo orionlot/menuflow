@@ -9,6 +9,7 @@ import type {
   OrderComposizione,
   PublicIngredient,
   PublicRestaurant,
+  TagliaComposizione,
 } from "@/types/db";
 import { formatEUR } from "@/lib/config/plans";
 import { brandPalette } from "@/lib/brand";
@@ -141,14 +142,17 @@ interface CartLine {
   unitCents: number;
   opzioni: Chosen[];
   composizione: OrderComposizione[];
+  taglia?: { id: string; nome: string };
 }
 
 function lineKey(
   itemId: string,
   chosen: Chosen[],
   compo: OrderComposizione[] = [],
+  tagliaId?: string,
 ): string {
   const parts: string[] = [];
+  if (tagliaId) parts.push(`t:${tagliaId}`);
   if (chosen.length)
     parts.push(chosen.map((c) => `${c.gruppo}:${c.scelta}`).sort().join(","));
   if (compo.length)
@@ -187,6 +191,10 @@ export default function MenuClient({
   const composizioneFor = (categoria: string): ComposizioneGruppo[] =>
     componibiliOn
       ? (tenant.composizione ?? []).filter((g) => g.categorie.includes(categoria))
+      : [];
+  const taglieFor = (categoria: string): TagliaComposizione[] =>
+    componibiliOn
+      ? (tenant.composizione_taglie ?? []).filter((tg) => tg.categorie.includes(categoria))
       : [];
 
   const [lang, setLang] = useState<string>(tenant.lingue?.[0] ?? "it");
@@ -298,12 +306,13 @@ export default function MenuClient({
     item: MenuItem,
     chosen: Chosen[],
     composizione: OrderComposizione[] = [],
+    taglia?: { id: string; nome: string },
   ) {
     const unitCents =
       Math.round(item.prezzo * 100) +
       chosen.reduce((s, c) => s + Math.round(c.prezzo * 100), 0) +
       composizione.reduce((s, c) => s + Math.round(c.prezzo * 100) * c.qta, 0);
-    const key = lineKey(item.id, chosen, composizione);
+    const key = lineKey(item.id, chosen, composizione, taglia?.id);
     setCart((c) => {
       const existing = c[key];
       return {
@@ -318,6 +327,7 @@ export default function MenuClient({
               unitCents,
               opzioni: chosen,
               composizione,
+              taglia,
             },
       };
     });
@@ -325,7 +335,8 @@ export default function MenuClient({
   function tapAdd(item: MenuItem) {
     if (
       effectiveOptions(item, tenant.aggiunte).length ||
-      composizioneFor(item.categoria).length
+      composizioneFor(item.categoria).length ||
+      taglieFor(item.categoria).length
     )
       setOptItem(item);
     else addLine(item, []);
@@ -368,6 +379,7 @@ export default function MenuClient({
               ingredient_id: c.ingredient_id,
               qta: c.qta,
             })),
+            taglia_id: l.taglia?.id,
           })),
         }),
       });
@@ -1108,11 +1120,12 @@ export default function MenuClient({
           item={optItem}
           groups={effectiveOptions(optItem, tenant.aggiunte)}
           composizione={composizioneFor(optItem.categoria)}
+          taglie={taglieFor(optItem.categoria)}
           ingredientiById={ingredientiById}
           p={p}
           onClose={() => setOptItem(null)}
-          onConfirm={(chosen, composizione) => {
-            addLine(optItem, chosen, composizione);
+          onConfirm={(chosen, composizione, taglia) => {
+            addLine(optItem, chosen, composizione, taglia);
             setOptItem(null);
           }}
         />
@@ -1150,7 +1163,14 @@ export default function MenuClient({
                       <Round bg={p.brand} fg={p.onBrand} onClick={() => setQty(l.key, l.qta + 1)}>+</Round>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <span className="block truncate">{l.nome}</span>
+                      <span className="block truncate">
+                        {l.nome}
+                        {l.taglia && (
+                          <span className="font-normal" style={{ color: p.textMuted }}>
+                            {" "}· {l.taglia.nome}
+                          </span>
+                        )}
+                      </span>
                       {l.opzioni.length > 0 && (
                         <span className="block text-xs" style={{ color: p.textMuted }}>
                           {l.opzioni.map((o) => o.scelta).join(", ")}
@@ -1432,6 +1452,7 @@ function OptionsModal({
   item,
   groups,
   composizione,
+  taglie,
   ingredientiById,
   p,
   onClose,
@@ -1440,10 +1461,15 @@ function OptionsModal({
   item: MenuItem;
   groups: ItemOption[];
   composizione: ComposizioneGruppo[];
+  taglie: TagliaComposizione[];
   ingredientiById: Map<string, PublicIngredient>;
   p: Pal;
   onClose: () => void;
-  onConfirm: (chosen: Chosen[], composizione: OrderComposizione[]) => void;
+  onConfirm: (
+    chosen: Chosen[],
+    composizione: OrderComposizione[],
+    taglia?: { id: string; nome: string },
+  ) => void;
 }) {
   // default: preselect first choice of required single groups
   const [sel, setSel] = useState<Record<string, string[]>>(() => {
@@ -1455,6 +1481,17 @@ function OptionsModal({
   // composition quantities per ingredient id
   const [compo, setCompo] = useState<Record<string, number>>({});
   const setQ = (id: string, n: number) => setCompo((c) => ({ ...c, [id]: Math.max(0, n) }));
+
+  // chosen size (if the category has sizes). Changing size resets the picks so
+  // the customer composes within the new limits.
+  const [tagliaId, setTagliaId] = useState<string>(() => taglie[0]?.id ?? "");
+  const taglia = taglie.find((tg) => tg.id === tagliaId);
+  function chooseTaglia(id: string) {
+    setTagliaId(id);
+    setCompo({});
+  }
+  const effMax = (g: ComposizioneGruppo) => taglia?.max[g.id] ?? g.max;
+  const effMin = (g: ComposizioneGruppo) => Math.min(g.min, effMax(g));
 
   function toggle(g: ItemOption, choice: string) {
     setSel((s) => {
@@ -1490,7 +1527,7 @@ function OptionsModal({
       .filter((x): x is OrderComposizione => x !== null),
   );
 
-  const compoMissing = composizione.some((g) => groupTotal(g) < g.min);
+  const compoMissing = composizione.some((g) => groupTotal(g) < effMin(g));
   const missing =
     groups.some((g) => g.obbligatorio && (sel[g.id]?.length ?? 0) === 0) || compoMissing;
   const unitCents =
@@ -1510,6 +1547,36 @@ function OptionsModal({
           <button onClick={onClose} className="text-2xl leading-none opacity-80" aria-label="Chiudi">×</button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4">
+          {taglie.length > 0 && (
+            <div className="mb-4">
+              <div className="mb-1 flex items-center gap-2">
+                <span className="font-semibold">Formato</span>
+                <span className="text-xs" style={{ color: p.textMuted }}>
+                  scelta obbligatoria
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {taglie.map((tg) => {
+                  const on = tg.id === tagliaId;
+                  return (
+                    <button
+                      key={tg.id}
+                      onClick={() => chooseTaglia(tg.id)}
+                      aria-pressed={on}
+                      className="rounded-lg px-3 py-2 text-sm font-medium"
+                      style={{
+                        background: on ? p.tint : "transparent",
+                        border: `1px solid ${on ? p.brand : p.surfaceBorder}`,
+                        color: on ? p.brand : p.text,
+                      }}
+                    >
+                      {tg.nome}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {groups.map((g) => (
             <div key={g.id} className="mb-4">
               <div className="mb-1 flex items-center gap-2">
@@ -1551,8 +1618,8 @@ function OptionsModal({
               <div key={g.id} className="mb-4">
                 <div className="mb-1 flex items-center gap-2">
                   <span className="font-semibold">{g.nome}</span>
-                  <span className="text-xs" style={{ color: total < g.min ? "#dc2626" : p.textMuted }}>
-                    {g.min > 0 ? `min ${g.min} · ` : ""}max {g.max} · {total}/{g.max}
+                  <span className="text-xs" style={{ color: total < effMin(g) ? "#dc2626" : p.textMuted }}>
+                    {effMin(g) > 0 ? `min ${effMin(g)} · ` : ""}max {effMax(g)} · {total}/{effMax(g)}
                   </span>
                 </div>
                 <div className="space-y-1.5">
@@ -1561,7 +1628,7 @@ function OptionsModal({
                     if (!ing) return null;
                     const qty = compo[s.ingredient_id] ?? 0;
                     const soldOut = ing.scorta != null && ing.scorta <= 0;
-                    const perMax = Math.min(ing.scorta ?? Infinity, g.max - total + qty);
+                    const perMax = Math.min(ing.scorta ?? Infinity, effMax(g) - total + qty);
                     const prezzo = s.prezzo ?? ing.prezzo;
                     return (
                       <div
@@ -1628,7 +1695,9 @@ function OptionsModal({
         </div>
         <div className="border-t px-5 py-4" style={{ borderColor: p.surfaceBorder }}>
           <button
-            onClick={() => onConfirm(chosen, composed)}
+            onClick={() =>
+              onConfirm(chosen, composed, taglia ? { id: taglia.id, nome: taglia.nome } : undefined)
+            }
             disabled={missing}
             className="w-full rounded-xl py-3.5 font-semibold disabled:opacity-50"
             style={{ background: p.brand, color: p.onBrand }}

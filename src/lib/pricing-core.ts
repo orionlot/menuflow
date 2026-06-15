@@ -5,6 +5,7 @@ import type {
   OrderComposizione,
   OrderItem,
   OrderItemOption,
+  TagliaComposizione,
 } from "@/types/db";
 import { effectiveOptions } from "@/lib/menu";
 
@@ -17,6 +18,7 @@ export interface IncomingCartLine {
   qta: number;
   opzioni?: IncomingOption[];
   composizione?: { ingredient_id: string; qta: number }[];
+  taglia_id?: string;
 }
 
 export interface PricedCart {
@@ -55,6 +57,8 @@ export function priceComposizione(
   gruppi: ComposizioneGruppo[],
   ingredients: Map<string, IngredientInfo>,
   chosen: { ingredient_id: string; qta: number }[] = [],
+  /** Per-group max overrides from the chosen size (gruppo_id -> max). */
+  sizeMax: Record<string, number> = {},
 ): { deltaCents: number; lines: OrderComposizione[] } {
   const groups = gruppi.filter((g) => g.categorie.includes(categoria));
   const allowed = new Map<string, { group: ComposizioneGruppo; override: number | null }>();
@@ -86,8 +90,10 @@ export function priceComposizione(
 
   for (const g of groups) {
     const total = perGroup.get(g.id) ?? 0;
-    if (total > g.max) throw new Error(`Massimo ${g.max} per "${g.nome}"`);
-    if (total < g.min) throw new Error(`Scegli almeno ${g.min} per "${g.nome}"`);
+    const effMax = sizeMax[g.id] ?? g.max;
+    const effMin = Math.min(g.min, effMax);
+    if (total > effMax) throw new Error(`Massimo ${effMax} per "${g.nome}"`);
+    if (total < effMin) throw new Error(`Scegli almeno ${effMin} per "${g.nome}"`);
   }
   return { deltaCents, lines };
 }
@@ -106,6 +112,7 @@ export function priceLines(
   opts: { enforceScorte?: boolean } = {},
   composizione: ComposizioneGruppo[] = [],
   ingredients: Map<string, IngredientInfo> = new Map(),
+  taglie: TagliaComposizione[] = [],
 ): PricedCart {
   if (!Array.isArray(cart) || cart.length === 0) {
     throw new Error("Carrello vuoto.");
@@ -167,11 +174,23 @@ export function priceLines(
         throw new Error(`Selezione richiesta: "${g.nome}" (${item.nome})`);
     }
 
+    // ── Resolve the chosen size variant (if the category has any) ──
+    const itemTaglie = taglie.filter((t) => t.categorie.includes(item.categoria));
+    let sizeMax: Record<string, number> = {};
+    let tagliaNome: string | undefined;
+    if (itemTaglie.length) {
+      const t = itemTaglie.find((x) => x.id === line.taglia_id);
+      if (!t) throw new Error(`Scegli una taglia per ${item.nome}`);
+      sizeMax = t.max ?? {};
+      tagliaNome = t.nome;
+    }
+
     const compo = priceComposizione(
       item.categoria,
       composizione,
       ingredients,
       line.composizione,
+      sizeMax,
     );
 
     const unitCents =
@@ -185,6 +204,7 @@ export function priceLines(
       prezzo: unitCents / 100,
       ...(orderOpts.length ? { opzioni: orderOpts } : {}),
       ...(compo.lines.length ? { composizione: compo.lines } : {}),
+      ...(tagliaNome ? { taglia: tagliaNome } : {}),
     });
   }
 

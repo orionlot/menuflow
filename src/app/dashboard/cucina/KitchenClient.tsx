@@ -14,6 +14,7 @@ interface KItem {
   nome: string;
   qta: number;
   prezzo: number;
+  taglia?: string;
   opzioni?: { gruppo: string; scelta: string; prezzo: number }[];
   composizione?: { ingredient_id: string; nome: string; qta: number; prezzo: number; unita?: string | null }[];
 }
@@ -309,7 +310,12 @@ export default function KitchenClient({
                                   <span className="min-w-[2.2rem] font-extrabold text-neutral-900">
                                     {it.qta}×
                                   </span>
-                                  <span>{it.nome}</span>
+                                  <span>
+                                    {it.nome}
+                                    {it.taglia && (
+                                      <span className="font-bold text-neutral-500"> · {it.taglia}</span>
+                                    )}
+                                  </span>
                                 </div>
                                 {det.length > 0 && (
                                   <ul className="mt-1 space-y-0.5 pl-[2.2rem] text-base font-medium text-neutral-600">
@@ -378,6 +384,7 @@ export default function KitchenClient({
                           return (
                             <li key={`${o.id}-${i}`} className="text-lg">
                               <span className="font-bold">{it.qta}×</span> {it.nome}
+                              {it.taglia && <span className="text-neutral-500"> · {it.taglia}</span>}
                               {det.length > 0 && (
                                 <span className="block pl-5 text-sm text-neutral-500">
                                   {det.join(", ")}

@@ -12,6 +12,7 @@ import {
   duplicateItem,
   importItems,
   updateComposizione,
+  updateTaglie,
   upsertIngredient,
   deleteIngredient,
 } from "@/app/dashboard/actions";
@@ -54,6 +55,7 @@ export default async function MenuPage() {
       componibiliOn={componibiliOn}
       initialIngredienti={ingredienti}
       initialComposizione={restaurant.composizione ?? []}
+      initialTaglie={restaurant.composizione_taglie ?? []}
       actions={{
         createItem,
         updateItem,
@@ -63,6 +65,7 @@ export default async function MenuPage() {
         updateAggiunte,
         reorder: reorderItems,
         updateComposizione,
+        updateTaglie,
         upsertIngredient,
         deleteIngredient,
       }}

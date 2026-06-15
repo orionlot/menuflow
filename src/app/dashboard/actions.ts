@@ -12,6 +12,7 @@ import {
   sanitizeItemPatch,
   sanitizeAggiunte,
   sanitizeComposizione,
+  sanitizeTaglie,
   type ItemPatch,
 } from "@/lib/menu";
 import { parseCsv, rowsToItemPatches } from "@/lib/csv";
@@ -20,6 +21,7 @@ import type {
   CategoryAddon,
   ComposizioneGruppo,
   PublicIngredient,
+  TagliaComposizione,
 } from "@/types/db";
 
 export type { ItemPatch };
@@ -148,6 +150,19 @@ export async function updateComposizione(composizione: ComposizioneGruppo[]) {
   const { error } = await admin
     .from("restaurants")
     .update({ composizione: sanitizeComposizione(composizione) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/menu");
+  revalidatePath("/[domain]", "page");
+}
+
+/** Size variants per composable category (owner). */
+export async function updateTaglie(taglie: TagliaComposizione[]) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ composizione_taglie: sanitizeTaglie(taglie) })
     .eq("id", restaurantId);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/menu");

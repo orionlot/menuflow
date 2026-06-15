@@ -258,6 +258,9 @@ export default function OrdiniClient({
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="text-neutral-700">
                           <span className="font-medium text-neutral-900">{it.qta}×</span> {it.nome}
+                          {it.taglia ? (
+                            <span className="font-medium text-neutral-500"> · {it.taglia}</span>
+                          ) : null}
                           {it.opzioni?.length ? (
                             <span className="text-neutral-400">
                               {" "}

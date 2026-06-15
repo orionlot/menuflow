@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CategoryAddon, ComposizioneGruppo } from "@/types/db";
+import type { CategoryAddon, ComposizioneGruppo, TagliaComposizione } from "@/types/db";
 import {
   priceLines,
   type IncomingCartLine,
@@ -24,6 +24,7 @@ export async function priceCartServerSide(
   aggiunte: CategoryAddon[] = [],
   opts: { enforceScorte?: boolean } = {},
   composizione: ComposizioneGruppo[] = [],
+  taglie: TagliaComposizione[] = [],
 ): Promise<PricedCart> {
   if (!Array.isArray(cart) || cart.length === 0) {
     throw new Error("Carrello vuoto.");
@@ -64,5 +65,6 @@ export async function priceCartServerSide(
     opts,
     composizione,
     ingredients,
+    taglie,
   );
 }

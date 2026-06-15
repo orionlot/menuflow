@@ -128,3 +128,12 @@ update public.restaurants set composizione = '[
     {"ingredient_id":"aaaa0001-0000-0000-0000-000000000010"}]}
 ]'::jsonb
 where slug = 'pizzeria-mario';
+
+-- Sizes (Medium / Large) for the Poke: each caps the max selections per group.
+update public.restaurants set composizione_taglie = '[
+  {"id":"taglia-medium","nome":"Medium","categorie":["Poke"],
+   "max":{"g-base":1,"g-prot":1,"g-top":3,"g-salse":2}},
+  {"id":"taglia-large","nome":"Large","categorie":["Poke"],
+   "max":{"g-base":1,"g-prot":2,"g-top":5,"g-salse":2}}
+]'::jsonb
+where slug = 'pizzeria-mario';

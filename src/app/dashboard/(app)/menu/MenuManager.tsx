@@ -26,6 +26,7 @@ import type {
   ItemOption,
   MenuItem,
   PublicIngredient,
+  TagliaComposizione,
 } from "@/types/db";
 import type { ItemPatch } from "@/lib/menu";
 import { ALLERGENI } from "@/lib/config/allergeni";
@@ -35,6 +36,7 @@ import OptionsEditor from "./OptionsEditor";
 import CategoryAddonsEditor from "./CategoryAddonsEditor";
 import IngredientiEditor from "./IngredientiEditor";
 import ComposizioneEditor from "./ComposizioneEditor";
+import TaglieEditor from "./TaglieEditor";
 
 type MiniRestaurant = { id: string; multilingua: boolean; lingue: string[] };
 type SaveState = "saving" | "saved" | "error";
@@ -48,6 +50,7 @@ export interface MenuActions {
   updateAggiunte: (aggiunte: CategoryAddon[]) => Promise<void>;
   reorder: (updates: { id: string; ordine: number }[]) => Promise<void>;
   updateComposizione?: (groups: ComposizioneGruppo[]) => Promise<void>;
+  updateTaglie?: (taglie: TagliaComposizione[]) => Promise<void>;
   upsertIngredient?: (input: {
     id?: string;
     nome?: string;
@@ -84,6 +87,7 @@ export default function MenuManager({
   componibiliOn = false,
   initialIngredienti = [],
   initialComposizione = [],
+  initialTaglie = [],
   actions,
 }: {
   restaurant: MiniRestaurant;
@@ -93,6 +97,7 @@ export default function MenuManager({
   componibiliOn?: boolean;
   initialIngredienti?: PublicIngredient[];
   initialComposizione?: ComposizioneGruppo[];
+  initialTaglie?: TagliaComposizione[];
   actions: MenuActions;
 }) {
   const router = useRouter();
@@ -413,6 +418,26 @@ export default function MenuManager({
             ingredienti={initialIngredienti}
             categories={categoryNames}
             onSave={(g) => run(() => actions.updateComposizione!(g))}
+          />
+        </details>
+      )}
+      {componibiliOn && actions.updateTaglie && (
+        <details className="mb-4 rounded-xl border border-neutral-200 bg-white p-4">
+          <summary className="cursor-pointer font-medium">
+            Taglie / formati{" "}
+            <span className="text-sm font-normal text-neutral-500">
+              {initialTaglie.length ? `(${initialTaglie.length})` : "— es. Medium / Large"}
+            </span>
+          </summary>
+          <p className="mb-3 mt-2 text-sm text-neutral-500">
+            Formati dello stesso piatto componibile (es. Medium, Large): ogni
+            taglia imposta quante scelte sono permesse per gruppo.
+          </p>
+          <TaglieEditor
+            value={initialTaglie}
+            gruppi={initialComposizione}
+            categories={categoryNames}
+            onSave={(t) => run(() => actions.updateTaglie!(t))}
           />
         </details>
       )}

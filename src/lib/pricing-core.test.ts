@@ -285,3 +285,60 @@ describe("priceLines + composizione", () => {
     ]);
   });
 });
+
+describe("priceComposizione + taglie (size caps the group max)", () => {
+  it("rejects a quantity above the size's max even if under the group max", () => {
+    // "prot" group max is 2, but the Medium size caps it at 1.
+    expect(() =>
+      priceComposizione("Poke", GRUPPI, ING(), [
+        { ingredient_id: "tonno", qta: 2 },
+        { ingredient_id: "riso", qta: 1 },
+      ], { prot: 1 }),
+    ).toThrow(/Massimo 1/);
+  });
+  it("allows quantities within the size's max", () => {
+    const r = priceComposizione("Poke", GRUPPI, ING(), [
+      { ingredient_id: "tonno", qta: 1 },
+      { ingredient_id: "riso", qta: 1 },
+    ], { prot: 1 });
+    expect(r.deltaCents).toBe(200);
+  });
+  it("clamps the min down to the size's max so it stays satisfiable", () => {
+    // base group min 1 / max 1; a size capping it at 0 must not demand 1.
+    const r = priceComposizione("Poke", GRUPPI, ING(), [{ ingredient_id: "tonno", qta: 1 }], {
+      base: 0,
+    });
+    expect(r.deltaCents).toBe(200);
+  });
+});
+
+const TAGLIE = [
+  { id: "m", nome: "Medium", categorie: ["Poke"], max: { prot: 1, base: 1 } },
+  { id: "l", nome: "Large", categorie: ["Poke"], max: { prot: 2, base: 1 } },
+];
+
+describe("priceLines + taglie", () => {
+  const pokeItem = item({ id: "poke", nome: "Poke", categoria: "Poke", prezzo: 9 });
+  it("requires a valid size when the category has sizes", () => {
+    expect(() =>
+      priceLines([pokeItem], [{ item_id: "poke", qta: 1, composizione: [{ ingredient_id: "riso", qta: 1 }] }], [], {}, GRUPPI, ING(), TAGLIE),
+    ).toThrow(/Scegli una taglia/);
+  });
+  it("applies the chosen size's max and records its name", () => {
+    // Medium caps proteine at 1 → choosing 2 must fail.
+    expect(() =>
+      priceLines(
+        [pokeItem],
+        [{ item_id: "poke", qta: 1, taglia_id: "m", composizione: [{ ingredient_id: "tonno", qta: 2 }, { ingredient_id: "riso", qta: 1 }] }],
+        [], {}, GRUPPI, ING(), TAGLIE,
+      ),
+    ).toThrow(/Massimo 1/);
+    // Large allows 2 proteine, and the line records the size name.
+    const r = priceLines(
+      [pokeItem],
+      [{ item_id: "poke", qta: 1, taglia_id: "l", composizione: [{ ingredient_id: "tonno", qta: 2 }, { ingredient_id: "riso", qta: 1 }] }],
+      [], {}, GRUPPI, ING(), TAGLIE,
+    );
+    expect(r.lines[0].taglia).toBe("Large");
+  });
+});

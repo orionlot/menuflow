@@ -11,7 +11,7 @@ import type {
 } from "@/types/db";
 
 const SAFE_RESTAURANT_COLUMNS =
-  "id, slug, nome, sottotitolo, logo_url, colore_primario, colore_secondario, tema, layout, piano, multilingua, lingue, pagamenti_attivi, coperto, coperto_modalita, coperto_label, accetta_mancia, aggiunte, composizione, funzionalita, funzionalita_admin, google_review_url, orari, attivo";
+  "id, slug, nome, sottotitolo, logo_url, colore_primario, colore_secondario, tema, layout, piano, multilingua, lingue, pagamenti_attivi, coperto, coperto_modalita, coperto_label, accetta_mancia, aggiunte, composizione, composizione_taglie, funzionalita, funzionalita_admin, google_review_url, orari, attivo";
 
 /**
  * Resolve a tenant from the `[domain]` route param, which is either:
