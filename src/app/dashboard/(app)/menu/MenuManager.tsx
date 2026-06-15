@@ -108,6 +108,7 @@ export default function MenuManager({
   const [closedCats, setClosedCats] = useState<Set<string>>(new Set());
   const [status, setStatus] = useState<Record<string, SaveState>>({});
   const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set());
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => setItems(initialItems), [initialItems]);
 
@@ -209,6 +210,12 @@ export default function MenuManager({
   function add() {
     run(async () => {
       await actions.createItem({ nome: "Nuova voce", categoria: "Senza categoria", prezzo: 0 });
+      router.refresh();
+    });
+  }
+  function addTo(categoria: string) {
+    run(async () => {
+      await actions.createItem({ nome: "Nuovo prodotto", categoria, prezzo: 0 });
       router.refresh();
     });
   }
@@ -319,6 +326,8 @@ export default function MenuManager({
     toggleAllergen,
     saveOptions,
   };
+
+  const editingItem = items.find((i) => i.id === editingId) ?? null;
 
   return (
     <div>
@@ -454,18 +463,27 @@ export default function MenuManager({
           const open = !closedCats.has(cat);
           return (
             <div key={cat} className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
-              <button
-                onClick={() => toggleCat(cat)}
-                className="flex w-full items-center justify-between px-4 py-3 text-left font-medium hover:bg-neutral-50"
-              >
-                <span>
-                  {cat}{" "}
-                  <span className="text-sm font-normal text-neutral-400">
-                    ({catItems.length})
+              <div className="flex items-center gap-2 px-4 py-3">
+                <button
+                  onClick={() => toggleCat(cat)}
+                  className="flex flex-1 items-center justify-between text-left font-medium"
+                >
+                  <span>
+                    {cat}{" "}
+                    <span className="text-sm font-normal text-neutral-400">
+                      ({catItems.length})
+                    </span>
                   </span>
-                </span>
-                <span className="text-neutral-400">{open ? "▲" : "▼"}</span>
-              </button>
+                  <span className="text-neutral-400">{open ? "▲" : "▼"}</span>
+                </button>
+                <button
+                  onClick={() => addTo(cat)}
+                  disabled={pending}
+                  className="shrink-0 rounded-lg bg-[var(--brand-soft)] px-3 py-1.5 text-xs font-medium text-brand transition hover:opacity-80 disabled:opacity-50"
+                >
+                  + Aggiungi
+                </button>
+              </div>
               {open && (
                 <div className="border-t border-neutral-100 p-3">
                   <DndContext
@@ -480,7 +498,13 @@ export default function MenuManager({
                     >
                       <ul className="space-y-2">
                         {catItems.map((item) => (
-                          <SortableItem key={item.id} item={item} h={handlers} />
+                          <SortableItem
+                            key={item.id}
+                            item={item}
+                            h={handlers}
+                            onEdit={(it) => setEditingId(it.id)}
+                            selected={editingId === item.id}
+                          />
                         ))}
                       </ul>
                     </SortableContext>
@@ -496,6 +520,15 @@ export default function MenuManager({
         <p className="text-neutral-500">
           Nessuna voce. Aggiungi la prima con il pulsante in alto.
         </p>
+      )}
+
+      {editingItem && (
+        <QuickEditDrawer
+          key={editingItem.id}
+          item={editingItem}
+          h={handlers}
+          onClose={() => setEditingId(null)}
+        />
       )}
     </div>
   );
@@ -516,10 +549,19 @@ function SaveBadge({ st }: { st?: SaveState }) {
   );
 }
 
-function SortableItem({ item, h }: { item: MenuItem; h: ItemHandlers }) {
+function SortableItem({
+  item,
+  h,
+  onEdit,
+  selected,
+}: {
+  item: MenuItem;
+  h: ItemHandlers;
+  onEdit: (item: MenuItem) => void;
+  selected: boolean;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
-  const [open, setOpen] = useState(false);
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -527,7 +569,6 @@ function SortableItem({ item, h }: { item: MenuItem; h: ItemHandlers }) {
     zIndex: isDragging ? 20 : undefined,
   };
   const st = h.status[item.id];
-  const uploading = h.uploadingIds.has(item.id);
   const allergenCount = item.allergeni?.length ?? 0;
   const optCount = item.opzioni?.length ?? 0;
 
@@ -535,7 +576,9 @@ function SortableItem({ item, h }: { item: MenuItem; h: ItemHandlers }) {
     <li
       ref={setNodeRef}
       style={style}
-      className="overflow-hidden rounded-xl border border-neutral-200 bg-white"
+      className={`overflow-hidden rounded-xl border bg-white transition ${
+        selected ? "border-brand ring-1 ring-[var(--brand-ring)]" : "border-neutral-200"
+      }`}
     >
       {/* ── Compact row ── */}
       <div className="flex items-center gap-2 p-2.5">
@@ -565,8 +608,7 @@ function SortableItem({ item, h }: { item: MenuItem; h: ItemHandlers }) {
         )}
 
         <button
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
+          onClick={() => onEdit(item)}
           className="flex min-w-0 flex-1 flex-col items-start text-left"
         >
           <span className="flex items-center gap-1.5 truncate font-medium">
@@ -599,18 +641,58 @@ function SortableItem({ item, h }: { item: MenuItem; h: ItemHandlers }) {
         </button>
 
         <button
-          onClick={() => setOpen((o) => !o)}
-          aria-label={open ? "Comprimi" : "Espandi"}
+          onClick={() => onEdit(item)}
+          aria-label="Modifica"
           className="shrink-0 rounded-md px-2 py-2 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
         >
-          {open ? "▲" : "▼"}
+          ✎
         </button>
       </div>
+    </li>
+  );
+}
 
-      {/* ── Expanded editor ── */}
-      {open && (
-        <div className="space-y-3 border-t border-neutral-100 bg-neutral-50/50 p-3">
-          {/* Image upload */}
+/** Right-side editor drawer for a single item, with a live phone preview. */
+function QuickEditDrawer({
+  item,
+  h,
+  onClose,
+}: {
+  item: MenuItem;
+  h: ItemHandlers;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState({
+    nome: item.nome,
+    prezzo: String(item.prezzo),
+    descrizione: item.descrizione ?? "",
+  });
+  const uploading = h.uploadingIds.has(item.id);
+  const st = h.status[item.id];
+  const allergenCount = item.allergeni?.length ?? 0;
+  const optCount = item.opzioni?.length ?? 0;
+  const prezzoNum = parseFloat(draft.prezzo) || 0;
+
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <aside className="absolute inset-y-0 right-0 flex w-full max-w-[420px] flex-col bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold">Modifica</h2>
+            <SaveBadge st={st} />
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Chiudi"
+            className="rounded-md px-2 text-2xl leading-none text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+          {/* Photo */}
           <div className="flex items-center gap-3">
             {item.foto_url ? (
               <Image
@@ -645,46 +727,50 @@ function SortableItem({ item, h }: { item: MenuItem; h: ItemHandlers }) {
             </label>
           </div>
 
-          {/* Core fields */}
+          {/* Name */}
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-neutral-500">Nome</span>
+            <input
+              value={draft.nome}
+              onChange={(e) => setDraft((d) => ({ ...d, nome: e.target.value }))}
+              onBlur={(e) =>
+                e.target.value !== item.nome && h.save(item.id, { nome: e.target.value })
+              }
+              className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm font-medium"
+            />
+          </label>
+
+          {/* Category + price (+ stock) */}
           <div className="flex flex-wrap gap-2">
-            <label className="min-w-40 flex-1">
-              <span className="mb-1 block text-xs text-neutral-500">Nome</span>
-              <input
-                defaultValue={item.nome}
-                onBlur={(e) =>
-                  e.target.value !== item.nome && h.save(item.id, { nome: e.target.value })
-                }
-                className="w-full rounded-md border border-neutral-300 px-2 py-1 text-sm font-medium"
-              />
-            </label>
-            <label className="w-36">
-              <span className="mb-1 block text-xs text-neutral-500">Categoria</span>
+            <label className="min-w-32 flex-1">
+              <span className="mb-1 block text-xs font-medium text-neutral-500">Categoria</span>
               <input
                 defaultValue={item.categoria}
                 onBlur={(e) =>
                   e.target.value !== item.categoria &&
                   h.save(item.id, { categoria: e.target.value })
                 }
-                className="w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+                className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
               />
             </label>
             <label className="w-24">
-              <span className="mb-1 block text-xs text-neutral-500">Prezzo €</span>
+              <span className="mb-1 block text-xs font-medium text-neutral-500">Prezzo €</span>
               <input
                 type="number"
                 step="0.1"
                 min="0"
-                defaultValue={item.prezzo}
+                value={draft.prezzo}
+                onChange={(e) => setDraft((d) => ({ ...d, prezzo: e.target.value }))}
                 onBlur={(e) => {
                   const v = parseFloat(e.target.value);
                   if (!Number.isNaN(v) && v !== item.prezzo) h.save(item.id, { prezzo: v });
                 }}
-                className="w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+                className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
               />
             </label>
             {h.scorteOn && (
               <label className="w-24" title="Scorte di oggi (vuoto = illimitate)">
-                <span className="mb-1 block text-xs text-neutral-500">Scorte</span>
+                <span className="mb-1 block text-xs font-medium text-neutral-500">Scorte</span>
                 <input
                   type="number"
                   min="0"
@@ -695,124 +781,163 @@ function SortableItem({ item, h }: { item: MenuItem; h: ItemHandlers }) {
                     const v = raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0);
                     if (v !== item.scorta) h.save(item.id, { scorta: v });
                   }}
-                  className="w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+                  className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
                 />
               </label>
             )}
           </div>
 
-          <input
-            defaultValue={item.descrizione ?? ""}
-            onBlur={(e) =>
-              e.target.value !== (item.descrizione ?? "") &&
-              h.save(item.id, { descrizione: e.target.value })
-            }
-            placeholder="Descrizione"
-            className="w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
-          />
+          {/* Description */}
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-neutral-500">Descrizione</span>
+            <textarea
+              value={draft.descrizione}
+              rows={2}
+              onChange={(e) => setDraft((d) => ({ ...d, descrizione: e.target.value }))}
+              onBlur={(e) =>
+                e.target.value !== (item.descrizione ?? "") &&
+                h.save(item.id, { descrizione: e.target.value })
+              }
+              placeholder="Aggiungi una descrizione"
+              className="w-full resize-none rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+            />
+          </label>
 
-          {/* Translations — only when the multilingua add-on is active */}
+          {/* Translations */}
           {h.otherLangs.map((lang) => (
-            <div key={lang} className="flex flex-wrap gap-2">
+            <div key={lang} className="space-y-1.5 rounded-lg bg-neutral-50 p-2">
+              <span className="text-[11px] font-medium uppercase text-neutral-400">{lang}</span>
               <input
                 defaultValue={item.nome_i18n?.[lang] ?? ""}
                 onBlur={(e) =>
-                  h.save(item.id, {
-                    nome_i18n: { ...item.nome_i18n, [lang]: e.target.value },
-                  })
+                  h.save(item.id, { nome_i18n: { ...item.nome_i18n, [lang]: e.target.value } })
                 }
                 placeholder={`Nome (${lang.toUpperCase()})`}
-                className="min-w-40 flex-1 rounded-md border border-neutral-200 bg-white px-2 py-1 text-sm"
+                className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1 text-sm"
               />
               <input
                 defaultValue={item.descrizione_i18n?.[lang] ?? ""}
                 onBlur={(e) =>
                   h.save(item.id, {
-                    descrizione_i18n: {
-                      ...item.descrizione_i18n,
-                      [lang]: e.target.value,
-                    },
+                    descrizione_i18n: { ...item.descrizione_i18n, [lang]: e.target.value },
                   })
                 }
                 placeholder={`Descrizione (${lang.toUpperCase()})`}
-                className="min-w-40 flex-1 rounded-md border border-neutral-200 bg-white px-2 py-1 text-sm"
+                className="w-full rounded-md border border-neutral-200 bg-white px-2 py-1 text-sm"
               />
             </div>
           ))}
 
-          {/* Allergeni (collapsed by default) */}
-          <details className="text-sm">
-            <summary className="cursor-pointer text-neutral-500">
+          {/* Allergens as checkboxes */}
+          <div>
+            <span className="mb-1.5 block text-xs font-medium text-neutral-500">
               Allergeni {allergenCount ? `(${allergenCount})` : ""}
-            </summary>
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            </span>
+            <div className="grid grid-cols-2 gap-1.5">
               {ALLERGENI.map((a) => {
-                const on = item.allergeni?.includes(a.id);
+                const on = item.allergeni?.includes(a.id) ?? false;
                 return (
-                  <button
-                    key={a.id}
-                    onClick={() => h.toggleAllergen(item, a.id)}
-                    aria-pressed={on}
-                    className={`rounded-full px-2.5 py-1 text-xs transition ${
-                      on
-                        ? "bg-amber-500 text-white"
-                        : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-                    }`}
-                  >
+                  <label key={a.id} className="flex items-center gap-2 text-sm text-neutral-700">
+                    <input
+                      type="checkbox"
+                      checked={on}
+                      onChange={() => h.toggleAllergen(item, a.id)}
+                      className="h-4 w-4 rounded border-neutral-300 accent-[var(--brand)]"
+                    />
                     {a.label}
-                  </button>
+                  </label>
                 );
               })}
             </div>
-          </details>
+          </div>
 
-          {/* Varianti / extra (collapsed by default) */}
-          <details
-            className="text-sm"
-            open={h.openOptionsId === item.id}
-            onToggle={(e) =>
-              h.setOpenOptions((e.target as HTMLDetailsElement).open ? item.id : null)
-            }
-          >
-            <summary className="cursor-pointer text-neutral-500">
+          {/* Variants / extras */}
+          <details className="text-sm">
+            <summary className="cursor-pointer font-medium text-neutral-600">
               Varianti / extra {optCount ? `(${optCount})` : ""}
             </summary>
             <div className="mt-2">
-              <OptionsEditor
-                value={item.opzioni ?? []}
-                onSave={(o) => h.saveOptions(item, o)}
-              />
+              <OptionsEditor value={item.opzioni ?? []} onSave={(o) => h.saveOptions(item, o)} />
             </div>
           </details>
 
-          {/* Row actions */}
-          <div className="flex items-center gap-3 border-t border-neutral-200 pt-2">
-            <button
-              onClick={() => h.toggleConsigliato(item)}
-              aria-pressed={item.consigliato}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                item.consigliato
-                  ? "bg-amber-100 text-amber-700"
-                  : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
-              }`}
-            >
-              {item.consigliato ? "★ Consigliato" : "☆ Consiglia"}
-            </button>
+          {/* Consigliato */}
+          <button
+            onClick={() => h.toggleConsigliato(item)}
+            aria-pressed={item.consigliato}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+              item.consigliato
+                ? "bg-amber-100 text-amber-700"
+                : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
+            }`}
+          >
+            {item.consigliato ? "★ Consigliato" : "☆ Consiglia"}
+          </button>
+
+          {/* Live preview */}
+          <div className="border-t border-neutral-100 pt-3">
+            <span className="mb-2 block text-xs font-medium text-neutral-500">Anteprima</span>
+            <div className="mx-auto w-[190px] rounded-[1.9rem] border-[7px] border-neutral-900 bg-neutral-900 shadow-xl">
+              <div className="overflow-hidden rounded-[1.4rem] bg-white">
+                {item.foto_url ? (
+                  <Image
+                    src={item.foto_url}
+                    alt={draft.nome}
+                    width={176}
+                    height={100}
+                    className="h-24 w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-24 items-center justify-center bg-neutral-100 text-[11px] text-neutral-400">
+                    foto
+                  </div>
+                )}
+                <div className="p-2.5">
+                  <div className="truncate text-sm font-semibold text-neutral-900">
+                    {draft.nome || "—"}
+                  </div>
+                  {draft.descrizione && (
+                    <div className="line-clamp-2 text-[11px] leading-snug text-neutral-500">
+                      {draft.descrizione}
+                    </div>
+                  )}
+                  <div className="mt-1.5 flex items-center justify-between">
+                    <span className="text-sm font-bold text-brand">
+                      {formatEUR(Math.round(prezzoNum * 100))}
+                    </span>
+                    {allergenCount > 0 && (
+                      <span className="text-[10px] text-neutral-400">{allergenCount} allergeni</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 border-t border-neutral-200 px-4 py-3">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => h.duplicate(item.id)}
-              className="text-xs text-neutral-500 hover:underline"
+              className="text-sm text-neutral-500 hover:underline"
             >
               Duplica
             </button>
             <button
               onClick={() => h.remove(item.id)}
-              className="ml-auto text-xs text-red-500 hover:underline"
+              className="text-sm text-red-500 hover:underline"
             >
               Elimina
             </button>
           </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
+          >
+            Fatto
+          </button>
         </div>
-      )}
-    </li>
+      </aside>
+    </div>
   );
 }
