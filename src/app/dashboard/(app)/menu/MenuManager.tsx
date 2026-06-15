@@ -20,13 +20,21 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { CategoryAddon, ItemOption, MenuItem } from "@/types/db";
+import type {
+  CategoryAddon,
+  ComposizioneGruppo,
+  ItemOption,
+  MenuItem,
+  PublicIngredient,
+} from "@/types/db";
 import type { ItemPatch } from "@/lib/menu";
 import { ALLERGENI } from "@/lib/config/allergeni";
 import { formatEUR } from "@/lib/config/plans";
 import { uploadImage } from "@/app/actions/upload";
 import OptionsEditor from "./OptionsEditor";
 import CategoryAddonsEditor from "./CategoryAddonsEditor";
+import IngredientiEditor from "./IngredientiEditor";
+import ComposizioneEditor from "./ComposizioneEditor";
 
 type MiniRestaurant = { id: string; multilingua: boolean; lingue: string[] };
 type SaveState = "saving" | "saved" | "error";
@@ -39,6 +47,15 @@ export interface MenuActions {
   importItems?: (csv: string) => Promise<{ added: number; skipped: number }>;
   updateAggiunte: (aggiunte: CategoryAddon[]) => Promise<void>;
   reorder: (updates: { id: string; ordine: number }[]) => Promise<void>;
+  updateComposizione?: (groups: ComposizioneGruppo[]) => Promise<void>;
+  upsertIngredient?: (input: {
+    id?: string;
+    nome?: string;
+    prezzo?: number;
+    scorta?: number | null;
+    unita?: string | null;
+  }) => Promise<PublicIngredient>;
+  deleteIngredient?: (id: string) => Promise<void>;
 }
 
 /** Handlers passed down to each sortable item row. */
@@ -64,12 +81,18 @@ export default function MenuManager({
   initialItems,
   initialAggiunte,
   scorteOn,
+  componibiliOn = false,
+  initialIngredienti = [],
+  initialComposizione = [],
   actions,
 }: {
   restaurant: MiniRestaurant;
   initialItems: MenuItem[];
   initialAggiunte: CategoryAddon[];
   scorteOn: boolean;
+  componibiliOn?: boolean;
+  initialIngredienti?: PublicIngredient[];
+  initialComposizione?: ComposizioneGruppo[];
   actions: MenuActions;
 }) {
   const router = useRouter();
@@ -352,6 +375,47 @@ export default function MenuManager({
           onSave={(g) => run(() => actions.updateAggiunte(g))}
         />
       </details>
+
+      {/* Componibili: ingredient stock + per-category composition */}
+      {componibiliOn && actions.upsertIngredient && actions.deleteIngredient && (
+        <details className="mb-4 rounded-xl border border-neutral-200 bg-white p-4">
+          <summary className="cursor-pointer font-medium">
+            Ingredienti &amp; scorta{" "}
+            <span className="text-sm font-normal text-neutral-500">
+              {initialIngredienti.length ? `(${initialIngredienti.length})` : "— per i componibili"}
+            </span>
+          </summary>
+          <p className="mb-3 mt-2 text-sm text-neutral-500">
+            Gli ingredienti con scorta condivisa usati nei prodotti componibili. La
+            scorta vuota = illimitata; a 0 l&apos;ingrediente risulta esaurito.
+          </p>
+          <IngredientiEditor
+            value={initialIngredienti}
+            upsert={actions.upsertIngredient}
+            remove={actions.deleteIngredient}
+          />
+        </details>
+      )}
+      {componibiliOn && actions.updateComposizione && (
+        <details className="mb-4 rounded-xl border border-neutral-200 bg-white p-4">
+          <summary className="cursor-pointer font-medium">
+            Composizione per categoria{" "}
+            <span className="text-sm font-normal text-neutral-500">
+              {initialComposizione.length ? `(${initialComposizione.length})` : "— es. Poke"}
+            </span>
+          </summary>
+          <p className="mb-3 mt-2 text-sm text-neutral-500">
+            Per categoria (es. &ldquo;Poke&rdquo;) definisci i gruppi di ingredienti
+            tra cui il cliente compone il piatto (min/max per gruppo).
+          </p>
+          <ComposizioneEditor
+            value={initialComposizione}
+            ingredienti={initialIngredienti}
+            categories={categoryNames}
+            onSave={(g) => run(() => actions.updateComposizione!(g))}
+          />
+        </details>
+      )}
 
       <p className="mb-3 text-xs text-neutral-400">
         Tocca una voce per modificarla. Trascina la maniglia ⠿ per riordinare i

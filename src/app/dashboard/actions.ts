@@ -8,9 +8,19 @@ import { sanitizeBranding } from "@/lib/branding";
 import { sanitizeFunzionalita } from "@/lib/config/features";
 import { sanitizeOrari } from "@/lib/orari";
 import { notifyTest } from "@/lib/telegram";
-import { sanitizeItemPatch, sanitizeAggiunte, type ItemPatch } from "@/lib/menu";
+import {
+  sanitizeItemPatch,
+  sanitizeAggiunte,
+  sanitizeComposizione,
+  type ItemPatch,
+} from "@/lib/menu";
 import { parseCsv, rowsToItemPatches } from "@/lib/csv";
-import type { BrandingPatch, CategoryAddon } from "@/types/db";
+import type {
+  BrandingPatch,
+  CategoryAddon,
+  ComposizioneGruppo,
+  PublicIngredient,
+} from "@/types/db";
 
 export type { ItemPatch };
 
@@ -126,6 +136,78 @@ export async function updateAggiunte(aggiunte: CategoryAddon[]) {
     .from("restaurants")
     .update({ aggiunte: sanitizeAggiunte(aggiunte) })
     .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/menu");
+  revalidatePath("/[domain]", "page");
+}
+
+/** Per-category composition config (owner). Owners only SELECT → service role. */
+export async function updateComposizione(composizione: ComposizioneGruppo[]) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ composizione: sanitizeComposizione(composizione) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/menu");
+  revalidatePath("/[domain]", "page");
+}
+
+/** Create or update one ingredient (owner-scoped). Returns the saved row. */
+export async function upsertIngredient(input: {
+  id?: string;
+  nome?: string;
+  prezzo?: number;
+  scorta?: number | null;
+  unita?: string | null;
+  ordine?: number;
+}): Promise<PublicIngredient> {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const patch = {
+    nome: String(input.nome ?? "").trim().slice(0, 60) || "Ingrediente",
+    prezzo: Math.max(0, Math.round((Number(input.prezzo) || 0) * 100) / 100),
+    scorta:
+      input.scorta == null ? null : Math.max(0, Math.floor(Number(input.scorta) || 0)),
+    unita: input.unita ? String(input.unita).trim().slice(0, 20) : null,
+    ordine: Math.floor(Number(input.ordine) || 0),
+  };
+  const cols = "id, nome, prezzo, scorta, unita, ordine";
+  if (input.id) {
+    const { data, error } = await admin
+      .from("ingredients")
+      .update(patch)
+      .eq("id", input.id)
+      .eq("restaurant_id", restaurantId)
+      .select(cols)
+      .single();
+    if (error) throw new Error(error.message);
+    revalidatePath("/dashboard/menu");
+    revalidatePath("/[domain]", "page");
+    const r = data as PublicIngredient;
+    return { ...r, prezzo: Number(r.prezzo) };
+  }
+  const { data, error } = await admin
+    .from("ingredients")
+    .insert({ ...patch, restaurant_id: restaurantId })
+    .select(cols)
+    .single();
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/menu");
+  revalidatePath("/[domain]", "page");
+  const r = data as PublicIngredient;
+  return { ...r, prezzo: Number(r.prezzo) };
+}
+
+export async function deleteIngredient(id: string) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("ingredients")
+    .delete()
+    .eq("id", id)
+    .eq("restaurant_id", restaurantId);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/menu");
   revalidatePath("/[domain]", "page");

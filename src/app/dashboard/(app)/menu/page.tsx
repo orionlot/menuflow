@@ -1,6 +1,6 @@
 import { requireOwner } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { MenuItem } from "@/types/db";
+import type { MenuItem, PublicIngredient } from "@/types/db";
 import MenuManager from "./MenuManager";
 import { isFeatureOn } from "@/lib/config/features";
 import {
@@ -11,6 +11,9 @@ import {
   reorderItems,
   duplicateItem,
   importItems,
+  updateComposizione,
+  upsertIngredient,
+  deleteIngredient,
 } from "@/app/dashboard/actions";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +28,19 @@ export default async function MenuPage() {
     .order("categoria", { ascending: true })
     .order("ordine", { ascending: true });
 
+  const componibiliOn = isFeatureOn(restaurant, "componibili");
+  const { data: ingRows } = componibiliOn
+    ? await supabase
+        .from("ingredients")
+        .select("id, nome, prezzo, scorta, unita, ordine")
+        .eq("restaurant_id", restaurant.id)
+        .order("ordine", { ascending: true })
+    : { data: [] };
+  const ingredienti = ((ingRows as PublicIngredient[]) ?? []).map((i) => ({
+    ...i,
+    prezzo: Number(i.prezzo),
+  }));
+
   return (
     <MenuManager
       restaurant={{
@@ -35,6 +51,9 @@ export default async function MenuPage() {
       initialItems={(data as MenuItem[]) ?? []}
       initialAggiunte={restaurant.aggiunte ?? []}
       scorteOn={isFeatureOn(restaurant, "scorte")}
+      componibiliOn={componibiliOn}
+      initialIngredienti={ingredienti}
+      initialComposizione={restaurant.composizione ?? []}
       actions={{
         createItem,
         updateItem,
@@ -43,6 +62,9 @@ export default async function MenuPage() {
         importItems,
         updateAggiunte,
         reorder: reorderItems,
+        updateComposizione,
+        upsertIngredient,
+        deleteIngredient,
       }}
     />
   );
