@@ -83,3 +83,48 @@ begin
     '[{"id":"extra","nome":"Aggiunte","tipo":"multi","obbligatorio":false,"categorie":["Pizze"],"scelte":[{"nome":"Patatine fritte","prezzo":3},{"nome":"Bibita","prezzo":2.5}]}]'::jsonb
     where slug='pizzeria-mario';
 end $$;
+
+-- ───────────── Demo: prodotto componibile "Poke" (Pizzeria) ─────────────
+-- "Componibili" è un add-on Plus; sul piano base lo abilitiamo via override admin
+-- + interruttore del ristoratore, così la demo è subito provabile.
+update public.restaurants
+  set funzionalita = funzionalita || '{"componibili": true}'::jsonb,
+      funzionalita_admin = funzionalita_admin || '{"componibili": true}'::jsonb
+  where slug = 'pizzeria-mario';
+
+insert into public.ingredients (id, restaurant_id, nome, prezzo, scorta, unita, ordine) values
+  ('aaaa0001-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Riso sushi',        0,   null, 'porzione', 1),
+  ('aaaa0001-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'Riso venere',       0.5, null, 'porzione', 2),
+  ('aaaa0001-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'Tonno',             2,   3,    'porzione', 3),
+  ('aaaa0001-0000-0000-0000-000000000004', '11111111-1111-1111-1111-111111111111', 'Salmone',           1.5, 6,    'porzione', 4),
+  ('aaaa0001-0000-0000-0000-000000000005', '11111111-1111-1111-1111-111111111111', 'Tofu',              1,   null, 'porzione', 5),
+  ('aaaa0001-0000-0000-0000-000000000006', '11111111-1111-1111-1111-111111111111', 'Avocado',           1,   8,    'porzione', 6),
+  ('aaaa0001-0000-0000-0000-000000000007', '11111111-1111-1111-1111-111111111111', 'Edamame',           0,   null, 'porzione', 7),
+  ('aaaa0001-0000-0000-0000-000000000008', '11111111-1111-1111-1111-111111111111', 'Mango',             0.5, 5,    'porzione', 8),
+  ('aaaa0001-0000-0000-0000-000000000009', '11111111-1111-1111-1111-111111111111', 'Salsa di soia',     0,   null, 'porzione', 9),
+  ('aaaa0001-0000-0000-0000-000000000010', '11111111-1111-1111-1111-111111111111', 'Maionese piccante', 0,   null, 'porzione', 10)
+on conflict (id) do nothing;
+
+insert into public.menu_items (id, restaurant_id, categoria, nome, descrizione, prezzo, disponibile, ordine, foto_url) values
+  ('bbbb0001-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Poke', 'Poke Bowl',
+   'Crea la tua poke: scegli base, proteine, topping e salse', 9.50, true, 1,
+   'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80&auto=format&fit=crop')
+on conflict (id) do nothing;
+
+update public.restaurants set composizione = '[
+  {"id":"g-base","nome":"Base","categorie":["Poke"],"min":1,"max":1,"ingredienti":[
+    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000001"},
+    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000002"}]},
+  {"id":"g-prot","nome":"Proteine","categorie":["Poke"],"min":1,"max":2,"ingredienti":[
+    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000003"},
+    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000004"},
+    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000005"}]},
+  {"id":"g-top","nome":"Topping","categorie":["Poke"],"min":0,"max":3,"ingredienti":[
+    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000006"},
+    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000007"},
+    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000008"}]},
+  {"id":"g-salse","nome":"Salse","categorie":["Poke"],"min":0,"max":2,"ingredienti":[
+    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000009"},
+    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000010"}]}
+]'::jsonb
+where slug = 'pizzeria-mario';
