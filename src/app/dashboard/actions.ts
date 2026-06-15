@@ -173,6 +173,7 @@ export async function updateTaglie(taglie: TagliaComposizione[]) {
 export async function upsertIngredient(input: {
   id?: string;
   nome?: string;
+  categoria?: string;
   prezzo?: number;
   scorta?: number | null;
   unita?: string | null;
@@ -182,13 +183,14 @@ export async function upsertIngredient(input: {
   const admin = createAdminClient();
   const patch = {
     nome: String(input.nome ?? "").trim().slice(0, 60) || "Ingrediente",
+    categoria: String(input.categoria ?? "").trim().slice(0, 40),
     prezzo: Math.max(0, Math.round((Number(input.prezzo) || 0) * 100) / 100),
     scorta:
       input.scorta == null ? null : Math.max(0, Math.floor(Number(input.scorta) || 0)),
     unita: input.unita ? String(input.unita).trim().slice(0, 20) : null,
     ordine: Math.floor(Number(input.ordine) || 0),
   };
-  const cols = "id, nome, prezzo, scorta, unita, ordine";
+  const cols = "id, nome, categoria, prezzo, scorta, unita, ordine";
   if (input.id) {
     const { data, error } = await admin
       .from("ingredients")

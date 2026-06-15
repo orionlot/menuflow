@@ -128,6 +128,7 @@ export interface Ingredient {
   id: string;
   restaurant_id: string;
   nome: string;
+  categoria: string; // optional grouping label (e.g. "Riso", "Pesce")
   prezzo: number; // EUR; 0 = "incluso"
   scorta: number | null; // null = illimitato, 0 = esaurito
   unita: string | null; // display only ("porzione", "g"…)

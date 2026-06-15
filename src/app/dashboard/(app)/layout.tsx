@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { requireOwner } from "@/lib/auth";
 import { signOut } from "@/app/dashboard/actions";
 import { adminBrandVars } from "@/lib/brand";
+import { isFeatureOn } from "@/lib/config/features";
 import { Container } from "@/components/ui/Container";
 import DashboardNav from "./DashboardNav";
 
@@ -30,7 +31,7 @@ export default async function DashboardLayout({
           </form>
         </Container>
         <Container className="pb-2">
-          <DashboardNav />
+          <DashboardNav componibiliOn={isFeatureOn(restaurant, "componibili")} />
         </Container>
       </header>
       <main>

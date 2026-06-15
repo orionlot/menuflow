@@ -16,14 +16,22 @@ const ITEMS = [
 ];
 
 /** Horizontal, scrollable tab bar. Active tab uses the tenant brand accent. */
-export default function DashboardNav() {
+export default function DashboardNav({ componibiliOn = false }: { componibiliOn?: boolean }) {
   const pathname = usePathname();
+  // "Ingredienti & inventario" only when the composable-products add-on is on.
+  const items = componibiliOn
+    ? [
+        ...ITEMS.slice(0, 3),
+        { href: "/dashboard/ingredienti", label: "Ingredienti" },
+        ...ITEMS.slice(3),
+      ]
+    : ITEMS;
   return (
     <nav
       aria-label="Sezioni"
       className="no-scrollbar -mx-1 flex gap-1 overflow-x-auto px-1"
     >
-      {ITEMS.map((it) => {
+      {items.map((it) => {
         const active =
           it.href === "/dashboard"
             ? pathname === "/dashboard"
