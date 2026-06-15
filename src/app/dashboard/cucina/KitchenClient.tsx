@@ -14,6 +14,16 @@ interface KItem {
   nome: string;
   qta: number;
   prezzo: number;
+  opzioni?: { gruppo: string; scelta: string; prezzo: number }[];
+  composizione?: { ingredient_id: string; nome: string; qta: number; prezzo: number; unita?: string | null }[];
+}
+
+/** Chosen options + composition for one order line, for the cook to read. */
+function itemDetails(it: KItem): string[] {
+  return [
+    ...(it.opzioni ?? []).map((x) => x.scelta),
+    ...(it.composizione ?? []).map((c) => `${c.qta}× ${c.nome}`),
+  ];
 }
 interface KOrder {
   id: string;
@@ -290,15 +300,27 @@ export default function KitchenClient({
                             <span className="text-neutral-400">{clock(o.created_at)}</span>
                           </span>
                         </div>
-                        <ul className="flex-1 space-y-1.5 px-4 py-3">
-                          {o.items.map((it, i) => (
-                            <li key={`${o.id}-${i}`} className="flex items-baseline gap-2 text-xl">
-                              <span className="min-w-[2.2rem] font-extrabold text-neutral-900">
-                                {it.qta}×
-                              </span>
-                              <span>{it.nome}</span>
-                            </li>
-                          ))}
+                        <ul className="flex-1 space-y-2 px-4 py-3">
+                          {o.items.map((it, i) => {
+                            const det = itemDetails(it);
+                            return (
+                              <li key={`${o.id}-${i}`}>
+                                <div className="flex items-baseline gap-2 text-xl">
+                                  <span className="min-w-[2.2rem] font-extrabold text-neutral-900">
+                                    {it.qta}×
+                                  </span>
+                                  <span>{it.nome}</span>
+                                </div>
+                                {det.length > 0 && (
+                                  <ul className="mt-1 space-y-0.5 pl-[2.2rem] text-base font-medium text-neutral-600">
+                                    {det.map((d, di) => (
+                                      <li key={di}>+ {d}</li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </li>
+                            );
+                          })}
                           {o.note && (
                             <li className="mt-2 rounded-lg bg-amber-100 px-3 py-2 text-base font-medium text-amber-900">
                               📝 {o.note}
@@ -351,11 +373,19 @@ export default function KitchenClient({
                         </span>
                       </div>
                       <ul className="flex-1 space-y-1 px-4 py-3">
-                        {o.items.map((it, i) => (
-                          <li key={`${o.id}-${i}`} className="text-lg">
-                            <span className="font-bold">{it.qta}×</span> {it.nome}
-                          </li>
-                        ))}
+                        {o.items.map((it, i) => {
+                          const det = itemDetails(it);
+                          return (
+                            <li key={`${o.id}-${i}`} className="text-lg">
+                              <span className="font-bold">{it.qta}×</span> {it.nome}
+                              {det.length > 0 && (
+                                <span className="block pl-5 text-sm text-neutral-500">
+                                  {det.join(", ")}
+                                </span>
+                              )}
+                            </li>
+                          );
+                        })}
                       </ul>
                       <div className="flex">
                         <button

@@ -254,19 +254,33 @@ export default function OrdiniClient({
 
                 <ul className="mt-2 space-y-0.5 border-t border-neutral-100 pl-1 pt-2 text-sm">
                   {(o.items ?? []).map((it, i) => (
-                    <li key={`${o.id}-${i}`} className="flex items-baseline justify-between gap-2">
-                      <span className="text-neutral-700">
-                        <span className="font-medium text-neutral-900">{it.qta}×</span> {it.nome}
-                        {it.opzioni?.length ? (
-                          <span className="text-neutral-400">
-                            {" "}
-                            ({it.opzioni.map((x) => x.scelta).join(", ")})
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className="shrink-0 text-neutral-500">
-                        {formatEUR(Math.round(Number(it.prezzo) * 100) * it.qta)}
-                      </span>
+                    <li key={`${o.id}-${i}`}>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-neutral-700">
+                          <span className="font-medium text-neutral-900">{it.qta}×</span> {it.nome}
+                          {it.opzioni?.length ? (
+                            <span className="text-neutral-400">
+                              {" "}
+                              ({it.opzioni.map((x) => x.scelta).join(", ")})
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="shrink-0 text-neutral-500">
+                          {formatEUR(Math.round(Number(it.prezzo) * 100) * it.qta)}
+                        </span>
+                      </div>
+                      {it.composizione?.length ? (
+                        <ul className="mt-0.5 space-y-0.5 pl-5 text-xs text-neutral-500">
+                          {it.composizione.map((c, ci) => (
+                            <li key={ci}>
+                              {c.qta}× {c.nome}
+                              {Number(c.prezzo) > 0
+                                ? ` (+${formatEUR(Math.round(Number(c.prezzo) * 100))})`
+                                : ""}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

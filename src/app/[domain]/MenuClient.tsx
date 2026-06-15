@@ -1574,7 +1574,14 @@ function OptionsModal({
                         }}
                       >
                         <span className="min-w-0">
-                          <span className="block truncate">{ing.nome}</span>
+                          <span className="block truncate">
+                            {ing.nome}
+                            {ing.unita ? (
+                              <span className="font-normal" style={{ color: p.textMuted }}>
+                                {" "}· {ing.unita}
+                              </span>
+                            ) : null}
+                          </span>
                           <span className="text-xs" style={{ color: p.textMuted }}>
                             {prezzo > 0 ? `+ ${formatEUR(Math.round(prezzo * 100))}` : "incluso"}
                             {!soldOut && ing.scorta != null ? ` · ne restano ${ing.scorta}` : ""}
