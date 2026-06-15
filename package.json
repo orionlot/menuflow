@@ -23,6 +23,7 @@
     "qrcode": "^1.5.4",
     "react": "^19",
     "react-dom": "^19",
+    "recharts": "^3.8.1",
     "stripe": "^22.2.0"
   },
   "devDependencies": {

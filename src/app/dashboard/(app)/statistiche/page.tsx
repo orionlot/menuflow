@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RevenueByDayChart, OrdersByHourChart } from "./Charts";
 import { requireOwner } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatEUR } from "@/lib/config/plans";
@@ -53,10 +54,9 @@ export default async function StatistichePage({
 
   const s = computeStats(orders, catMap);
   const prev = computeStats(prevOrders, catMap);
-  const maxHour = Math.max(1, ...s.byHour.map((h) => h.orders));
-  const maxDayRev = Math.max(1, ...s.byDay.map((d) => d.revenueCents));
   const maxProdQty = Math.max(1, ...s.topProducts.map((p) => p.qty));
   const maxCatRev = Math.max(1, ...s.byCategory.map((c) => c.revenueCents));
+  const brandColor = restaurant.colore_primario || "#525252";
 
   return (
     <div>
@@ -176,56 +176,13 @@ export default async function StatistichePage({
 
             {/* Fascia oraria */}
             <Card title="Ordini per fascia oraria">
-              <div className="flex h-40 items-end gap-[3px]">
-                {s.byHour.map((h) => (
-                  <div
-                    key={h.hour}
-                    className="flex h-full flex-1 flex-col justify-end"
-                    title={`${String(h.hour).padStart(2, "0")}:00 — ${h.orders} ordini · ${formatEUR(h.revenueCents)}`}
-                  >
-                    <div
-                      className="w-full rounded-t bg-neutral-800"
-                      style={{
-                        height: `${(h.orders / maxHour) * 100}%`,
-                        minHeight: h.orders ? 3 : 0,
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="mt-1 flex justify-between text-[10px] text-neutral-400">
-                <span>00</span>
-                <span>06</span>
-                <span>12</span>
-                <span>18</span>
-                <span>23</span>
-              </div>
+              <OrdersByHourChart data={s.byHour} color={brandColor} />
             </Card>
           </div>
 
           {/* Andamento giornaliero */}
           <Card title="Incasso per giorno">
-            <div className="flex h-40 items-end gap-1">
-              {s.byDay.map((d) => (
-                <div
-                  key={d.date}
-                  className="flex h-full flex-1 flex-col justify-end"
-                  title={`${d.date} — ${formatEUR(d.revenueCents)} · ${d.orders} ordini`}
-                >
-                  <div
-                    className="w-full rounded-t bg-neutral-800"
-                    style={{
-                      height: `${(d.revenueCents / maxDayRev) * 100}%`,
-                      minHeight: d.revenueCents ? 3 : 0,
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="mt-1 flex justify-between text-[10px] text-neutral-400">
-              <span>{s.byDay[0]?.date.slice(5)}</span>
-              <span>{s.byDay[s.byDay.length - 1]?.date.slice(5)}</span>
-            </div>
+            <RevenueByDayChart data={s.byDay} color={brandColor} />
           </Card>
 
           {/* Per categoria */}
