@@ -34,3 +34,11 @@ alter table public.restaurants
 do $$ begin
   alter publication supabase_realtime add table public.ingredients;
 exception when duplicate_object then null; end $$;
+
+-- Atomic stock decrement (no read-then-write race): floors at 0, skips unlimited.
+create or replace function public.consume_ingredient(p_id uuid, p_n int)
+returns void language sql as $$
+  update public.ingredients
+  set scorta = greatest(0, scorta - p_n)
+  where id = p_id and scorta is not null;
+$$;

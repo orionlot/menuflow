@@ -100,8 +100,6 @@ export type PublicRestaurant = Pick<
 > & {
   /** Effective on/off per feature (plan ∪ admin entitlement, then owner switch). */
   funzioni_attive: Record<string, boolean>;
-  /** Composable ingredients (with live stock) for "componibili" categories. */
-  ingredienti: PublicIngredient[];
 };
 
 /** A choice within an option group, e.g. "+ Bacon" with a price delta. */

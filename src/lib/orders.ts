@@ -2,6 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Order, Restaurant } from "@/types/db";
 import { notifyPaidOrder } from "@/lib/telegram";
+import { isFeatureOn } from "@/lib/config/features";
+import { decrementIngredientStock } from "@/lib/ingredients";
 
 /**
  * Transition an order to `pagato` and fire the Payments bot. Shared by the
@@ -45,7 +47,11 @@ export async function markOrderPaid(
     .maybeSingle();
   const restaurant = restaurantRow as Restaurant | null;
 
-  if (restaurant) await notifyPaidOrder(restaurant, updated);
+  if (restaurant) {
+    if (isFeatureOn(restaurant, "componibili"))
+      await decrementIngredientStock(admin, updated.items);
+    await notifyPaidOrder(restaurant, updated);
+  }
   return updated;
 }
 

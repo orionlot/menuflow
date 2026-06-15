@@ -15,7 +15,8 @@ export type FeatureId =
   | "stampa"
   | "feedback"
   | "riepilogo"
-  | "scorte";
+  | "scorte"
+  | "componibili";
 
 export interface FeatureDef {
   id: FeatureId;
@@ -84,6 +85,14 @@ export const FEATURES: FeatureDef[] = [
     id: "scorte",
     nome: "Scorte semplici",
     descrizione: "Porzioni disponibili al giorno, con auto-esaurito a zero.",
+    pianoMinimo: "plus",
+    defaultOn: false,
+  },
+  {
+    id: "componibili",
+    nome: "Prodotti componibili",
+    descrizione:
+      "Categorie componibili dagli ingredienti, con scorta per ingrediente.",
     pianoMinimo: "plus",
     defaultOn: false,
   },

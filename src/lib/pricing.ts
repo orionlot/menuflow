@@ -1,7 +1,13 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CategoryAddon } from "@/types/db";
-import { priceLines, type IncomingCartLine, type PricedCart, type PricedItem } from "@/lib/pricing-core";
+import type { CategoryAddon, ComposizioneGruppo } from "@/types/db";
+import {
+  priceLines,
+  type IncomingCartLine,
+  type IngredientInfo,
+  type PricedCart,
+  type PricedItem,
+} from "@/lib/pricing-core";
 
 export type { IncomingOption, IncomingCartLine, PricedCart } from "@/lib/pricing-core";
 
@@ -17,6 +23,7 @@ export async function priceCartServerSide(
   cart: IncomingCartLine[],
   aggiunte: CategoryAddon[] = [],
   opts: { enforceScorte?: boolean } = {},
+  composizione: ComposizioneGruppo[] = [],
 ): Promise<PricedCart> {
   if (!Array.isArray(cart) || cart.length === 0) {
     throw new Error("Carrello vuoto.");
@@ -31,5 +38,31 @@ export async function priceCartServerSide(
 
   if (error) throw new Error(error.message);
 
-  return priceLines((items ?? []) as PricedItem[], cart, aggiunte, opts);
+  // Composable products: load ingredient stock so the core can validate
+  // quantities against live stock and price the composition.
+  let ingredients = new Map<string, IngredientInfo>();
+  if (composizione.length) {
+    const { data: ing } = await admin
+      .from("ingredients")
+      .select("id, nome, prezzo, scorta")
+      .eq("restaurant_id", restaurantId);
+    const rows = (ing ?? []) as {
+      id: string;
+      nome: string;
+      prezzo: number;
+      scorta: number | null;
+    }[];
+    ingredients = new Map(
+      rows.map((r) => [r.id, { nome: r.nome, prezzo: Number(r.prezzo), scorta: r.scorta }]),
+    );
+  }
+
+  return priceLines(
+    (items ?? []) as PricedItem[],
+    cart,
+    aggiunte,
+    opts,
+    composizione,
+    ingredients,
+  );
 }

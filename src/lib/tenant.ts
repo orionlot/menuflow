@@ -2,10 +2,16 @@ import "server-only";
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { funzioniAttive } from "@/lib/config/features";
-import type { MenuItem, PlanId, PublicRestaurant, Restaurant } from "@/types/db";
+import type {
+  MenuItem,
+  PlanId,
+  PublicIngredient,
+  PublicRestaurant,
+  Restaurant,
+} from "@/types/db";
 
 const SAFE_RESTAURANT_COLUMNS =
-  "id, slug, nome, sottotitolo, logo_url, colore_primario, colore_secondario, tema, layout, piano, multilingua, lingue, pagamenti_attivi, coperto, coperto_modalita, coperto_label, accetta_mancia, aggiunte, funzionalita, funzionalita_admin, google_review_url, orari, attivo";
+  "id, slug, nome, sottotitolo, logo_url, colore_primario, colore_secondario, tema, layout, piano, multilingua, lingue, pagamenti_attivi, coperto, coperto_modalita, coperto_label, accetta_mancia, aggiunte, composizione, funzionalita, funzionalita_admin, google_review_url, orari, attivo";
 
 /**
  * Resolve a tenant from the `[domain]` route param, which is either:
@@ -84,6 +90,22 @@ export async function getMenuItems(restaurantId: string): Promise<MenuItem[]> {
     .order("ordine", { ascending: true })
     .order("created_at", { ascending: true });
   return (data as MenuItem[]) ?? [];
+}
+
+/** Public ingredient list (with live stock) for composable categories. */
+export async function getPublicIngredients(
+  restaurantId: string,
+): Promise<PublicIngredient[]> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("ingredients")
+    .select("id, nome, prezzo, scorta, unita, ordine")
+    .eq("restaurant_id", restaurantId)
+    .order("ordine", { ascending: true });
+  return ((data as PublicIngredient[]) ?? []).map((i) => ({
+    ...i,
+    prezzo: Number(i.prezzo),
+  }));
 }
 
 /** Top-selling item ids over the last `days` (≥3 sales), for "più ordinati" badges. */

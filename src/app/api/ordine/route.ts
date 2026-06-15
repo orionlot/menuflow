@@ -5,6 +5,7 @@ import { computeCopertoCents, computeManciaCents } from "@/lib/pricing-core";
 import { notifyNewOrder } from "@/lib/telegram";
 import { isStripeConfigured } from "@/lib/env";
 import { isFeatureOn } from "@/lib/config/features";
+import { decrementIngredientStock } from "@/lib/ingredients";
 import { hitRateLimit } from "@/lib/ratelimit";
 import { isOpenNow } from "@/lib/orari";
 import { createConnectPaymentIntent } from "@/lib/stripe/connect";
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
       item_id: string;
       qta: number;
       opzioni?: { gruppo: string; scelta: string }[];
+      composizione?: { ingredient_id: string; qta: number }[];
     }[];
   };
   try {
@@ -96,6 +98,7 @@ export async function POST(req: Request) {
       body.items ?? [],
       restaurant.aggiunte ?? [],
       { enforceScorte: isFeatureOn(restaurant, "scorte") },
+      isFeatureOn(restaurant, "componibili") ? (restaurant.composizione ?? []) : [],
     );
 
     const note = clean(body.note, 280);
@@ -172,6 +175,9 @@ export async function POST(req: Request) {
                 .eq("id", l.item_id),
             ),
         );
+      }
+      if (isFeatureOn(restaurant, "componibili")) {
+        await decrementIngredientStock(admin, lines);
       }
       await notifyNewOrder(restaurant, order);
       return NextResponse.json({ ok: true, mode: "placed", orderId: order.id });
