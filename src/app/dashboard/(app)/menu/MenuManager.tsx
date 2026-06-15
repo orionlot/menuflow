@@ -444,6 +444,7 @@ export default function MenuManager({
               {open && (
                 <div className="border-t border-neutral-100 p-3">
                   <DndContext
+                    id={`cat-${cat}`}
                     sensors={sensors}
                     collisionDetection={closestCenter}
                     onDragEnd={(e) => onDragEnd(cat, e)}
