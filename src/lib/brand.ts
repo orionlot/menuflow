@@ -109,3 +109,35 @@ export function brandPalette(
     tint: `rgba(${r},${g},${b},0.10)`,
   };
 }
+
+/**
+ * CSS custom properties for the admin shell's per-tenant accent. The admin stays
+ * neutral and uses these ONLY for the active tab, focus ring, "attivo" badge and
+ * primary CTA. Falls back to a neutral ink when the tenant has no brand set.
+ * Text colour is picked for AA contrast over the brand (white vs near-black).
+ */
+export function adminBrandVars(
+  primary?: string | null,
+  secondary?: string | null,
+): Record<string, string> {
+  const valid = (h?: string | null) =>
+    h && /^#[0-9a-fA-F]{6}$/.test(h) ? h : null;
+  const contrast = (hex: string) => {
+    const { r, g, b } = hexToRgb(hex);
+    return luminance(r, g, b) > 0.62 ? "#171717" : "#ffffff";
+  };
+  const rgba = (hex: string, a: number) => {
+    const { r, g, b } = hexToRgb(hex);
+    return `rgba(${r}, ${g}, ${b}, ${a})`;
+  };
+  const brand = valid(primary) ?? "#171717";
+  const brand2 = valid(secondary) ?? brand;
+  return {
+    "--brand": brand,
+    "--brand-contrast": contrast(brand),
+    "--brand-2": brand2,
+    "--brand-2-contrast": contrast(brand2),
+    "--brand-soft": rgba(brand, 0.1),
+    "--brand-ring": rgba(brand, 0.4),
+  };
+}

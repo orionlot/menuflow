@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/auth";
 import { adminSignOut } from "@/app/admin/actions";
+import { Container } from "@/components/ui/Container";
 
 export default async function AdminLayout({
   children,
@@ -9,21 +10,25 @@ export default async function AdminLayout({
   const user = await requireAdmin();
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <header className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3">
-          <span className="font-bold">
-            MenuFlow <span className="text-neutral-400">/ admin</span>
+    <div className="min-h-screen bg-neutral-50 text-neutral-900">
+      <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/90 backdrop-blur">
+        <Container className="flex items-center justify-between gap-3 py-3">
+          <span className="font-display font-bold">
+            MenuFlow <span className="font-normal text-neutral-400">/ admin</span>
           </span>
           <div className="flex items-center gap-3 text-sm text-neutral-500">
-            <span>{user.email}</span>
+            <span className="hidden sm:inline">{user.email}</span>
             <form action={adminSignOut}>
-              <button className="hover:text-black">Esci</button>
+              <button className="rounded-lg px-3 py-1.5 font-medium transition hover:bg-neutral-100 hover:text-neutral-900">
+                Esci
+              </button>
             </form>
           </div>
-        </div>
+        </Container>
       </header>
-      <main className="mx-auto max-w-5xl px-5 py-6">{children}</main>
+      <main>
+        <Container className="py-6">{children}</Container>
+      </main>
     </div>
   );
 }

@@ -3,6 +3,15 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Per-tenant brand accents. Injected at runtime on the admin shell
+     (adminBrandVars); these neutral fallbacks apply when no tenant brand. */
+  --brand: #171717;
+  --brand-contrast: #ffffff;
+  --brand-2: #171717;
+  --brand-2-contrast: #ffffff;
+  --brand-soft: rgba(23, 23, 23, 0.06);
+  --brand-ring: rgba(23, 23, 23, 0.4);
 }
 
 @theme inline {
@@ -10,6 +19,17 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-body);
   --font-display: var(--font-display);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+}
+
+/* Consistent, accessible keyboard focus everywhere; no residual mouse outline. */
+:focus-visible {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 body {
