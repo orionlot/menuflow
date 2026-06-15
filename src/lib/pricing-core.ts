@@ -1,4 +1,11 @@
-import type { CategoryAddon, ItemOption, OrderItem, OrderItemOption } from "@/types/db";
+import type {
+  CategoryAddon,
+  ComposizioneGruppo,
+  ItemOption,
+  OrderComposizione,
+  OrderItem,
+  OrderItemOption,
+} from "@/types/db";
 import { effectiveOptions } from "@/lib/menu";
 
 export interface IncomingOption {
@@ -9,6 +16,7 @@ export interface IncomingCartLine {
   item_id: string;
   qta: number;
   opzioni?: IncomingOption[];
+  composizione?: { ingredient_id: string; qta: number }[];
 }
 
 export interface PricedCart {
@@ -28,6 +36,62 @@ export interface PricedItem {
   scorta?: number | null;
 }
 
+/** Live ingredient info (price + stock) keyed by id, for composable products. */
+export interface IngredientInfo {
+  nome: string;
+  prezzo: number;
+  scorta: number | null;
+}
+
+/**
+ * Validate & price a customer's chosen composition for a composable item.
+ * SECURITY-CRITICAL: rejects ingredients not in a group for the item's category,
+ * per-ingredient quantity above remaining stock, sold-out ingredients, and group
+ * min/max violations. Returns the per-unit price delta (cents) and the order lines.
+ * (Total stock across multiple units is enforced atomically at decrement time.)
+ */
+export function priceComposizione(
+  categoria: string,
+  gruppi: ComposizioneGruppo[],
+  ingredients: Map<string, IngredientInfo>,
+  chosen: { ingredient_id: string; qta: number }[] = [],
+): { deltaCents: number; lines: OrderComposizione[] } {
+  const groups = gruppi.filter((g) => g.categorie.includes(categoria));
+  const allowed = new Map<string, { group: ComposizioneGruppo; override: number | null }>();
+  for (const g of groups)
+    for (const s of g.ingredienti)
+      allowed.set(s.ingredient_id, { group: g, override: s.prezzo ?? null });
+
+  let deltaCents = 0;
+  const lines: OrderComposizione[] = [];
+  const perGroup = new Map<string, number>();
+
+  for (const ch of chosen ?? []) {
+    const qta = Number(ch.qta);
+    if (!Number.isInteger(qta) || qta < 1) continue; // ignore blank/zero picks
+    const a = allowed.get(ch.ingredient_id);
+    const ing = ingredients.get(ch.ingredient_id);
+    if (!a || !ing) throw new Error(`Ingrediente non valido: ${ch.ingredient_id}`);
+    if (ing.scorta != null && qta > ing.scorta)
+      throw new Error(
+        ing.scorta > 0
+          ? `Scorte insufficienti per ${ing.nome}: ne restano ${ing.scorta}.`
+          : `Ingrediente esaurito: ${ing.nome}`,
+      );
+    const prezzo = a.override ?? ing.prezzo;
+    deltaCents += Math.round(Number(prezzo) * 100) * qta;
+    lines.push({ ingredient_id: ch.ingredient_id, nome: ing.nome, qta, prezzo: Number(prezzo) });
+    perGroup.set(a.group.id, (perGroup.get(a.group.id) ?? 0) + qta);
+  }
+
+  for (const g of groups) {
+    const total = perGroup.get(g.id) ?? 0;
+    if (total > g.max) throw new Error(`Massimo ${g.max} per "${g.nome}"`);
+    if (total < g.min) throw new Error(`Scegli almeno ${g.min} per "${g.nome}"`);
+  }
+  return { deltaCents, lines };
+}
+
 /**
  * SECURITY-CRITICAL, pure pricing core. Given the items already fetched from the
  * DB, validate the cart and recompute the line totals — no DB / no I/O, so it is
@@ -40,6 +104,8 @@ export function priceLines(
   cart: IncomingCartLine[],
   aggiunte: CategoryAddon[] = [],
   opts: { enforceScorte?: boolean } = {},
+  composizione: ComposizioneGruppo[] = [],
+  ingredients: Map<string, IngredientInfo> = new Map(),
 ): PricedCart {
   if (!Array.isArray(cart) || cart.length === 0) {
     throw new Error("Carrello vuoto.");
@@ -101,7 +167,15 @@ export function priceLines(
         throw new Error(`Selezione richiesta: "${g.nome}" (${item.nome})`);
     }
 
-    const unitCents = Math.round(Number(item.prezzo) * 100) + optionDeltaCents;
+    const compo = priceComposizione(
+      item.categoria,
+      composizione,
+      ingredients,
+      line.composizione,
+    );
+
+    const unitCents =
+      Math.round(Number(item.prezzo) * 100) + optionDeltaCents + compo.deltaCents;
     itemsTotaleCents += unitCents * qta;
 
     lines.push({
@@ -110,6 +184,7 @@ export function priceLines(
       qta,
       prezzo: unitCents / 100,
       ...(orderOpts.length ? { opzioni: orderOpts } : {}),
+      ...(compo.lines.length ? { composizione: compo.lines } : {}),
     });
   }
 

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeOpzioni, sanitizeAggiunte, sanitizeItemPatch } from "@/lib/menu";
+import {
+  sanitizeOpzioni,
+  sanitizeAggiunte,
+  sanitizeItemPatch,
+  sanitizeComposizione,
+} from "@/lib/menu";
 
 describe("sanitizeOpzioni", () => {
   it("returns [] for non-arrays", () => {
@@ -88,5 +93,47 @@ describe("sanitizeItemPatch", () => {
     expect(sanitizeItemPatch({ scorta: 3.9 }).scorta).toBe(3);
     expect(sanitizeItemPatch({ scorta: -2 }).scorta).toBe(0);
     expect(sanitizeItemPatch({ scorta: null }).scorta).toBeNull();
+  });
+});
+
+describe("sanitizeComposizione", () => {
+  it("returns [] for non-arrays", () => {
+    expect(sanitizeComposizione(null)).toEqual([]);
+    expect(sanitizeComposizione("x")).toEqual([]);
+  });
+  it("keeps a valid group, trims, drops empty ingredients/categories", () => {
+    expect(
+      sanitizeComposizione([
+        {
+          id: "g",
+          nome: "  Proteine  ",
+          categorie: ["Poke", ""],
+          min: 1,
+          max: 2,
+          ingredienti: [
+            { ingredient_id: "i1", prezzo: 2 },
+            { ingredient_id: "", prezzo: 1 },
+          ],
+        },
+        { nome: "NoCat", categorie: [], ingredienti: [{ ingredient_id: "x" }] },
+        { nome: "", categorie: ["Poke"], ingredienti: [{ ingredient_id: "x" }] },
+      ]),
+    ).toEqual([
+      {
+        id: "g",
+        nome: "Proteine",
+        categorie: ["Poke"],
+        min: 1,
+        max: 2,
+        ingredienti: [{ ingredient_id: "i1", prezzo: 2 }],
+      },
+    ]);
+  });
+  it("clamps min down to max and floors numbers", () => {
+    const [g] = sanitizeComposizione([
+      { nome: "G", categorie: ["C"], min: 9, max: 3, ingredienti: [{ ingredient_id: "i" }] },
+    ]);
+    expect(g.max).toBe(3);
+    expect(g.min).toBe(3);
   });
 });

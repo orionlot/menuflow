@@ -59,6 +59,7 @@ export interface Restaurant {
   coperto_label: string;
   accetta_mancia: boolean;
   aggiunte: CategoryAddon[];
+  composizione: ComposizioneGruppo[];
   funzionalita: Record<string, boolean>;
   funzionalita_admin: Record<string, boolean>;
   google_review_url: string | null;
@@ -92,12 +93,15 @@ export type PublicRestaurant = Pick<
   | "coperto_label"
   | "accetta_mancia"
   | "aggiunte"
+  | "composizione"
   | "google_review_url"
   | "orari"
   | "attivo"
 > & {
   /** Effective on/off per feature (plan ∪ admin entitlement, then owner switch). */
   funzioni_attive: Record<string, boolean>;
+  /** Composable ingredients (with live stock) for "componibili" categories. */
+  ingredienti: PublicIngredient[];
 };
 
 /** A choice within an option group, e.g. "+ Bacon" with a price delta. */
@@ -117,6 +121,41 @@ export interface ItemOption {
 /** An option group that applies to whole categories (restaurant-level add-ons). */
 export interface CategoryAddon extends ItemOption {
   categorie: string[];
+}
+
+/** A single ingredient with shared, per-restaurant stock (composable products). */
+export interface Ingredient {
+  id: string;
+  restaurant_id: string;
+  nome: string;
+  prezzo: number; // EUR; 0 = "incluso"
+  scorta: number | null; // null = illimitato, 0 = esaurito
+  unita: string | null; // display only ("porzione", "g"…)
+  ordine: number;
+}
+/** Browser-safe ingredient (no restaurant_id). */
+export type PublicIngredient = Omit<Ingredient, "restaurant_id">;
+
+/** A composition group references ingredients (by id) for one or more categories. */
+export interface ComposizioneScelta {
+  ingredient_id: string;
+  prezzo?: number | null; // override; falls back to Ingredient.prezzo
+}
+export interface ComposizioneGruppo {
+  id: string;
+  nome: string;
+  categorie: string[]; // categories this group composes (e.g. ["Poke"])
+  min: number; // min total portions in the group (0 = optional)
+  max: number; // max total portions in the group
+  ingredienti: ComposizioneScelta[];
+}
+
+/** A chosen ingredient (with quantity) on an order line. */
+export interface OrderComposizione {
+  ingredient_id: string;
+  nome: string;
+  qta: number;
+  prezzo: number; // unit price applied (override ?? ingredient price)
 }
 
 export interface MenuItem {
@@ -148,8 +187,9 @@ export interface OrderItem {
   item_id: string;
   nome: string;
   qta: number;
-  prezzo: number; // unit price INCLUDING chosen option deltas
+  prezzo: number; // unit price INCLUDING chosen option deltas + composition
   opzioni?: OrderItemOption[];
+  composizione?: OrderComposizione[];
 }
 
 export interface Order {

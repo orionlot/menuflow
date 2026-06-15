@@ -1,5 +1,10 @@
 import { ALLERGENI_BY_ID } from "@/lib/config/allergeni";
-import type { CategoryAddon, ItemOption } from "@/types/db";
+import type {
+  CategoryAddon,
+  ComposizioneGruppo,
+  ComposizioneScelta,
+  ItemOption,
+} from "@/types/db";
 
 /**
  * Effective option groups for an item = its own options + any category add-ons
@@ -121,4 +126,42 @@ export function sanitizeItemPatch(patch: ItemPatch): ItemPatch {
     out.scorta =
       patch.scorta == null ? null : Math.max(0, Math.floor(Number(patch.scorta) || 0));
   return out;
+}
+
+/** Whitelist the per-category composition config (groups of ingredients). */
+export function sanitizeComposizione(raw: unknown): ComposizioneGruppo[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .slice(0, 12)
+    .map((g, gi) => {
+      const o = (g ?? {}) as Partial<ComposizioneGruppo>;
+      const ingredienti = Array.isArray(o.ingredienti)
+        ? o.ingredienti
+            .slice(0, 30)
+            .map((s) => {
+              const sc = (s ?? {}) as Partial<ComposizioneScelta>;
+              const out: ComposizioneScelta = {
+                ingredient_id: String(sc.ingredient_id ?? "").trim().slice(0, 40),
+              };
+              if (sc.prezzo != null && Number.isFinite(Number(sc.prezzo)))
+                out.prezzo = Math.max(0, Math.round(Number(sc.prezzo) * 100) / 100);
+              return out;
+            })
+            .filter((s) => s.ingredient_id)
+        : [];
+      const categorie = Array.isArray(o.categorie)
+        ? o.categorie.map((c) => String(c).trim().slice(0, 60)).filter(Boolean).slice(0, 50)
+        : [];
+      const max = Math.max(1, Math.floor(Number(o.max) || 1));
+      const min = Math.min(max, Math.max(0, Math.floor(Number(o.min) || 0)));
+      return {
+        id: String(o.id ?? `c${gi}`).slice(0, 40),
+        nome: String(o.nome ?? "").trim().slice(0, 40),
+        categorie,
+        min,
+        max,
+        ingredienti,
+      };
+    })
+    .filter((g) => g.nome && g.categorie.length && g.ingredienti.length);
 }
