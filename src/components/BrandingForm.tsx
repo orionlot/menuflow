@@ -184,9 +184,9 @@ export default function BrandingForm({
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-neutral-500">
+            <div className="mb-1 text-xs font-medium text-neutral-500">
               Colore secondario
-            </label>
+            </div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs text-neutral-600">
               <input
                 type="checkbox"

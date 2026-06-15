@@ -22,12 +22,15 @@ interface HourDatum {
   revenueCents: number;
 }
 
-// Abbreviated euro for axis ticks: 782715¢ -> "€7,8K" (it-IT compact, no overflow).
-const eurCompact = new Intl.NumberFormat("it-IT", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
-const shortEuro = (cents: number) => `€${eurCompact.format(cents / 100)}`;
+// Abbreviated euro for axis ticks: 782715¢ -> "€7,8K" (avoids overflow). We format
+// K/M ourselves because Intl "compact" in it-IT renders words ("7,8 mila", "1 Mln").
+const nfIT = (n: number) => n.toLocaleString("it-IT", { maximumFractionDigits: 1 });
+const shortEuro = (cents: number) => {
+  const e = cents / 100;
+  if (e >= 1_000_000) return `€${nfIT(e / 1_000_000)}M`;
+  if (e >= 1_000) return `€${nfIT(e / 1_000)}K`;
+  return `€${nfIT(e)}`;
+};
 
 const dayLabel = (iso: string) => {
   const [, m, d] = iso.split("-");

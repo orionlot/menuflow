@@ -140,12 +140,24 @@ export default function MenuManager({
   // Per-item save with explicit status (salvataggio… / salvato / errore).
   function save(id: string, patch: ItemPatch) {
     setError(null);
+    patchLocal(id, patch as Partial<MenuItem>); // keep the collapsed summary in sync
     setItemStatus(id, "saving");
     startTransition(async () => {
       try {
         await actions.updateItem(id, patch);
         setItemStatus(id, "saved");
-        window.setTimeout(() => setItemStatus(id, null), 2000);
+        // Clear the "saved" badge after 2s, but only if a newer save hasn't
+        // already set a different state for this item.
+        window.setTimeout(
+          () =>
+            setStatus((prev) => {
+              if (prev[id] !== "saved") return prev;
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            }),
+          2000,
+        );
       } catch (e) {
         setItemStatus(id, "error");
         setError(e instanceof Error ? e.message : "Errore nel salvataggio.");
