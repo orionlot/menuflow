@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getMenuItems, getPopularItemIds, resolveTenant } from "@/lib/tenant";
+import {
+  getMenuItems,
+  getPopularItemIds,
+  getPublicIngredients,
+  resolveTenant,
+} from "@/lib/tenant";
 import MenuClient from "./MenuClient";
 
 // ISR: the public menu is statically regenerated so it stays fast and remains
@@ -36,5 +41,15 @@ export default async function TenantMenuPage({ params }: Params) {
 
   const items = await getMenuItems(tenant.id);
   const popolari = await getPopularItemIds(tenant.id);
-  return <MenuClient tenant={tenant} items={items} popolari={popolari} />;
+  const ingredienti = tenant.funzioni_attive?.componibili
+    ? await getPublicIngredients(tenant.id)
+    : [];
+  return (
+    <MenuClient
+      tenant={tenant}
+      items={items}
+      popolari={popolari}
+      ingredienti={ingredienti}
+    />
+  );
 }
