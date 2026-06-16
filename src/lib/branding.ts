@@ -40,5 +40,10 @@ export function sanitizeBranding(patch: BrandingPatch): Record<string, unknown> 
     out.google_review_url = patch.google_review_url
       ? String(patch.google_review_url).trim().slice(0, 300)
       : null;
+  if (patch.annuncio && typeof patch.annuncio === "object")
+    out.annuncio = {
+      testo: String(patch.annuncio.testo ?? "").trim().slice(0, 200),
+      attivo: Boolean(patch.annuncio.attivo),
+    };
   return out;
 }

@@ -4,6 +4,8 @@ import {
   updateFunzionalita,
   updateBranding,
   updateOrari,
+  updateAperturaStato,
+  updateChiusure,
   connectStripe,
   disconnectStripe,
   updateTelegram,
@@ -13,6 +15,7 @@ import { isTelegramConfigured } from "@/lib/env";
 import FeaturesOwner from "./FeaturesOwner";
 import ServiceSettings from "./ServiceSettings";
 import OrariSettings from "./OrariSettings";
+import DisponibilitaSettings from "./DisponibilitaSettings";
 import PagamentiSettings from "./PagamentiSettings";
 import TelegramSettings from "./TelegramSettings";
 
@@ -75,6 +78,14 @@ export default async function FunzionalitaPage() {
           }}
           action={updateBranding}
         />
+        <div className="mt-3">
+          <DisponibilitaSettings
+            initialOverride={restaurant.aperto_override}
+            initialChiusure={restaurant.chiusure ?? []}
+            setStato={updateAperturaStato}
+            setChiusure={updateChiusure}
+          />
+        </div>
         <div className="mt-3">
           <OrariSettings initial={restaurant.orari} action={updateOrari} />
         </div>

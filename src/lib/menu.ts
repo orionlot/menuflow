@@ -3,7 +3,9 @@ import type {
   CategoryAddon,
   ComposizioneGruppo,
   ComposizioneScelta,
+  ItemNota,
   ItemOption,
+  NoteConfig,
   TagliaComposizione,
 } from "@/types/db";
 
@@ -76,6 +78,7 @@ export interface ItemPatch {
   ingredienti?: string[]; // ingredient ids (refs public.ingredients), display-only list
   composizione?: ComposizioneGruppo[]; // per-item composition groups (category-less)
   composizione_taglie?: TagliaComposizione[]; // per-item size variants (category-less)
+  nota?: ItemNota; // per-product customer-note override
 }
 
 export function sanitizeOpzioni(raw: unknown): ItemOption[] {
@@ -139,7 +142,49 @@ export function sanitizeItemPatch(patch: ItemPatch): ItemPatch {
     out.composizione = sanitizeComposizione(patch.composizione, { requireCategorie: false });
   if (Array.isArray(patch.composizione_taglie))
     out.composizione_taglie = sanitizeTaglie(patch.composizione_taglie, { requireCategorie: false });
+  if (patch.nota && typeof patch.nota === "object") out.nota = sanitizeNota(patch.nota);
   return out;
+}
+
+/** Shape a per-product customer-note config. */
+export function sanitizeNota(raw: unknown): ItemNota {
+  const o = (raw ?? {}) as Partial<ItemNota>;
+  const out: ItemNota = { attiva: Boolean(o.attiva) };
+  if (typeof o.label === "string" && o.label.trim()) out.label = o.label.trim().slice(0, 60);
+  if (o.obbligatoria) out.obbligatoria = true;
+  return out;
+}
+
+/** Whitelist the category-scoped customer-note config. A row is kept only if it
+ *  targets at least one category. */
+export function sanitizeNoteConfig(raw: unknown): NoteConfig[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .slice(0, 20)
+    .map((g, gi) => {
+      const o = (g ?? {}) as Partial<NoteConfig>;
+      const categorie = Array.isArray(o.categorie)
+        ? o.categorie.map((c) => String(c).trim().slice(0, 60)).filter(Boolean).slice(0, 50)
+        : [];
+      const out: NoteConfig = { id: String(o.id ?? `n${gi}`).slice(0, 40), categorie };
+      if (typeof o.label === "string" && o.label.trim()) out.label = o.label.trim().slice(0, 60);
+      if (o.obbligatoria) out.obbligatoria = true;
+      return out;
+    })
+    .filter((g) => g.categorie.length);
+}
+
+/** Resolve the effective customer-note prompt for an item: its own `nota` wins
+ *  (when active) over a category-level rule; null if no note applies. */
+export function effectiveNota(
+  item: { categoria: string; nota?: ItemNota | null },
+  noteConfig?: NoteConfig[],
+): { label: string; obbligatoria: boolean } | null {
+  if (item.nota?.attiva)
+    return { label: item.nota.label?.trim() || "Nota", obbligatoria: Boolean(item.nota.obbligatoria) };
+  const rule = (noteConfig ?? []).find((c) => c.categorie.includes(item.categoria));
+  if (rule) return { label: rule.label?.trim() || "Nota", obbligatoria: Boolean(rule.obbligatoria) };
+  return null;
 }
 
 /** Whitelist a composition config (groups of ingredients). With

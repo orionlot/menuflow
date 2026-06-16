@@ -293,6 +293,9 @@ export default function OrdiniClient({
                           ))}
                         </ul>
                       ) : null}
+                      {it.nota ? (
+                        <p className="mt-0.5 pl-5 text-xs italic text-amber-700">📝 {it.nota}</p>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

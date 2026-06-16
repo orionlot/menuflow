@@ -230,6 +230,10 @@ export async function adminDuplicateItem(itemId: string) {
     opzioni: item.opzioni ?? [],
     consigliato: false,
     scorta: item.scorta ?? null,
+    ingredienti: item.ingredienti ?? [],
+    composizione: item.composizione ?? [],
+    composizione_taglie: item.composizione_taglie ?? [],
+    nota: item.nota ?? {},
   });
   if (error) throw new Error(error.message);
   revalidatePath("/admin");

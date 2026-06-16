@@ -205,6 +205,7 @@ export default async function AdminHome() {
                     coperto_label: r.coperto_label,
                     accetta_mancia: r.accetta_mancia,
                     google_review_url: r.google_review_url,
+                    annuncio: r.annuncio,
                   }}
                   action={updateRestaurantBranding.bind(null, r.id)}
                 />

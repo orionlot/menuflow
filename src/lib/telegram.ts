@@ -56,7 +56,19 @@ function escapeHtml(s: unknown): string {
 
 function itemsBlock(order: Pick<Order, "items">): string {
   return order.items
-    .map((i) => `• ${i.qta}× ${escapeHtml(i.nome)} — ${formatEUR(Math.round(i.prezzo * 100))}`)
+    .map((i) => {
+      let line = `• ${i.qta}× ${escapeHtml(i.nome)} — ${formatEUR(Math.round(i.prezzo * 100))}`;
+      const details = [
+        i.taglia ? `formato: ${i.taglia}` : "",
+        (i.opzioni ?? []).map((o) => o.scelta).join(", "),
+        (i.composizione ?? []).map((c) => `${c.qta}× ${c.nome}`).join(", "),
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      if (details) line += `\n   ${escapeHtml(details)}`;
+      if (i.nota) line += `\n   📝 ${escapeHtml(i.nota)}`;
+      return line;
+    })
     .join("\n");
 }
 

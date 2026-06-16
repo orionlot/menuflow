@@ -8,7 +8,7 @@ import { isFeatureOn } from "@/lib/config/features";
 import { decrementIngredientStock, composableCategories } from "@/lib/ingredients";
 import { decrementMenuItemStock } from "@/lib/menu-stock";
 import { hitRateLimit } from "@/lib/ratelimit";
-import { isOpenNow } from "@/lib/orari";
+import { isServiceOpen } from "@/lib/orari";
 import { createConnectPaymentIntent } from "@/lib/stripe/connect";
 import type { Order, Restaurant } from "@/types/db";
 
@@ -45,6 +45,7 @@ export async function POST(req: Request) {
       opzioni?: { gruppo: string; scelta: string }[];
       composizione?: { ingredient_id: string; qta: number }[];
       taglia_id?: string;
+      nota?: string;
     }[];
   };
   try {
@@ -79,7 +80,7 @@ export async function POST(req: Request) {
         { status: 409 },
       );
     }
-    if (isFeatureOn(restaurant, "orari") && !isOpenNow(restaurant.orari)) {
+    if (!isServiceOpen(restaurant, { orariEnabled: isFeatureOn(restaurant, "orari") })) {
       return NextResponse.json(
         { ok: false, error: "Siamo chiusi: ordini non disponibili in questo momento." },
         { status: 409 },

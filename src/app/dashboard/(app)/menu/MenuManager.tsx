@@ -20,13 +20,14 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { CategoryAddon, ItemOption, MenuItem, PublicIngredient } from "@/types/db";
+import type { CategoryAddon, ItemOption, MenuItem, NoteConfig, PublicIngredient } from "@/types/db";
 import type { ItemPatch } from "@/lib/menu";
 import { ALLERGENI } from "@/lib/config/allergeni";
 import { formatEUR } from "@/lib/config/plans";
 import { uploadImage } from "@/app/actions/upload";
 import OptionsEditor from "./OptionsEditor";
 import CategoryAddonsEditor from "./CategoryAddonsEditor";
+import NotesEditor from "./NotesEditor";
 import ComposizioneEditor from "./ComposizioneEditor";
 import TaglieEditor from "./TaglieEditor";
 
@@ -40,6 +41,7 @@ export interface MenuActions {
   deleteItem: (id: string) => Promise<void>;
   importItems?: (csv: string) => Promise<{ added: number; skipped: number }>;
   updateAggiunte: (aggiunte: CategoryAddon[]) => Promise<void>;
+  updateNoteConfig?: (noteConfig: NoteConfig[]) => Promise<void>;
   reorder: (updates: { id: string; ordine: number }[]) => Promise<void>;
 }
 
@@ -65,6 +67,7 @@ export default function MenuManager({
   restaurant,
   initialItems,
   initialAggiunte,
+  initialNoteConfig = [],
   scorteOn,
   descrizioneOn = true,
   ingredientiOn = false,
@@ -75,6 +78,7 @@ export default function MenuManager({
   restaurant: MiniRestaurant;
   initialItems: MenuItem[];
   initialAggiunte: CategoryAddon[];
+  initialNoteConfig?: NoteConfig[];
   scorteOn: boolean;
   descrizioneOn?: boolean;
   ingredientiOn?: boolean;
@@ -377,6 +381,28 @@ export default function MenuManager({
           onSave={(g) => run(() => actions.updateAggiunte(g))}
         />
       </details>
+
+      {/* Note cliente per categoria */}
+      {actions.updateNoteConfig && (
+      <details className="mb-4 rounded-xl border border-neutral-200 bg-white p-4">
+        <summary className="cursor-pointer font-medium">
+          Note cliente per categoria{" "}
+          <span className="text-sm font-normal text-neutral-500">
+            {initialNoteConfig.length ? `(${initialNoteConfig.length})` : "— facoltative"}
+          </span>
+        </summary>
+        <p className="mb-3 mt-2 text-sm text-neutral-500">
+          Es. &ldquo;Note di cottura&rdquo; su tutte le &ldquo;Pizze&rdquo;: un campo nota
+          comparirà su ogni prodotto di quelle categorie. Per un singolo prodotto usa la sezione
+          &ldquo;Nota cliente&rdquo; nella sua scheda.
+        </p>
+        <NotesEditor
+          value={initialNoteConfig}
+          categories={categoryNames}
+          onSave={(g) => run(() => actions.updateNoteConfig!(g))}
+        />
+      </details>
+      )}
 
       <p className="mb-3 text-xs text-neutral-400">
         Tocca una voce per modificarla. Trascina la maniglia ⠿ per riordinare i
@@ -892,6 +918,53 @@ function QuickEditDrawer({
               </div>
             </details>
           )}
+
+          {/* Customer note for this product */}
+          <details className="text-sm">
+            <summary className="cursor-pointer font-medium text-neutral-600">
+              Nota cliente {item.nota?.attiva ? "(attiva)" : ""}
+            </summary>
+            <div className="mt-2 space-y-2">
+              <label className="flex items-center gap-2 text-sm text-neutral-700">
+                <input
+                  type="checkbox"
+                  checked={Boolean(item.nota?.attiva)}
+                  onChange={(e) =>
+                    h.save(item.id, { nota: { ...item.nota, attiva: e.target.checked } })
+                  }
+                  className="h-4 w-4 rounded border-neutral-300 accent-[var(--brand)]"
+                />
+                Chiedi una nota al cliente per questo prodotto
+              </label>
+              {item.nota?.attiva && (
+                <>
+                  <input
+                    defaultValue={item.nota?.label ?? ""}
+                    placeholder="Etichetta (es. Note di cottura)"
+                    onBlur={(e) => {
+                      const label = e.target.value.trim();
+                      if (label !== (item.nota?.label ?? ""))
+                        h.save(item.id, { nota: { ...item.nota, attiva: true, label } });
+                    }}
+                    className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+                  />
+                  <label className="flex items-center gap-2 text-sm text-neutral-700">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(item.nota?.obbligatoria)}
+                      onChange={(e) =>
+                        h.save(item.id, {
+                          nota: { ...item.nota, attiva: true, obbligatoria: e.target.checked },
+                        })
+                      }
+                      className="h-4 w-4 rounded border-neutral-300 accent-[var(--brand)]"
+                    />
+                    Nota obbligatoria
+                  </label>
+                </>
+              )}
+            </div>
+          </details>
 
           {/* Consigliato */}
           <button

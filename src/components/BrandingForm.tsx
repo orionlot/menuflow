@@ -32,6 +32,7 @@ export default function BrandingForm({
     coperto_label: string;
     accetta_mancia: boolean;
     google_review_url: string | null;
+    annuncio?: { testo: string; attivo: boolean };
   };
   action: (patch: BrandingPatch) => Promise<void>;
 }) {
@@ -43,6 +44,8 @@ export default function BrandingForm({
   const [layout, setLayout] = useState<MenuLayout>(initial.layout ?? DEFAULT_LAYOUT);
   const [logoUrl, setLogoUrl] = useState<string | null>(initial.logo_url);
   const [reviewUrl, setReviewUrl] = useState(initial.google_review_url ?? "");
+  const [annuncioTesto, setAnnuncioTesto] = useState(initial.annuncio?.testo ?? "");
+  const [annuncioAttivo, setAnnuncioAttivo] = useState(Boolean(initial.annuncio?.attivo));
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -102,6 +105,7 @@ export default function BrandingForm({
           layout,
           logo_url: logoUrl,
           google_review_url: reviewUrl.trim() || null,
+          annuncio: { testo: annuncioTesto.trim(), attivo: annuncioAttivo },
         });
         setMsg("Salvato ✓");
       } catch (e) {
@@ -348,6 +352,33 @@ export default function BrandingForm({
           />
           <p className="mt-1 text-[11px] text-neutral-400">
             Usato dalla card “lascia una recensione” dopo l’ordine (se la funzione è attiva).
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-1 flex items-center justify-between text-xs font-medium text-neutral-500">
+            <span>Annuncio</span>
+            <label className="flex cursor-pointer items-center gap-1.5 text-neutral-600">
+              <input
+                type="checkbox"
+                checked={annuncioAttivo}
+                onChange={(e) => setAnnuncioAttivo(e.target.checked)}
+                className="h-4 w-4 rounded border-neutral-300 accent-[var(--brand)]"
+              />
+              Attivo
+            </label>
+          </label>
+          <textarea
+            value={annuncioTesto}
+            onChange={(e) => setAnnuncioTesto(e.target.value)}
+            rows={2}
+            maxLength={200}
+            placeholder="Es. Oggi cucina aperta fino alle 23 · Consegna gratuita sopra i 20€"
+            className="w-full resize-none rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+          />
+          <p className="mt-1 text-[11px] text-neutral-400">
+            Mostrato in cima al menu pubblico, con i colori del tuo brand. Spunta “Attivo” per
+            renderlo visibile.
           </p>
         </div>
 

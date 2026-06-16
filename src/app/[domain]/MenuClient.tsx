@@ -14,8 +14,8 @@ import type {
 import { formatEUR } from "@/lib/config/plans";
 import { brandPalette } from "@/lib/brand";
 import { resolveLayout, FONT_VARS } from "@/lib/config/layout";
-import { isOpenNow, orariLabel } from "@/lib/orari";
-import { effectiveOptions } from "@/lib/menu";
+import { isServiceOpen, orariLabel, activeChiusura } from "@/lib/orari";
+import { effectiveOptions, effectiveNota } from "@/lib/menu";
 import HelpButton from "./HelpButton";
 import { ALLERGENI, ALLERGENI_BY_ID } from "@/lib/config/allergeni";
 
@@ -143,6 +143,7 @@ interface CartLine {
   opzioni: Chosen[];
   composizione: OrderComposizione[];
   taglia?: { id: string; nome: string; prezzo?: number };
+  nota?: string;
 }
 
 function lineKey(
@@ -150,6 +151,7 @@ function lineKey(
   chosen: Chosen[],
   compo: OrderComposizione[] = [],
   tagliaId?: string,
+  nota?: string,
 ): string {
   const parts: string[] = [];
   if (tagliaId) parts.push(`t:${tagliaId}`);
@@ -157,6 +159,7 @@ function lineKey(
     parts.push(chosen.map((c) => `${c.gruppo}:${c.scelta}`).sort().join(","));
   if (compo.length)
     parts.push(compo.map((c) => `${c.ingredient_id}x${c.qta}`).sort().join(","));
+  if (nota?.trim()) parts.push(`n:${nota.trim()}`);
   return parts.length ? `${itemId}|${parts.join("|")}` : itemId;
 }
 
@@ -227,6 +230,8 @@ export default function MenuClient({
   const [pending, setPending] = useState<null | { orderId: string; sim: boolean }>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [allergyOpen, setAllergyOpen] = useState(false);
+  const [catOpen, setCatOpen] = useState(false);
+  const [annuncioDismissed, setAnnuncioDismissed] = useState(false);
   const [myAllergens, setMyAllergens] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [voted, setVoted] = useState<number | null>(null);
@@ -326,13 +331,15 @@ export default function MenuClient({
     chosen: Chosen[],
     composizione: OrderComposizione[] = [],
     taglia?: { id: string; nome: string; prezzo?: number },
+    nota?: string,
   ) {
     const unitCents =
       Math.round(item.prezzo * 100) +
       Math.round((taglia?.prezzo ?? 0) * 100) +
       chosen.reduce((s, c) => s + Math.round(c.prezzo * 100), 0) +
       composizione.reduce((s, c) => s + Math.round(c.prezzo * 100) * c.qta, 0);
-    const key = lineKey(item.id, chosen, composizione, taglia?.id);
+    const cleanNota = nota?.trim() || undefined;
+    const key = lineKey(item.id, chosen, composizione, taglia?.id, cleanNota);
     setCart((c) => {
       const existing = c[key];
       return {
@@ -348,6 +355,7 @@ export default function MenuClient({
               opzioni: chosen,
               composizione,
               taglia,
+              nota: cleanNota,
             },
       };
     });
@@ -356,7 +364,8 @@ export default function MenuClient({
     if (
       effectiveOptions(item, tenant.aggiunte).length ||
       composizioneFor(item).length ||
-      taglieFor(item).length
+      taglieFor(item).length ||
+      effectiveNota(item, tenant.note_config)
     )
       setOptItem(item);
     else addLine(item, []);
@@ -402,6 +411,7 @@ export default function MenuClient({
               qta: c.qta,
             })),
             taglia_id: l.taglia?.id,
+            nota: l.nota,
           })),
         }),
       });
@@ -469,8 +479,14 @@ export default function MenuClient({
 
   const initial = tenant.nome.trim().charAt(0).toUpperCase();
   const tavoloMissing = !tavolo.trim();
-  const closed = Boolean(tenant.funzioni_attive?.orari) && !isOpenNow(tenant.orari);
+  const orariOn = Boolean(tenant.funzioni_attive?.orari);
+  // Manual override + scheduled closures always apply; weekly hours only when on.
+  const chiusura = activeChiusura(tenant.chiusure);
+  const forcedClosed = tenant.aperto_override === false;
+  const closed = !isServiceOpen(tenant, { orariEnabled: orariOn });
   const ordersBlocked = backend === "down" || closed;
+  const annuncioOn =
+    Boolean(tenant.annuncio?.attivo && tenant.annuncio?.testo?.trim()) && !annuncioDismissed;
   const tuttoOn = activeCat === ALL_CAT;
 
   const renderItem = (item: MenuItem, idx: number) => {
@@ -815,38 +831,92 @@ export default function MenuClient({
           </div>
         </header>
 
-        {/* Category rail + allergen legend accordion */}
+        {/* Announcement banner (brand-coloured, dismissible in-memory) */}
+        {annuncioOn && (
+          <div className="px-5 pt-3">
+            <div
+              className="flex items-start gap-2 rounded-2xl px-4 py-3 text-sm"
+              style={{ background: p.tint, border: `1px solid ${p.brand}`, color: p.text }}
+            >
+              <span aria-hidden style={{ color: p.brand }}>
+                📣
+              </span>
+              <span className="min-w-0 flex-1 whitespace-pre-line font-medium">
+                {tenant.annuncio.testo}
+              </span>
+              <button
+                onClick={() => setAnnuncioDismissed(true)}
+                aria-label="Chiudi annuncio"
+                className="-mt-1 shrink-0 rounded-md px-1 text-lg leading-none"
+                style={{ color: p.textMuted }}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Category accordion + allergen legend accordion */}
         {categories.length > 0 && (
           <div className="sticky top-0 z-20" style={{ background: p.pageBg }}>
-            <div className="flex flex-wrap gap-2 px-5 py-3">
+            <div className="px-5 py-3">
               <button
-                onClick={() => setActiveCat(ALL_CAT)}
-                className="shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition"
+                onClick={() => setCatOpen((o) => !o)}
+                aria-expanded={catOpen}
+                className="flex w-full items-center justify-between rounded-full px-4 py-2 text-sm font-semibold transition"
                 style={{
-                  background: tuttoOn ? p.chipActiveBg : p.chipBg,
-                  color: tuttoOn ? p.chipActiveText : p.chipText,
-                  border: tuttoOn ? "none" : `1px solid ${p.surfaceBorder}`,
+                  background: catOpen ? p.chipActiveBg : p.chipBg,
+                  color: catOpen ? p.chipActiveText : p.chipText,
+                  border: catOpen ? "none" : `1px solid ${p.surfaceBorder}`,
                 }}
               >
-                Tutto
+                <span className="truncate">Categorie · {tuttoOn ? "Tutto" : activeCat || categories[0]}</span>
+                <span
+                  aria-hidden
+                  className="ml-2 text-base leading-none"
+                  style={{ transform: catOpen ? "rotate(45deg)" : "none", transition: "transform .15s" }}
+                >
+                  +
+                </span>
               </button>
-              {categories.map((c) => {
-                const on = !tuttoOn && c === (activeCat || categories[0]);
-                return (
+              {catOpen && (
+                <div className="mt-2 flex flex-wrap gap-2">
                   <button
-                    key={c}
-                    onClick={() => setActiveCat(c)}
+                    onClick={() => {
+                      setActiveCat(ALL_CAT);
+                      setCatOpen(false);
+                    }}
                     className="shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition"
                     style={{
-                      background: on ? p.chipActiveBg : p.chipBg,
-                      color: on ? p.chipActiveText : p.chipText,
-                      border: on ? "none" : `1px solid ${p.surfaceBorder}`,
+                      background: tuttoOn ? p.chipActiveBg : p.chipBg,
+                      color: tuttoOn ? p.chipActiveText : p.chipText,
+                      border: tuttoOn ? "none" : `1px solid ${p.surfaceBorder}`,
                     }}
                   >
-                    {c}
+                    Tutto
                   </button>
-                );
-              })}
+                  {categories.map((c) => {
+                    const on = !tuttoOn && c === (activeCat || categories[0]);
+                    return (
+                      <button
+                        key={c}
+                        onClick={() => {
+                          setActiveCat(c);
+                          setCatOpen(false);
+                        }}
+                        className="shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition"
+                        style={{
+                          background: on ? p.chipActiveBg : p.chipBg,
+                          color: on ? p.chipActiveText : p.chipText,
+                          border: on ? "none" : `1px solid ${p.surfaceBorder}`,
+                        }}
+                      >
+                        {c}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {allergyOn && (
@@ -1021,8 +1091,11 @@ export default function MenuClient({
                 border: "1px solid rgba(245,158,11,0.4)",
               }}
             >
-              Siamo chiusi
-              {orariLabel(tenant.orari) ? ` · Aperto ${orariLabel(tenant.orari)}` : ""}
+              {chiusura
+                ? `Chiuso${chiusura.motivo ? ` · ${chiusura.motivo}` : ""}`
+                : forcedClosed
+                  ? "Siamo chiusi"
+                  : `Siamo chiusi${orariOn && orariLabel(tenant.orari) ? ` · Aperto ${orariLabel(tenant.orari)}` : ""}`}
             </div>
           </div>
         )}
@@ -1155,11 +1228,12 @@ export default function MenuClient({
           groups={effectiveOptions(optItem, tenant.aggiunte)}
           composizione={composizioneFor(optItem)}
           taglie={taglieFor(optItem)}
+          nota={effectiveNota(optItem, tenant.note_config)}
           ingredientiById={ingredientiById}
           p={p}
           onClose={() => setOptItem(null)}
-          onConfirm={(chosen, composizione, taglia) => {
-            addLine(optItem, chosen, composizione, taglia);
+          onConfirm={(chosen, composizione, taglia, nota) => {
+            addLine(optItem, chosen, composizione, taglia, nota);
             setOptItem(null);
           }}
         />
@@ -1213,6 +1287,11 @@ export default function MenuClient({
                       {l.composizione.length > 0 && (
                         <span className="block text-xs" style={{ color: p.textMuted }}>
                           {l.composizione.map((c) => `${c.qta}× ${c.nome}`).join(", ")}
+                        </span>
+                      )}
+                      {l.nota && (
+                        <span className="block text-xs italic" style={{ color: p.textMuted }}>
+                          📝 {l.nota}
                         </span>
                       )}
                     </div>
@@ -1551,6 +1630,7 @@ function OptionsModal({
   groups,
   composizione,
   taglie,
+  nota,
   ingredientiById,
   p,
   onClose,
@@ -1560,6 +1640,7 @@ function OptionsModal({
   groups: ItemOption[];
   composizione: ComposizioneGruppo[];
   taglie: TagliaComposizione[];
+  nota: { label: string; obbligatoria: boolean } | null;
   ingredientiById: Map<string, PublicIngredient>;
   p: Pal;
   onClose: () => void;
@@ -1567,8 +1648,10 @@ function OptionsModal({
     chosen: Chosen[],
     composizione: OrderComposizione[],
     taglia?: { id: string; nome: string; prezzo?: number },
+    nota?: string,
   ) => void;
 }) {
+  const [notaText, setNotaText] = useState("");
   // default: preselect first choice of required single groups
   const [sel, setSel] = useState<Record<string, string[]>>(() => {
     const init: Record<string, string[]> = {};
@@ -1626,8 +1709,11 @@ function OptionsModal({
   );
 
   const compoMissing = composizione.some((g) => groupTotal(g) < effMin(g));
+  const notaMissing = Boolean(nota?.obbligatoria) && !notaText.trim();
   const missing =
-    groups.some((g) => g.obbligatorio && (sel[g.id]?.length ?? 0) === 0) || compoMissing;
+    groups.some((g) => g.obbligatorio && (sel[g.id]?.length ?? 0) === 0) ||
+    compoMissing ||
+    notaMissing;
   const unitCents =
     Math.round(item.prezzo * 100) +
     Math.round((taglia?.prezzo ?? 0) * 100) +
@@ -1797,6 +1883,25 @@ function OptionsModal({
               </div>
             );
           })}
+          {nota && (
+            <div className="mb-1">
+              <div className="mb-1 flex items-center gap-2">
+                <span className="font-semibold">{nota.label}</span>
+                <span className="text-xs" style={{ color: p.textMuted }}>
+                  {nota.obbligatoria ? "obbligatoria" : "facoltativa"}
+                </span>
+              </div>
+              <textarea
+                value={notaText}
+                onChange={(e) => setNotaText(e.target.value)}
+                rows={2}
+                maxLength={200}
+                placeholder={nota.label}
+                className="w-full resize-none rounded-lg px-3 py-2 text-sm outline-none"
+                style={{ background: "transparent", color: p.text, border: `1px solid ${p.surfaceBorder}` }}
+              />
+            </div>
+          )}
         </div>
         <div className="border-t px-5 py-4" style={{ borderColor: p.surfaceBorder }}>
           <button
@@ -1805,6 +1910,7 @@ function OptionsModal({
                 chosen,
                 composed,
                 taglia ? { id: taglia.id, nome: taglia.nome, prezzo: taglia.prezzo } : undefined,
+                notaText,
               )
             }
             disabled={missing}

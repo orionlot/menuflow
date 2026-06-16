@@ -15,15 +15,17 @@ interface KItem {
   qta: number;
   prezzo: number;
   taglia?: string;
+  nota?: string;
   opzioni?: { gruppo: string; scelta: string; prezzo: number }[];
   composizione?: { ingredient_id: string; nome: string; qta: number; prezzo: number; unita?: string | null }[];
 }
 
-/** Chosen options + composition for one order line, for the cook to read. */
+/** Chosen options + composition + customer note for one order line, for the cook to read. */
 function itemDetails(it: KItem): string[] {
   return [
     ...(it.opzioni ?? []).map((x) => x.scelta),
     ...(it.composizione ?? []).map((c) => `${c.qta}× ${c.nome}`),
+    ...(it.nota ? [`📝 ${it.nota}`] : []),
   ];
 }
 interface KOrder {

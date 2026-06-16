@@ -33,6 +33,34 @@ export interface Orari {
   a: string;
 }
 
+/** A scheduled closure (holiday / extraordinary closed day). `a` omitted = single day. */
+export interface Chiusura {
+  da: string; // "YYYY-MM-DD"
+  a?: string; // "YYYY-MM-DD" (inclusive end; defaults to `da`)
+  motivo?: string;
+}
+
+/** Front-of-house announcement banner (colours follow the brand). */
+export interface Annuncio {
+  testo: string;
+  attivo: boolean;
+}
+
+/** Category-scoped customer-note config (mirrors CategoryAddon, minus choices). */
+export interface NoteConfig {
+  id: string;
+  categorie: string[];
+  label?: string;
+  obbligatoria?: boolean;
+}
+
+/** Per-product customer-note override (wins over the category-level note_config). */
+export interface ItemNota {
+  attiva: boolean;
+  label?: string;
+  obbligatoria?: boolean;
+}
+
 export interface Restaurant {
   id: string;
   slug: string;
@@ -65,6 +93,11 @@ export interface Restaurant {
   funzionalita_admin: Record<string, boolean>;
   google_review_url: string | null;
   orari: Orari | null;
+  /** Manual open/close override of the fixed hours: null=auto, true=open, false=closed. */
+  aperto_override: boolean | null;
+  chiusure: Chiusura[];
+  annuncio: Annuncio;
+  note_config: NoteConfig[];
   attivo: boolean;
   owner_id: string | null;
   created_at: string;
@@ -98,6 +131,10 @@ export type PublicRestaurant = Pick<
   | "composizione_taglie"
   | "google_review_url"
   | "orari"
+  | "aperto_override"
+  | "chiusure"
+  | "annuncio"
+  | "note_config"
   | "attivo"
 > & {
   /** Effective on/off per feature (plan ∪ admin entitlement, then owner switch). */
@@ -192,6 +229,8 @@ export interface MenuItem {
   composizione: ComposizioneGruppo[];
   /** Per-item size variants (overrides category-level when non-empty). */
   composizione_taglie: TagliaComposizione[];
+  /** Per-product customer-note override (wins over the category-level note_config). */
+  nota: ItemNota;
   created_at: string;
 }
 
@@ -209,6 +248,7 @@ export interface OrderItem {
   opzioni?: OrderItemOption[];
   composizione?: OrderComposizione[];
   taglia?: string; // chosen size name (e.g. "Large"), display only
+  nota?: string; // free-text customer note for this line (does not affect price)
 }
 
 export interface Order {
@@ -252,4 +292,5 @@ export interface BrandingPatch {
   coperto_label?: string;
   accetta_mancia?: boolean;
   google_review_url?: string | null;
+  annuncio?: Annuncio;
 }

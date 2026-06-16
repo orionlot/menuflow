@@ -41,6 +41,7 @@ export default async function BrandingPage() {
           coperto_label: restaurant.coperto_label,
           accetta_mancia: restaurant.accetta_mancia,
           google_review_url: restaurant.google_review_url,
+          annuncio: restaurant.annuncio,
         }}
         action={updateBranding}
       />

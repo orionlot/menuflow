@@ -360,6 +360,21 @@ describe("priceLines + taglie", () => {
   });
 });
 
+describe("priceLines + per-line nota", () => {
+  it("carries a trimmed customer note onto the order line (no price effect)", () => {
+    const r = priceLines(
+      [item({ id: "x", prezzo: 5 })],
+      [{ item_id: "x", qta: 1, nota: "  senza cipolla  " }],
+    );
+    expect(r.lines[0].nota).toBe("senza cipolla");
+    expect(r.itemsTotaleCents).toBe(500);
+  });
+  it("omits the nota field when empty", () => {
+    const r = priceLines([item({ id: "x", prezzo: 5 })], [{ item_id: "x", qta: 1, nota: "   " }]);
+    expect(r.lines[0].nota).toBeUndefined();
+  });
+});
+
 describe("priceLines + per-item composizione (category-independent)", () => {
   // A product in a non-composable category ("Pizze") carrying its OWN groups.
   const ownGroups: ComposizioneGruppo[] = [

@@ -19,6 +19,7 @@ export interface IncomingCartLine {
   opzioni?: IncomingOption[];
   composizione?: { ingredient_id: string; qta: number }[];
   taglia_id?: string;
+  nota?: string; // free-text customer note for this line (does not affect price)
 }
 
 export interface PricedCart {
@@ -220,6 +221,7 @@ export function priceLines(
       tagliaPrezzoCents;
     itemsTotaleCents += unitCents * qta;
 
+    const nota = typeof line.nota === "string" ? line.nota.trim().slice(0, 200) : "";
     lines.push({
       item_id: item.id,
       nome: item.nome,
@@ -228,6 +230,7 @@ export function priceLines(
       ...(orderOpts.length ? { opzioni: orderOpts } : {}),
       ...(compo.lines.length ? { composizione: compo.lines } : {}),
       ...(tagliaNome ? { taglia: tagliaNome } : {}),
+      ...(nota ? { nota } : {}),
     });
   }
 

@@ -6,13 +6,14 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeBranding } from "@/lib/branding";
 import { sanitizeFunzionalita } from "@/lib/config/features";
-import { sanitizeOrari } from "@/lib/orari";
+import { sanitizeOrari, sanitizeChiusure } from "@/lib/orari";
 import { notifyTest } from "@/lib/telegram";
 import {
   sanitizeItemPatch,
   sanitizeAggiunte,
   sanitizeComposizione,
   sanitizeTaglie,
+  sanitizeNoteConfig,
   type ItemPatch,
 } from "@/lib/menu";
 import { parseCsv, rowsToItemPatches } from "@/lib/csv";
@@ -77,6 +78,10 @@ export async function duplicateItem(itemId: string) {
     opzioni: item.opzioni ?? [],
     consigliato: false,
     scorta: item.scorta ?? null,
+    ingredienti: item.ingredienti ?? [],
+    composizione: item.composizione ?? [],
+    composizione_taglie: item.composizione_taglie ?? [],
+    nota: item.nota ?? {},
   });
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/menu");
@@ -253,6 +258,48 @@ export async function updateOrari(orari: unknown) {
     .eq("id", restaurantId);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/funzionalita");
+  revalidatePath("/[domain]", "page");
+}
+
+/** Manual open/close override: "auto" (use orari + chiusure), "aperto" (force
+ *  open), "chiuso" (force closed). Overrides the fixed daily hours. */
+export async function updateAperturaStato(stato: unknown) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const aperto_override = stato === "aperto" ? true : stato === "chiuso" ? false : null;
+  const { error } = await admin
+    .from("restaurants")
+    .update({ aperto_override })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/funzionalita");
+  revalidatePath("/dashboard");
+  revalidatePath("/[domain]", "page");
+}
+
+/** Scheduled closures (holidays / extraordinary closed days). */
+export async function updateChiusure(chiusure: unknown) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ chiusure: sanitizeChiusure(chiusure) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/funzionalita");
+  revalidatePath("/[domain]", "page");
+}
+
+/** Category-scoped customer-note config. */
+export async function updateNoteConfig(noteConfig: unknown) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ note_config: sanitizeNoteConfig(noteConfig) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/menu");
   revalidatePath("/[domain]", "page");
 }
 
