@@ -193,6 +193,9 @@ export default function MenuClient({
   const etichetteOn = Boolean(tenant.funzioni_attive?.etichette);
   const fasceOrarieOn = Boolean(tenant.funzioni_attive?.fasce_orarie);
   const prezzoAsportoOn = Boolean(tenant.funzioni_attive?.prezzo_asporto);
+  const deliveryOn = Boolean(tenant.funzioni_attive?.delivery);
+  const trackingOn = tenant.funzioni_attive?.tracking_ordine !== false; // default on
+  const servizioOn = tenant.funzioni_attive?.richiesta_servizio !== false; // default on
   const itemById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const ingredientiById = useMemo(
     () => new Map(ingredienti.map((i) => [i.id, i])),
@@ -221,6 +224,8 @@ export default function MenuClient({
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [tavolo, setTavolo] = useState("");
   const [asporto, setAsporto] = useState(false);
+  const [delivery, setDelivery] = useState(false);
+  const [indirizzo, setIndirizzo] = useState("");
   const [pagaInCassa, setPagaInCassa] = useState(false);
   const [note, setNote] = useState("");
   const [coperti, setCoperti] = useState(0);
@@ -429,6 +434,10 @@ export default function MenuClient({
       setError("Inserisci il numero del tavolo per procedere.");
       return;
     }
+    if (delivery && !indirizzo.trim()) {
+      setError("Inserisci l'indirizzo di consegna per procedere.");
+      return;
+    }
     if (copertiMissing) {
       setError("Indica il numero di coperti per procedere.");
       return;
@@ -449,6 +458,8 @@ export default function MenuClient({
           slug: tenant.slug,
           tavolo,
           asporto,
+          tipo: delivery ? "delivery" : asporto ? "asporto" : "tavolo",
+          indirizzo: delivery ? indirizzo : undefined,
           paga_in_cassa: payAtCounter,
           note,
           coperti: !asporto && cMode === "persona" ? coperti : undefined,
@@ -933,7 +944,7 @@ export default function MenuClient({
         )}
 
         {/* "Segui il tuo ordine" — recent orders placed from this device (cookie) */}
-        {myOrders.length > 0 && (
+        {trackingOn && myOrders.length > 0 && (
           <div className="px-5 pt-3">
             {myOrders.length === 1 ? (
               <a
@@ -1330,7 +1341,7 @@ export default function MenuClient({
       )}
 
       {/* Serve aiuto — chiama cameriere / chiedi il conto */}
-      {backend !== "down" && !sheet && !done && !pending && !optItem && (
+      {servizioOn && backend !== "down" && !sheet && !done && !pending && !optItem && (
         <div className="fixed bottom-4 left-4 z-30">
           <HelpButton
             slug={tenant.slug}
@@ -1431,34 +1442,40 @@ export default function MenuClient({
                 className="mt-4 rounded-xl border border-dashed p-3"
                 style={{ borderColor: tavoloMissing ? "#ef4444" : p.brand }}
               >
-                {asportoOn && (
-                  <div className="mb-2 flex gap-2">
+                {(asportoOn || deliveryOn) && (
+                  <div className="mb-2 flex flex-wrap gap-2">
                     {[
-                      { val: false, label: "Al tavolo" },
-                      { val: true, label: "🛍 Da asporto" },
-                    ].map((opt) => {
-                      const on = asporto === opt.val;
-                      return (
-                        <button
-                          key={opt.label}
-                          type="button"
-                          onClick={() => {
-                            setAsporto(opt.val);
-                            setTavolo("");
-                            if (!opt.val) setPagaInCassa(false);
-                          }}
-                          aria-pressed={on}
-                          className="flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition"
-                          style={{
-                            background: on ? p.tint : "transparent",
-                            border: `1px solid ${on ? p.brand : p.surfaceBorder}`,
-                            color: on ? p.brand : p.text,
-                          }}
-                        >
-                          {opt.label}
-                        </button>
-                      );
-                    })}
+                      { dest: "tavolo" as const, label: "Al tavolo", show: true },
+                      { dest: "asporto" as const, label: "🛍 Da asporto", show: asportoOn },
+                      { dest: "delivery" as const, label: "🛵 Delivery", show: deliveryOn },
+                    ]
+                      .filter((o) => o.show)
+                      .map((opt) => {
+                        const cur = delivery ? "delivery" : asporto ? "asporto" : "tavolo";
+                        const on = cur === opt.dest;
+                        return (
+                          <button
+                            key={opt.dest}
+                            type="button"
+                            onClick={() => {
+                              setAsporto(opt.dest !== "tavolo");
+                              setDelivery(opt.dest === "delivery");
+                              setTavolo("");
+                              if (opt.dest === "tavolo") setPagaInCassa(false);
+                              if (opt.dest !== "delivery") setIndirizzo("");
+                            }}
+                            aria-pressed={on}
+                            className="flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition"
+                            style={{
+                              background: on ? p.tint : "transparent",
+                              border: `1px solid ${on ? p.brand : p.surfaceBorder}`,
+                              color: on ? p.brand : p.text,
+                            }}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
                   </div>
                 )}
                 <label className="text-xs" style={{ color: p.textMuted }}>
@@ -1472,6 +1489,15 @@ export default function MenuClient({
                   className="mt-1 w-full bg-transparent text-lg font-semibold outline-none"
                   style={{ color: p.text }}
                 />
+                {delivery && (
+                  <input
+                    value={indirizzo}
+                    onChange={(e) => setIndirizzo(e.target.value)}
+                    placeholder="Indirizzo di consegna — obbligatorio"
+                    className="mt-2 w-full bg-transparent text-sm outline-none"
+                    style={{ color: p.text }}
+                  />
+                )}
                 {asporto && tenant.pagamenti_attivi && (
                   <div className="mt-3">
                     <span className="text-xs" style={{ color: p.textMuted }}>

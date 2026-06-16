@@ -9,13 +9,17 @@ type Tipo = "tavolo" | "asporto" | "delivery";
 export default function ManualOrderModal({
   items,
   asportoOn,
+  deliveryOn,
   copertoModalita,
+  initialTavolo,
   onClose,
   onCreate,
 }: {
   items: PickerItem[];
   asportoOn: boolean;
+  deliveryOn: boolean;
   copertoModalita: string;
+  initialTavolo?: string;
   onClose: () => void;
   onCreate: (input: {
     tavolo: string;
@@ -29,7 +33,7 @@ export default function ManualOrderModal({
 }) {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [tipo, setTipo] = useState<Tipo>("tavolo");
-  const [tavolo, setTavolo] = useState("");
+  const [tavolo, setTavolo] = useState(initialTavolo ?? "");
   const [sala, setSala] = useState("");
   const [indirizzo, setIndirizzo] = useState("");
   const [coperti, setCoperti] = useState(0);
@@ -100,12 +104,8 @@ export default function ManualOrderModal({
 
   const tipoOptions: { id: Tipo; label: string }[] = [
     { id: "tavolo", label: "Tavolo" },
-    ...(asportoOn
-      ? ([
-          { id: "asporto", label: "Asporto" },
-          { id: "delivery", label: "Delivery" },
-        ] as const)
-      : []),
+    ...(asportoOn ? ([{ id: "asporto", label: "Asporto" }] as const) : []),
+    ...(deliveryOn ? ([{ id: "delivery", label: "Delivery" }] as const) : []),
   ];
 
   return (

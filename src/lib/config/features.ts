@@ -23,7 +23,12 @@ export type FeatureId =
   | "reparto"
   | "prezzo_asporto"
   | "etichette"
-  | "fasce_orarie";
+  | "fasce_orarie"
+  | "tracking_ordine"
+  | "richiesta_servizio"
+  | "delivery"
+  | "ordine_manuale"
+  | "sala";
 
 export interface FeatureDef {
   id: FeatureId;
@@ -154,6 +159,42 @@ export const FEATURES: FeatureDef[] = [
     nome: "Solo pranzo / cena",
     descrizione: "Mostra un piatto solo a pranzo o solo a cena.",
     pianoMinimo: "base",
+    defaultOn: false,
+  },
+  {
+    id: "tracking_ordine",
+    nome: "Segui il tuo ordine",
+    descrizione:
+      "Il cliente segue lo stato del suo ordine (ricevuto → in preparazione → pronto → servito).",
+    pianoMinimo: "base",
+    defaultOn: true,
+  },
+  {
+    id: "richiesta_servizio",
+    nome: "Chiama cameriere / conto",
+    descrizione: "Dal menu il cliente può chiamare il cameriere o chiedere il conto al tavolo.",
+    pianoMinimo: "base",
+    defaultOn: true,
+  },
+  {
+    id: "delivery",
+    nome: "Consegna a domicilio",
+    descrizione: "Aggiunge «Delivery» come tipo d’ordine, con indirizzo di consegna.",
+    pianoMinimo: "plus",
+    defaultOn: false,
+  },
+  {
+    id: "ordine_manuale",
+    nome: "Ordine manuale (cassa)",
+    descrizione: "Crea un ordine dalla dashboard (cameriere/cassa), pagato al banco.",
+    pianoMinimo: "base",
+    defaultOn: true,
+  },
+  {
+    id: "sala",
+    nome: "Mappa sala / tavoli",
+    descrizione: "Disegna la sala e avvia un ordine toccando un tavolo.",
+    pianoMinimo: "plus",
     defaultOn: false,
   },
 ];

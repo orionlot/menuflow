@@ -111,6 +111,9 @@ export default function OrdiniClient({
   stampaOn,
   riepilogoOn,
   asportoOn,
+  deliveryOn,
+  ordineManualeOn,
+  richiestaServizioOn,
   copertoModalita,
   actions,
 }: {
@@ -122,6 +125,9 @@ export default function OrdiniClient({
   stampaOn: boolean;
   riepilogoOn: boolean;
   asportoOn: boolean;
+  deliveryOn: boolean;
+  ordineManualeOn: boolean;
+  richiestaServizioOn: boolean;
   copertoModalita: string;
   actions: OrdiniActions;
 }) {
@@ -264,12 +270,14 @@ export default function OrdiniClient({
             onChange={(e) => router.push(`/dashboard/ordini?day=${e.target.value}`)}
             className="rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"
           />
-          <button
-            onClick={() => setManualOpen(true)}
-            className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-neutral-700"
-          >
-            + Nuovo ordine
-          </button>
+          {ordineManualeOn && (
+            <button
+              onClick={() => setManualOpen(true)}
+              className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-neutral-700"
+            >
+              + Nuovo ordine
+            </button>
+          )}
         </div>
       </div>
 
@@ -281,7 +289,7 @@ export default function OrdiniClient({
       )}
 
       {/* Service requests (call-waiter / ask-bill) */}
-      {requests.length > 0 && (
+      {richiestaServizioOn && requests.length > 0 && (
         <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 p-3">
           <p className="mb-2 text-sm font-semibold text-amber-800">
             🛎 Richieste dai tavoli ({requests.length})
@@ -421,6 +429,7 @@ export default function OrdiniClient({
         <ManualOrderModal
           items={pickerItems}
           asportoOn={asportoOn}
+          deliveryOn={deliveryOn}
           copertoModalita={copertoModalita}
           onClose={() => setManualOpen(false)}
           onCreate={async (input) => {

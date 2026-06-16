@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyServiceRequest } from "@/lib/telegram";
 import { hitRateLimit } from "@/lib/ratelimit";
+import { isFeatureOn } from "@/lib/config/features";
 import type { Restaurant } from "@/types/db";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
 
   const { data } = await admin.from("restaurants").select("*").eq("slug", slug).maybeSingle();
   const restaurant = data as Restaurant | null;
-  if (!restaurant || !restaurant.attivo) {
+  if (!restaurant || !restaurant.attivo || !isFeatureOn(restaurant, "richiesta_servizio")) {
     return NextResponse.json({ ok: false, error: "Non disponibile." }, { status: 404 });
   }
 

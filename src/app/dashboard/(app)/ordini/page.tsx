@@ -96,6 +96,9 @@ export default async function OrdiniPage({
       stampaOn={isFeatureOn(restaurant, "stampa")}
       riepilogoOn={isFeatureOn(restaurant, "riepilogo")}
       asportoOn={isFeatureOn(restaurant, "asporto")}
+      deliveryOn={isFeatureOn(restaurant, "delivery")}
+      ordineManualeOn={isFeatureOn(restaurant, "ordine_manuale")}
+      richiestaServizioOn={isFeatureOn(restaurant, "richiesta_servizio")}
       copertoModalita={restaurant.coperto_modalita}
       actions={{ annullaOrdine, markServiceRequestHandled, createManualOrder }}
     />

@@ -133,8 +133,10 @@ export async function POST(req: Request) {
     // Destination: a table number, or the customer name for takeaway/delivery.
     // Delivery is a takeaway-style order (no coperto) that also carries an address.
     const asportoOn = isFeatureOn(restaurant, "asporto");
-    const delivery = asportoOn && body.tipo === "delivery";
-    const asporto = asportoOn && (Boolean(body.asporto) || delivery);
+    const deliveryOn = isFeatureOn(restaurant, "delivery");
+    const delivery = deliveryOn && body.tipo === "delivery";
+    // Delivery is takeaway-style (no coperto) even if the asporto feature is off.
+    const asporto = (asportoOn && Boolean(body.asporto)) || delivery;
     const tipo = delivery ? "delivery" : asporto ? "asporto" : "tavolo";
     const tavolo = clean(body.tavolo, 40);
     if (!tavolo) {

@@ -569,11 +569,12 @@ export async function createManualOrder(input: {
   const restaurant = rRow as Restaurant | null;
   if (!restaurant) throw new Error("Ristorante non trovato.");
 
-  // Asporto/delivery are only valid when the feature is on (mirror /api/ordine);
+  // Asporto/delivery are only valid when their feature is on (mirror /api/ordine);
   // otherwise it falls back to a table order so the coperto rules still apply.
   const asportoOn = isFeatureOn(restaurant, "asporto");
+  const deliveryOn = isFeatureOn(restaurant, "delivery");
   const tipo =
-    asportoOn && input.tipo === "delivery"
+    deliveryOn && input.tipo === "delivery"
       ? "delivery"
       : asportoOn && input.tipo === "asporto"
         ? "asporto"

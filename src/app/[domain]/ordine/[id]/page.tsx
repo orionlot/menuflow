@@ -26,6 +26,7 @@ export default async function OrdineTrackingPage({ params }: Params) {
   const { domain, id } = await params;
   const tenant = await resolveTenant(domain);
   if (!tenant) notFound();
+  if (tenant.funzioni_attive?.tracking_ordine === false) notFound(); // feature off
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
 
   // Scope the lookup to this tenant so a foreign order id can't be tracked here.
