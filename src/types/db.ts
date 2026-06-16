@@ -75,8 +75,8 @@ export interface SalaTavolo {
   x: number;
   y: number;
   posti?: number;
-  /** Free note shown as a bubble on the table (e.g. "vicino finestra", "riservato"). */
-  nota?: string;
+  /** Free notes shown as bubbles on the table (max 5), e.g. "vicino finestra". */
+  note?: string[];
 }
 /** A room of the floor plan, holding positioned tables. */
 export interface Sala {

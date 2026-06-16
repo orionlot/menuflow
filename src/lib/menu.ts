@@ -317,7 +317,15 @@ export function sanitizeSale(raw: unknown): Sala[] {
     const usedTable = new Set<string>();
     const tavoli: SalaTavolo[] = [];
     for (const tv of Array.isArray(room.tavoli) ? room.tavoli : []) {
-      const t = (tv ?? {}) as { id?: unknown; nome?: unknown; x?: unknown; y?: unknown; posti?: unknown; nota?: unknown };
+      const t = (tv ?? {}) as {
+        id?: unknown;
+        nome?: unknown;
+        x?: unknown;
+        y?: unknown;
+        posti?: unknown;
+        note?: unknown;
+        nota?: unknown;
+      };
       const tnome = String(t.nome ?? "").trim().slice(0, 20);
       if (!tnome) continue;
       const tableBase = slugId(String(t.id ?? "").trim(), slugId(tnome, "t"));
@@ -326,14 +334,20 @@ export function sanitizeSale(raw: unknown): Sala[] {
       while (usedTable.has(tid)) tid = `${tableBase}-${m++}`;
       usedTable.add(tid);
       const posti = Number(t.posti);
-      const nota = String(t.nota ?? "").trim().slice(0, 120);
+      // Notes: accept an array, fold a legacy single `nota` string, trim, drop
+      // empties, cap each at 120 chars and the list at 5 bubbles.
+      const rawNotes = Array.isArray(t.note) ? t.note : t.nota != null ? [t.nota] : [];
+      const note = rawNotes
+        .map((x) => String(x ?? "").trim().slice(0, 120))
+        .filter(Boolean)
+        .slice(0, 5);
       tavoli.push({
         id: tid,
         nome: tnome,
         x: clamp(t.x),
         y: clamp(t.y),
         ...(Number.isInteger(posti) && posti > 0 && posti <= 50 ? { posti } : {}),
-        ...(nota ? { nota } : {}),
+        ...(note.length ? { note } : {}),
       });
       if (tavoli.length >= 100) break;
     }

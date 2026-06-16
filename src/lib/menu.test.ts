@@ -33,6 +33,18 @@ describe("sanitizeSale", () => {
     const out = sanitizeSale([{ nome: "S", tavoli: [{ nome: "1", x: 10, y: 10, posti: 999 }] }]);
     expect(out[0].tavoli[0].posti).toBeUndefined();
   });
+
+  it("keeps up to 5 trimmed notes, drops empties", () => {
+    const out = sanitizeSale([
+      { nome: "S", tavoli: [{ nome: "1", x: 0, y: 0, note: [" a ", "", "b", "c", "d", "e", "f"] }] },
+    ]);
+    expect(out[0].tavoli[0].note).toEqual(["a", "b", "c", "d", "e"]);
+  });
+
+  it("folds a legacy single `nota` string into the note array", () => {
+    const out = sanitizeSale([{ nome: "S", tavoli: [{ nome: "1", x: 0, y: 0, nota: "Riservato" }] }]);
+    expect(out[0].tavoli[0].note).toEqual(["Riservato"]);
+  });
 });
 
 describe("sanitizeReparti", () => {

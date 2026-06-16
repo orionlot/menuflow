@@ -43,6 +43,7 @@ export default function SalaClient({
   );
   const [selected, setSelected] = useState<string | null>(null);
   const [orderTavolo, setOrderTavolo] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -102,6 +103,21 @@ export default function SalaClient({
   function removeTable(id: string) {
     persist(sale.map((r, i) => (i === roomIdx ? { ...r, tavoli: r.tavoli.filter((t) => t.id !== id) } : r)));
     setSelected(null);
+  }
+  function patchTableNote(tableId: string, fn: (notes: string[]) => string[]) {
+    persist(
+      sale.map((r, i) =>
+        i === roomIdx
+          ? { ...r, tavoli: r.tavoli.map((t) => (t.id === tableId ? { ...t, note: fn(t.note ?? []) } : t)) }
+          : r,
+      ),
+    );
+  }
+  function addNote(tableId: string, text: string) {
+    const v = text.trim();
+    if (!v) return;
+    patchTableNote(tableId, (notes) => (notes.length >= 5 ? notes : [...notes, v]));
+    setNoteDraft("");
   }
 
   // ── Pointer drag (free 2D positioning), modifica mode only ──
@@ -258,10 +274,17 @@ export default function SalaClient({
                   {t.posti ? (
                     <span className="mt-0.5 text-[10px] text-neutral-500">{t.posti} posti</span>
                   ) : null}
-                  {t.nota ? (
-                    <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-max max-w-[140px] -translate-x-1/2 whitespace-normal rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[10px] font-medium leading-tight text-amber-900 shadow-sm">
-                      {t.nota}
-                      <span className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-[5px] border-t-[5px] border-x-transparent border-t-amber-300" />
+                  {t.note?.length ? (
+                    <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 flex w-max max-w-[150px] -translate-x-1/2 flex-col items-center gap-1">
+                      {t.note.map((n, ni) => (
+                        <span
+                          key={ni}
+                          className="whitespace-normal rounded-lg border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-medium leading-tight text-amber-900 shadow-sm"
+                        >
+                          {n}
+                        </span>
+                      ))}
+                      <span className="-mt-0.5 h-0 w-0 border-x-[5px] border-t-[5px] border-x-transparent border-t-amber-300" />
                     </span>
                   ) : null}
                 </button>
@@ -301,23 +324,62 @@ export default function SalaClient({
                   className="w-20 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
                 />
               </label>
-              <label className="min-w-[12rem] flex-1 text-sm">
-                <span className="mb-1 block text-xs text-neutral-500">Nota (bubble)</span>
-                <input
-                  value={selectedTable.nota ?? ""}
-                  onChange={(e) => patchTableLocal(selectedTable.id, { nota: e.target.value || undefined })}
-                  onBlur={() => persist(sale)}
-                  maxLength={120}
-                  placeholder="es. vicino finestra, riservato…"
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
-                />
-              </label>
               <button
                 onClick={() => removeTable(selectedTable.id)}
                 className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
               >
                 Elimina tavolo
               </button>
+
+              {/* Notes → bubbles (max 5) */}
+              <div className="w-full">
+                <span className="mb-1 block text-xs text-neutral-500">
+                  Note (bubble) — {(selectedTable.note ?? []).length}/5
+                </span>
+                {(selectedTable.note ?? []).length > 0 && (
+                  <ul className="mb-2 flex flex-wrap gap-1.5">
+                    {(selectedTable.note ?? []).map((n, i) => (
+                      <li
+                        key={i}
+                        className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900"
+                      >
+                        {n}
+                        <button
+                          onClick={() => patchTableNote(selectedTable.id, (notes) => notes.filter((_, j) => j !== i))}
+                          aria-label={`Rimuovi nota ${n}`}
+                          className="text-amber-700 hover:text-amber-900"
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {(selectedTable.note ?? []).length < 5 && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={noteDraft}
+                      onChange={(e) => setNoteDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addNote(selectedTable.id, noteDraft);
+                        }
+                      }}
+                      maxLength={120}
+                      placeholder="es. vicino finestra, riservato…"
+                      className="min-w-[12rem] flex-1 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+                    />
+                    <button
+                      onClick={() => addNote(selectedTable.id, noteDraft)}
+                      disabled={!noteDraft.trim()}
+                      className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50 disabled:opacity-50"
+                    >
+                      + Nota
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
