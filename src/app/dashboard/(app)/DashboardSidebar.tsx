@@ -10,6 +10,7 @@ const PRIMARY: Item[] = [
   { href: "/dashboard", label: "Dashboard", icon: "grid", exact: true },
   { href: "/dashboard/ordini", label: "Ordini", icon: "receipt" },
   { href: "/dashboard/cucina", label: "Cucina", icon: "chef" },
+  { href: "/dashboard/sala", label: "Sala", icon: "tables" },
   { href: "/dashboard/menu", label: "Menu", icon: "book" },
   { href: "/dashboard/ingredienti", label: "Inventario", icon: "box" },
   { href: "/dashboard/clienti", label: "Clienti", icon: "users" },
@@ -25,11 +26,14 @@ const SETTINGS: Item[] = [
 export default function DashboardSidebar({
   nome,
   esci,
+  salaOn = false,
 }: {
   nome: string;
   esci: ReactNode;
+  salaOn?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const primary = salaOn ? PRIMARY : PRIMARY.filter((i) => i.href !== "/dashboard/sala");
   return (
     <>
       {/* Mobile top bar */}
@@ -49,14 +53,14 @@ export default function DashboardSidebar({
         <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setOpen(false)}>
           <div className="absolute inset-0 bg-black/40" />
           <div className="absolute inset-y-0 left-0 w-64 bg-white p-3" onClick={(e) => e.stopPropagation()}>
-            <Nav nome={nome} esci={esci} onNavigate={() => setOpen(false)} />
+            <Nav nome={nome} esci={esci} primary={primary} onNavigate={() => setOpen(false)} />
           </div>
         </div>
       )}
 
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-neutral-200 bg-white lg:block">
-        <Nav nome={nome} esci={esci} />
+        <Nav nome={nome} esci={esci} primary={primary} />
       </aside>
     </>
   );
@@ -65,10 +69,12 @@ export default function DashboardSidebar({
 function Nav({
   nome,
   esci,
+  primary,
   onNavigate,
 }: {
   nome: string;
   esci: ReactNode;
+  primary: Item[];
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
@@ -106,7 +112,7 @@ function Nav({
         <span className="truncate font-display text-base font-bold tracking-tight">{nome}</span>
       </div>
       <nav aria-label="Sezioni" className="flex-1 space-y-1 overflow-y-auto">
-        {PRIMARY.map(link)}
+        {primary.map(link)}
         <div className="my-2 border-t border-neutral-100" />
         {SETTINGS.map(link)}
       </nav>
@@ -117,7 +123,7 @@ function Nav({
 
 type IconName =
   | "grid" | "receipt" | "chef" | "book" | "box" | "users" | "chart" | "qr"
-  | "palette" | "scale" | "gear" | "menu" | "logo";
+  | "palette" | "scale" | "gear" | "menu" | "logo" | "tables";
 
 function Icon({ name }: { name: IconName }) {
   const p: Record<IconName, ReactNode> = {
@@ -134,6 +140,7 @@ function Icon({ name }: { name: IconName }) {
     gear: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.5-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 12 4.6a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.5l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9 2 2 0 1 1 0 4 1.7 1.7 0 0 0-1.5.9z" /></>,
     menu: <><path d="M4 6h16M4 12h16M4 18h16" /></>,
     logo: <><circle cx="12" cy="12" r="9" /><path d="M12 3v18M3 12h18" /></>,
+    tables: <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><circle cx="17" cy="17" r="3" /></>,
   };
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

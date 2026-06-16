@@ -5,7 +5,35 @@ import {
   sanitizeItemPatch,
   sanitizeComposizione,
   sanitizeReparti,
+  sanitizeSale,
 } from "@/lib/menu";
+
+describe("sanitizeSale", () => {
+  it("keeps room + table ids, clamps x/y to 0–100, keeps valid posti", () => {
+    const out = sanitizeSale([
+      { id: "sala-1", nome: "Interno", tavoli: [{ id: "tav-1", nome: "1", x: 150, y: -5, posti: 4 }] },
+    ]);
+    expect(out).toEqual([
+      { id: "sala-1", nome: "Interno", tavoli: [{ id: "tav-1", nome: "1", x: 100, y: 0, posti: 4 }] },
+    ]);
+  });
+
+  it("derives ids from names, drops nameless rooms/tables, defaults bad x/y to 50", () => {
+    const out = sanitizeSale([
+      { nome: "Dehors", tavoli: [{ nome: "A" }, { nome: "  " }] },
+      { nome: "  " },
+    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0].id).toBe("dehors");
+    expect(out[0].tavoli).toEqual([{ id: "a", nome: "A", x: 50, y: 50 }]);
+  });
+
+  it("ignores non-arrays and drops out-of-range posti", () => {
+    expect(sanitizeSale("nope")).toEqual([]);
+    const out = sanitizeSale([{ nome: "S", tavoli: [{ nome: "1", x: 10, y: 10, posti: 999 }] }]);
+    expect(out[0].tavoli[0].posti).toBeUndefined();
+  });
+});
 
 describe("sanitizeReparti", () => {
   it("keeps an existing id stable (so dish references don't break)", () => {

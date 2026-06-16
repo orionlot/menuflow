@@ -5,8 +5,11 @@ import type {
   ComposizioneScelta,
   ItemNota,
   ItemOption,
+  MenuItem,
   NoteConfig,
   Reparto,
+  Sala,
+  SalaTavolo,
   TagliaComposizione,
 } from "@/types/db";
 
@@ -251,6 +254,88 @@ export function sanitizeReparti(raw: unknown): Reparto[] {
     const coloreRaw = String(r.colore ?? "").trim();
     const colore = /^#[0-9a-fA-F]{6}$/.test(coloreRaw) ? coloreRaw : "#64748b";
     out.push({ id, nome, colore });
+    if (out.length >= 20) break;
+  }
+  return out;
+}
+
+/** True when an item can't be ordered with a bare {item_id, qta} — it requires a
+ *  mandatory option/add-on choice, a required size, or a min>=1 composition. Used
+ *  to filter the manual-order / sala pickers (which don't collect choices). */
+export function menuItemNeedsChoice(
+  item: MenuItem,
+  aggiunte: CategoryAddon[],
+  composizione: ComposizioneGruppo[],
+  composizioneTaglie: TagliaComposizione[],
+  componibiliOn: boolean,
+): boolean {
+  if (effectiveOptions(item, aggiunte).some((g) => g.obbligatorio)) return true;
+  if (componibiliOn) {
+    const taglie = item.composizione_taglie?.length
+      ? item.composizione_taglie
+      : composizioneTaglie.filter((t) => t.categorie.includes(item.categoria));
+    if (taglie.length) return true;
+    const compo = item.composizione?.length
+      ? item.composizione
+      : composizione.filter((g) => g.categorie.includes(item.categoria));
+    if (compo.some((g) => (g.min ?? 0) >= 1)) return true;
+  }
+  return false;
+}
+
+/** Slugify a string into a stable id, with a fallback when empty. */
+function slugId(raw: string, fallback: string): string {
+  const s = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+  return s || fallback;
+}
+
+/** Sanitize the floor-plan rooms + tables (Sala builder). Stable slug ids are
+ *  preserved (so an in-flight order's table label stays valid); x/y clamp to
+ *  0–100 (% of canvas); names/counts are bounded. */
+export function sanitizeSale(raw: unknown): Sala[] {
+  if (!Array.isArray(raw)) return [];
+  const usedRoom = new Set<string>();
+  const out: Sala[] = [];
+  const clamp = (v: unknown): number => {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n * 10) / 10)) : 50;
+  };
+  for (const r of raw) {
+    const room = (r ?? {}) as { id?: unknown; nome?: unknown; tavoli?: unknown };
+    const nome = String(room.nome ?? "").trim().slice(0, 40);
+    if (!nome) continue;
+    const roomBase = slugId(String(room.id ?? "").trim(), slugId(nome, "sala"));
+    let id = roomBase;
+    let n = 2;
+    while (usedRoom.has(id)) id = `${roomBase}-${n++}`;
+    usedRoom.add(id);
+
+    const usedTable = new Set<string>();
+    const tavoli: SalaTavolo[] = [];
+    for (const tv of Array.isArray(room.tavoli) ? room.tavoli : []) {
+      const t = (tv ?? {}) as { id?: unknown; nome?: unknown; x?: unknown; y?: unknown; posti?: unknown };
+      const tnome = String(t.nome ?? "").trim().slice(0, 20);
+      if (!tnome) continue;
+      const tableBase = slugId(String(t.id ?? "").trim(), slugId(tnome, "t"));
+      let tid = tableBase;
+      let m = 2;
+      while (usedTable.has(tid)) tid = `${tableBase}-${m++}`;
+      usedTable.add(tid);
+      const posti = Number(t.posti);
+      tavoli.push({
+        id: tid,
+        nome: tnome,
+        x: clamp(t.x),
+        y: clamp(t.y),
+        ...(Number.isInteger(posti) && posti > 0 && posti <= 50 ? { posti } : {}),
+      });
+      if (tavoli.length >= 100) break;
+    }
+    out.push({ id, nome, tavoli });
     if (out.length >= 20) break;
   }
   return out;

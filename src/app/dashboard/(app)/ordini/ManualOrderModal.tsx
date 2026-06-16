@@ -12,6 +12,7 @@ export default function ManualOrderModal({
   deliveryOn,
   copertoModalita,
   initialTavolo,
+  initialSala,
   onClose,
   onCreate,
 }: {
@@ -20,6 +21,7 @@ export default function ManualOrderModal({
   deliveryOn: boolean;
   copertoModalita: string;
   initialTavolo?: string;
+  initialSala?: string;
   onClose: () => void;
   onCreate: (input: {
     tavolo: string;
@@ -34,7 +36,7 @@ export default function ManualOrderModal({
   const [cart, setCart] = useState<Record<string, number>>({});
   const [tipo, setTipo] = useState<Tipo>("tavolo");
   const [tavolo, setTavolo] = useState(initialTavolo ?? "");
-  const [sala, setSala] = useState("");
+  const [sala, setSala] = useState(initialSala ?? "");
   const [indirizzo, setIndirizzo] = useState("");
   const [coperti, setCoperti] = useState(0);
   const [note, setNote] = useState("");

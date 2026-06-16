@@ -22,6 +22,7 @@ import {
   sanitizeNoteConfig,
   sanitizeEtichette,
   sanitizeReparti,
+  sanitizeSale,
   type ItemPatch,
 } from "@/lib/menu";
 import { parseCsv, rowsToItemPatches } from "@/lib/csv";
@@ -330,6 +331,18 @@ export async function updateReparti(reparti: unknown) {
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/menu");
   revalidatePath("/dashboard/cucina");
+}
+
+/** Floor-plan rooms + tables (Sala builder). */
+export async function updateSale(sale: unknown) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ sale: sanitizeSale(sale) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/sala");
 }
 
 /** Category-scoped customer-note config. */

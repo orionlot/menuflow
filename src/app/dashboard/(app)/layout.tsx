@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { requireOwner } from "@/lib/auth";
 import { signOut } from "@/app/dashboard/actions";
 import { adminBrandVars } from "@/lib/brand";
+import { isFeatureOn } from "@/lib/config/features";
 import DashboardSidebar from "./DashboardSidebar";
 
 export default async function DashboardLayout({
@@ -28,7 +29,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-neutral-50 text-neutral-900" style={brandVars}>
-      <DashboardSidebar nome={restaurant.nome} esci={esci} />
+      <DashboardSidebar nome={restaurant.nome} esci={esci} salaOn={isFeatureOn(restaurant, "sala")} />
       <main className="min-w-0 flex-1">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">{children}</div>
       </main>

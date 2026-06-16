@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Order, ServiceRequest, MenuItem } from "@/types/db";
 import OrdiniClient, { type PickerItem } from "./OrdiniClient";
 import { isFeatureOn } from "@/lib/config/features";
-import { effectiveOptions } from "@/lib/menu";
+import { menuItemNeedsChoice } from "@/lib/menu";
 import { annullaOrdine, markServiceRequestHandled, createManualOrder } from "@/app/dashboard/actions";
 
 export const dynamic = "force-dynamic";
@@ -61,23 +61,8 @@ export default async function OrdiniPage({
     .order("categoria", { ascending: true })
     .order("ordine", { ascending: true });
 
-  function requiresChoice(item: MenuItem): boolean {
-    if (effectiveOptions(item, aggiunte).some((g) => g.obbligatorio)) return true;
-    if (componibiliOn) {
-      const taglie = item.composizione_taglie?.length
-        ? item.composizione_taglie
-        : taglieCat.filter((t) => t.categorie.includes(item.categoria));
-      if (taglie.length) return true;
-      const compo = item.composizione?.length
-        ? item.composizione
-        : compoCat.filter((g) => g.categorie.includes(item.categoria));
-      if (compo.some((g) => (g.min ?? 0) >= 1)) return true;
-    }
-    return false;
-  }
-
   const pickerItems: PickerItem[] = ((itemRows as MenuItem[]) ?? [])
-    .filter((i) => !requiresChoice(i))
+    .filter((i) => !menuItemNeedsChoice(i, aggiunte, compoCat, taglieCat, componibiliOn))
     .map((i) => ({
       id: i.id,
       nome: i.nome,

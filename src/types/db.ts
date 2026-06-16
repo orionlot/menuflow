@@ -68,6 +68,21 @@ export interface Reparto {
   colore?: string;
 }
 
+/** A table on the floor plan. x/y are 0–100 % of the canvas. */
+export interface SalaTavolo {
+  id: string;
+  nome: string;
+  x: number;
+  y: number;
+  posti?: number;
+}
+/** A room of the floor plan, holding positioned tables. */
+export interface Sala {
+  id: string;
+  nome: string;
+  tavoli: SalaTavolo[];
+}
+
 /** Kitchen order priority. */
 export type Priorita = "alta" | "media" | "bassa";
 
@@ -111,6 +126,8 @@ export interface Restaurant {
   reparti: Reparto[];
   /** Reusable dish-label catalog (label names, e.g. "Vegetariano"). */
   etichette: string[];
+  /** Floor-plan rooms + positioned tables (Sala builder). */
+  sale: Sala[];
   attivo: boolean;
   owner_id: string | null;
   created_at: string;
