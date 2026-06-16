@@ -6,6 +6,7 @@
  * Path form (`/<slug>`) is universal: it works on the apex/app domain AND on a
  * custom domain, because the middleware serves `app/[domain]` for unknown hosts.
  */
+import { ROOT_DOMAIN } from "@/lib/env";
 
 export function tenantPath(slug: string, tavolo?: string | null): string {
   const t = tavolo ? `?tavolo=${encodeURIComponent(tavolo)}` : "";
@@ -38,7 +39,12 @@ export function isMapsUrl(url: string): boolean {
   }
 }
 
-/** Subdomain form (needs a custom domain + wildcard DNS in production). */
+/**
+ * Subdomain form (`slug.<root>`) — needs wildcard DNS in production. The subdomain
+ * is built from the CONFIGURED apex (ROOT_DOMAIN), never from the current request
+ * host: opening the dashboard at `slug.<root>` would otherwise yield
+ * `slug.slug.<root>` (duplicated label). Localhost dev keeps `slug.localhost:port`.
+ */
 export function tenantSubdomainUrl(
   origin: string,
   slug: string,
@@ -46,9 +52,12 @@ export function tenantSubdomainUrl(
 ): string {
   try {
     const u = new URL(origin);
-    const host = u.host.replace(/^www\./, ""); // slug.example.com, not slug.www.example.com
+    const host = u.hostname.toLowerCase();
     const t = tavolo ? `?tavolo=${encodeURIComponent(tavolo)}` : "";
-    return `${u.protocol}//${slug}.${host}${t}`;
+    if (host === "localhost" || host.endsWith(".localhost")) {
+      return `${u.protocol}//${slug}.localhost${u.port ? `:${u.port}` : ""}${t}`;
+    }
+    return `${u.protocol}//${slug}.${ROOT_DOMAIN}${t}`;
   } catch {
     return buildTenantUrl(origin, slug, tavolo);
   }
