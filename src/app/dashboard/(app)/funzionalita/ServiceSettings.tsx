@@ -45,7 +45,7 @@ export default function ServiceSettings({
       <div className="mb-2 text-xs font-medium text-neutral-500">Coperto</div>
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <label className="mb-1 block text-[11px] text-neutral-400">Modalità</label>
+          <label className="mb-1 block text-xs font-medium text-neutral-500">Modalità</label>
           <select
             value={mode}
             onChange={(e) => setMode(e.target.value as CopertoModalita)}
@@ -60,7 +60,7 @@ export default function ServiceSettings({
         {mode !== "nessuno" && (
           <>
             <div>
-              <label className="mb-1 block text-[11px] text-neutral-400">
+              <label className="mb-1 block text-xs font-medium text-neutral-500">
                 {mode === "servizio"
                   ? "Percentuale (%)"
                   : mode === "ordine"
@@ -77,7 +77,7 @@ export default function ServiceSettings({
               />
             </div>
             <div>
-              <label className="mb-1 block text-[11px] text-neutral-400">Etichetta</label>
+              <label className="mb-1 block text-xs font-medium text-neutral-500">Etichetta</label>
               <input
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
@@ -100,7 +100,13 @@ export default function ServiceSettings({
         >
           {pending ? "Salvataggio…" : "Salva servizio"}
         </button>
-        {msg && <span className="text-sm text-neutral-500">{msg}</span>}
+        {msg && (
+          <span
+            className={`text-sm ${msg.endsWith("✓") ? "text-green-600" : "text-neutral-500"}`}
+          >
+            {msg}
+          </span>
+        )}
       </div>
     </div>
   );

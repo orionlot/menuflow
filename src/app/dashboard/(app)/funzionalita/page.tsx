@@ -46,13 +46,17 @@ export default async function FunzionalitaPage() {
         </p>
       </div>
 
-      {/* Anchor tabs — jump to a section. */}
-      <nav aria-label="Sezioni funzionalità" className="flex flex-wrap gap-2">
+      {/* Anchor tabs — jump to a section. The clicked pill keeps focus,
+          giving a brand-tinted "current section" cue without client JS. */}
+      <nav
+        aria-label="Sezioni funzionalità"
+        className="flex flex-wrap gap-1.5 rounded-xl border border-neutral-200 bg-white p-1.5"
+      >
         {TABS.map((t) => (
           <a
             key={t.href}
             href={t.href}
-            className="rounded-full bg-neutral-100 px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-200"
+            className="rounded-full px-3 py-1.5 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 focus:bg-[var(--brand-soft)] focus:text-brand focus:outline-none"
           >
             {t.label}
           </a>

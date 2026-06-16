@@ -75,22 +75,24 @@ export default function TelegramSettings({
         pubblicarlo: chi lo possiede può controllare il bot.
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
-        <label className="text-sm">
-          Chat ordini
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-neutral-500">Chat ordini</span>
           <input
             value={ord}
             onChange={(e) => setOrd(e.target.value)}
             placeholder="es. 123456789"
-            className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 font-mono text-sm"
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2 font-mono text-sm"
           />
         </label>
-        <label className="text-sm">
-          Chat pagamenti (opzionale)
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-neutral-500">
+            Chat pagamenti (opzionale)
+          </span>
           <input
             value={pag}
             onChange={(e) => setPag(e.target.value)}
             placeholder="es. 987654321"
-            className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 font-mono text-sm"
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2 font-mono text-sm"
           />
         </label>
       </div>
@@ -109,7 +111,13 @@ export default function TelegramSettings({
         >
           Invia notifica di prova
         </button>
-        {msg && <span className="text-sm text-neutral-500">{msg}</span>}
+        {msg && (
+          <span
+            className={`text-sm ${msg.endsWith("✓") ? "text-green-600" : "text-neutral-500"}`}
+          >
+            {msg}
+          </span>
+        )}
       </div>
     </div>
   );

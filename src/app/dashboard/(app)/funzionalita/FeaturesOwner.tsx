@@ -41,7 +41,7 @@ export default function FeaturesOwner({
     <div className="space-y-3">
       <ul className="divide-y divide-neutral-100 overflow-hidden rounded-xl border border-neutral-200 bg-white">
         {features.map((f) => (
-          <li key={f.id} className="flex items-center justify-between gap-3 p-3">
+          <li key={f.id} className="flex items-center justify-between gap-3 p-4">
             <div className="min-w-0">
               <div className="font-medium">{f.nome}</div>
               <div className="text-sm text-neutral-500">{f.descrizione}</div>
@@ -58,7 +58,7 @@ export default function FeaturesOwner({
                 aria-checked={state[f.id]}
                 onClick={() => setState((s) => ({ ...s, [f.id]: !s[f.id] }))}
                 className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-                  state[f.id] ? "bg-green-500" : "bg-neutral-300"
+                  state[f.id] ? "bg-[var(--brand)]" : "bg-neutral-300"
                 }`}
                 aria-label={f.nome}
               >
@@ -69,10 +69,10 @@ export default function FeaturesOwner({
               </button>
             ) : (
               <span
-                className="shrink-0 rounded-full bg-neutral-100 px-2 py-1 text-xs text-neutral-400"
+                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 px-2 py-1 text-xs font-medium text-neutral-500"
                 title="Non disponibile col tuo piano"
               >
-                🔒
+                <span aria-hidden>🔒</span> Bloccato
               </span>
             )}
           </li>
@@ -86,7 +86,13 @@ export default function FeaturesOwner({
         >
           {pending ? "Salvataggio…" : "Salva"}
         </button>
-        {msg && <span className="text-sm text-neutral-500">{msg}</span>}
+        {msg && (
+          <span
+            className={`text-sm ${msg.endsWith("✓") ? "text-green-600" : "text-neutral-500"}`}
+          >
+            {msg}
+          </span>
+        )}
       </div>
     </div>
   );

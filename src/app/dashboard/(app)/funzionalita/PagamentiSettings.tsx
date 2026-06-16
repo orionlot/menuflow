@@ -108,7 +108,13 @@ export default function PagamentiSettings({
           </div>
         </div>
       )}
-      {msg && <p className="mt-2 text-sm text-neutral-500">{msg}</p>}
+      {msg && (
+        <p
+          className={`mt-2 text-sm ${msg.endsWith("✓") ? "text-green-600" : "text-neutral-500"}`}
+        >
+          {msg}
+        </p>
+      )}
       <p className="mt-2 text-[11px] text-neutral-400">
         La modalità test (pagamenti finti o reali) è gestita dall’amministratore.
       </p>

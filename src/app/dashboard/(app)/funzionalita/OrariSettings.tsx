@@ -87,11 +87,17 @@ export default function OrariSettings({
         <button
           onClick={save}
           disabled={pending}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-60"
         >
           {pending ? "…" : "Salva orari"}
         </button>
-        {msg && <span className="text-sm text-neutral-500">{msg}</span>}
+        {msg && (
+          <span
+            className={`text-sm ${msg.endsWith("✓") ? "text-green-600" : "text-neutral-500"}`}
+          >
+            {msg}
+          </span>
+        )}
       </div>
     </div>
   );
