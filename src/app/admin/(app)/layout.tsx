@@ -19,7 +19,7 @@ export default async function AdminLayout({
           <div className="flex items-center gap-3 text-sm text-neutral-500">
             <span className="hidden sm:inline">{user.email}</span>
             <form action={adminSignOut}>
-              <button className="rounded-lg px-3 py-1.5 font-medium transition hover:bg-neutral-100 hover:text-neutral-900">
+              <button className="rounded-lg px-3 py-1.5 font-medium transition hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900">
                 Esci
               </button>
             </form>

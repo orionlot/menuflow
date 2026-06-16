@@ -43,7 +43,7 @@ export default async function AdminHome() {
               name="slug"
               required
               placeholder="pizzeria-mario"
-              className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
+              className={inputClass}
             />
           </Field>
           <Field label="Nome">
@@ -51,14 +51,11 @@ export default async function AdminHome() {
               name="nome"
               required
               placeholder="Pizzeria da Mario"
-              className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
+              className={inputClass}
             />
           </Field>
           <Field label="Piano">
-            <select
-              name="piano"
-              className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
-            >
+            <select name="piano" className={inputClass}>
               {Object.values(PLANS).map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.label}
@@ -66,15 +63,13 @@ export default async function AdminHome() {
               ))}
             </select>
           </Field>
-          <label className="flex items-center gap-1 text-sm">
+          <label className={checkboxLabelClass}>
             <input type="checkbox" name="multilingua" /> Multilingua
           </label>
-          <label className="flex items-center gap-1 text-sm">
+          <label className={checkboxLabelClass}>
             <input type="checkbox" name="pagamenti_attivi" /> Pagamenti
           </label>
-          <button className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700">
-            Crea
-          </button>
+          <button className={btnPrimary}>Crea</button>
         </form>
       </section>
 
@@ -86,33 +81,47 @@ export default async function AdminHome() {
             key={r.id}
             className="rounded-xl border border-neutral-200 bg-white p-5"
           >
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <a
-                  href={buildTenantUrl(origin, r.slug)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-medium text-blue-600 hover:underline"
-                >
-                  {r.nome}
-                </a>
-                <span className="ml-2 text-xs text-neutral-500">
-                  {r.slug} · {r.attivo ? "attivo" : "SOSPESO"}
-                </span>
-                <Link
-                  href={`/admin/menu/${r.id}`}
-                  className="ml-3 text-xs text-blue-600 hover:underline"
-                >
-                  Gestisci menu →
-                </Link>
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-neutral-100 pb-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <a
+                    href={buildTenantUrl(origin, r.slug)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-sm font-medium text-brand hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+                  >
+                    {r.nome}
+                  </a>
+                  <span
+                    className={
+                      "rounded-full px-2 py-0.5 text-[11px] font-semibold " +
+                      (r.attivo
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700")
+                    }
+                  >
+                    {r.attivo ? "attivo" : "SOSPESO"}
+                  </span>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
+                  <span>{r.slug}</span>
+                  <span aria-hidden>·</span>
+                  <Link
+                    href={`/admin/menu/${r.id}`}
+                    className="rounded-sm text-brand hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+                  >
+                    Gestisci menu →
+                  </Link>
+                </div>
               </div>
               <form action={setAttivo.bind(null, r.id, !r.attivo)}>
                 <button
-                  className={`rounded-md px-3 py-1 text-xs font-semibold ${
-                    r.attivo
-                      ? "bg-red-100 text-red-700"
-                      : "bg-green-100 text-green-700"
-                  }`}
+                  className={
+                    "rounded-lg px-3 py-1.5 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900 " +
+                    (r.attivo
+                      ? "bg-red-100 text-red-700 hover:bg-red-200"
+                      : "bg-green-100 text-green-700 hover:bg-green-200")
+                  }
                 >
                   {r.attivo ? "Sospendi" : "Riattiva"}
                 </button>
@@ -125,14 +134,14 @@ export default async function AdminHome() {
                 <input
                   name="nome"
                   defaultValue={r.nome}
-                  className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
+                  className={inputClass}
                 />
               </Field>
               <Field label="Piano">
                 <select
                   name="piano"
                   defaultValue={r.piano}
-                  className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
+                  className={inputClass}
                 >
                   {Object.values(PLANS).map((p) => (
                     <option key={p.id} value={p.id}>
@@ -141,7 +150,7 @@ export default async function AdminHome() {
                   ))}
                 </select>
               </Field>
-              <label className="flex items-center gap-1 text-sm">
+              <label className={checkboxLabelClass}>
                 <input
                   type="checkbox"
                   name="multilingua"
@@ -149,7 +158,7 @@ export default async function AdminHome() {
                 />{" "}
                 Multilingua
               </label>
-              <label className="flex items-center gap-1 text-sm">
+              <label className={checkboxLabelClass}>
                 <input
                   type="checkbox"
                   name="pagamenti_attivi"
@@ -158,7 +167,7 @@ export default async function AdminHome() {
                 Pagamenti
               </label>
               <label
-                className="flex items-center gap-1 text-sm"
+                className={checkboxLabelClass}
                 title="Pagamenti simulati (finti). Disattiva per incassare davvero via Stripe."
               >
                 <input
@@ -168,17 +177,15 @@ export default async function AdminHome() {
                 />{" "}
                 Test (finti)
               </label>
-              <label className="flex items-center gap-1 text-sm">
+              <label className={checkboxLabelClass}>
                 <input type="checkbox" name="attivo" defaultChecked={r.attivo} />{" "}
                 Attivo
               </label>
-              <button className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-100">
-                Salva
-              </button>
+              <button className={btnSecondary}>Salva</button>
             </form>
 
             <details className="mt-3 text-sm">
-              <summary className="cursor-pointer text-neutral-500">
+              <summary className={summaryClass}>
                 Aspetto / brand
               </summary>
               <div className="mt-3">
@@ -205,7 +212,7 @@ export default async function AdminHome() {
             </details>
 
             <details className="mt-3 text-sm">
-              <summary className="cursor-pointer text-neutral-500">
+              <summary className={summaryClass}>
                 Funzionalità (disponibilità)
               </summary>
               <div className="mt-3">
@@ -223,7 +230,7 @@ export default async function AdminHome() {
             </details>
 
             <details className="mt-3 text-sm">
-              <summary className="cursor-pointer text-neutral-500">
+              <summary className={summaryClass}>
                 Incorpora (iframe)
               </summary>
               <div className="mt-3">
@@ -232,34 +239,32 @@ export default async function AdminHome() {
             </details>
 
             <details className="mt-3 text-sm">
-              <summary className="cursor-pointer text-neutral-500">
+              <summary className={summaryClass}>
                 Inserimento menu iniziale
               </summary>
               <form
                 action={addInitialMenuItem}
-                className="mt-2 flex flex-wrap items-end gap-2"
+                className="mt-3 flex flex-wrap items-end gap-3"
               >
                 <input type="hidden" name="restaurant_id" value={r.id} />
                 <input
                   name="categoria"
                   placeholder="Categoria"
-                  className="rounded-md border border-neutral-300 px-2 py-1"
+                  className={inputClass}
                 />
                 <input
                   name="nome"
                   placeholder="Nome voce"
-                  className="rounded-md border border-neutral-300 px-2 py-1"
+                  className={inputClass}
                 />
                 <input
                   name="prezzo"
                   type="number"
                   step="0.1"
                   placeholder="Prezzo"
-                  className="w-24 rounded-md border border-neutral-300 px-2 py-1"
+                  className={`w-24 ${inputClass}`}
                 />
-                <button className="rounded-md bg-neutral-900 px-3 py-1 text-white">
-                  Aggiungi
-                </button>
+                <button className={btnPrimary}>Aggiungi</button>
               </form>
             </details>
           </div>
@@ -269,6 +274,20 @@ export default async function AdminHome() {
   );
 }
 
+const inputClass =
+  "rounded-lg border border-neutral-300 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
+
+const checkboxLabelClass = "flex items-center gap-2 text-sm font-medium text-neutral-600";
+
+const btnPrimary =
+  "rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
+
+const btnSecondary =
+  "rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
+
+const summaryClass =
+  "cursor-pointer rounded-sm text-sm font-medium text-neutral-600 hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900";
+
 function Field({
   label,
   children,
@@ -277,7 +296,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-xs text-neutral-500">
+    <label className="flex flex-col gap-1 text-sm font-medium text-neutral-600">
       {label}
       {children}
     </label>

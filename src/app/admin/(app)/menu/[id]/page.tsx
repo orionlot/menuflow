@@ -39,11 +39,14 @@ export default async function AdminMenuPage({
 
   return (
     <div>
-      <Link href="/admin" className="text-sm text-neutral-500 hover:text-black">
+      <Link
+        href="/admin"
+        className="inline-flex items-center gap-1 rounded-sm text-sm font-medium text-neutral-500 hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+      >
         ← Tutti i ristoranti
       </Link>
       <p className="mb-4 mt-1 text-sm text-neutral-500">
-        Menu di <b>{restaurant.nome}</b> (gestione admin)
+        Menu di <b className="text-neutral-900">{restaurant.nome}</b> (gestione admin)
       </p>
       <MenuManager
         restaurant={{

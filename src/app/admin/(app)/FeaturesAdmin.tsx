@@ -25,45 +25,67 @@ export default function FeaturesAdmin({
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
 
+  const [ok, setOk] = useState(false);
+
   function save() {
     setMsg(null);
+    setOk(false);
     startTransition(async () => {
       try {
         await action(restaurantId, state);
-        setMsg("✓");
+        setOk(true);
+        setMsg("Salvato ✓");
       } catch (e) {
+        setOk(false);
         setMsg(e instanceof Error ? e.message : "Errore");
       }
     });
   }
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-neutral-500">
+    <div className="space-y-3">
+      <p className="text-sm font-medium text-neutral-600">
         Disponibilità per questo locale (sovrascrive il piano).
       </p>
-      <div className="grid gap-1">
+      <div className="grid gap-1.5">
         {features.map((f) => (
-          <label key={f.id} className="flex items-center justify-between gap-2 text-sm">
+          <label
+            key={f.id}
+            className="flex items-center justify-between gap-2 rounded-lg p-1.5 text-sm hover:bg-neutral-50"
+          >
             <span>
-              {f.nome} <span className="text-neutral-400">(piano {f.pianoMinimo})</span>
+              {f.nome}{" "}
+              <span className="text-neutral-400">(piano {f.pianoMinimo})</span>
             </span>
             <input
               type="checkbox"
               checked={state[f.id]}
-              onChange={(e) => setState((s) => ({ ...s, [f.id]: e.target.checked }))}
+              onChange={(e) =>
+                setState((s) => ({ ...s, [f.id]: e.target.checked }))
+              }
             />
           </label>
         ))}
       </div>
-      <button
-        onClick={save}
-        disabled={pending}
-        className="rounded bg-neutral-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
-      >
-        {pending ? "…" : "Salva disponibilità"}
-        {msg && <span className="ml-1">{msg}</span>}
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={pending}
+          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+        >
+          {pending ? "Salvataggio…" : "Salva disponibilità"}
+        </button>
+        {msg && (
+          <span
+            className={
+              "text-sm font-medium " +
+              (ok ? "text-green-700" : "text-red-700")
+            }
+          >
+            {msg}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
