@@ -6,6 +6,7 @@ import type {
   ItemNota,
   ItemOption,
   NoteConfig,
+  Reparto,
   TagliaComposizione,
 } from "@/types/db";
 
@@ -212,6 +213,45 @@ export function sanitizeEtichette(raw: unknown): string[] {
       out.push(v);
     }
     if (out.length >= 30) break;
+  }
+  return out;
+}
+
+/** Sanitize the restaurateur-configured kitchen departments (reparti).
+ *  Each entry is { id, nome, colore }. Existing ids are preserved (dishes
+ *  reference reparti by id); new entries get a slug id derived from the name,
+ *  de-duplicated. Colour must be a #rrggbb hex, else a neutral default. */
+export function sanitizeReparti(raw: unknown): Reparto[] {
+  if (!Array.isArray(raw)) return [];
+  const usedIds = new Set<string>();
+  const out: Reparto[] = [];
+  for (const x of raw) {
+    const r = (x ?? {}) as { id?: unknown; nome?: unknown; colore?: unknown };
+    const nome = String(r.nome ?? "").trim().slice(0, 40);
+    if (!nome) continue;
+    // Prefer an existing id (keeps dish references stable); else slugify the name.
+    let base = String(r.id ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40);
+    if (!base) {
+      base =
+        nome
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 40) || "reparto";
+    }
+    let id = base;
+    let n = 2;
+    while (usedIds.has(id)) id = `${base}-${n++}`;
+    usedIds.add(id);
+    const coloreRaw = String(r.colore ?? "").trim();
+    const colore = /^#[0-9a-fA-F]{6}$/.test(coloreRaw) ? coloreRaw : "#64748b";
+    out.push({ id, nome, colore });
+    if (out.length >= 20) break;
   }
   return out;
 }

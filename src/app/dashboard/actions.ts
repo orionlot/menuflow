@@ -16,6 +16,7 @@ import {
   sanitizeTaglie,
   sanitizeNoteConfig,
   sanitizeEtichette,
+  sanitizeReparti,
   type ItemPatch,
 } from "@/lib/menu";
 import { parseCsv, rowsToItemPatches } from "@/lib/csv";
@@ -309,6 +310,19 @@ export async function updateEtichette(etichette: unknown) {
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/menu");
   revalidatePath("/[domain]", "page");
+}
+
+/** Restaurateur-configured kitchen departments (Reparti tab + Kitchen Display). */
+export async function updateReparti(reparti: unknown) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ reparti: sanitizeReparti(reparti) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/menu");
+  revalidatePath("/dashboard/cucina");
 }
 
 /** Category-scoped customer-note config. */

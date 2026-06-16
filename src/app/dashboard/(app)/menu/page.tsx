@@ -11,6 +11,7 @@ import {
   updateAggiunte,
   updateNoteConfig,
   updateEtichette,
+  updateReparti,
   reorderItems,
   duplicateItem,
   importItems,
@@ -77,6 +78,7 @@ export default async function MenuPage() {
         updateAggiunte,
         updateNoteConfig,
         updateEtichette,
+        updateReparti,
         reorder: reorderItems,
       }}
     />

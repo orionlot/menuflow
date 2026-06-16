@@ -29,12 +29,13 @@ import OptionsEditor from "./OptionsEditor";
 import CategoryAddonsEditor from "./CategoryAddonsEditor";
 import NotesEditor from "./NotesEditor";
 import EtichetteEditor from "./EtichetteEditor";
+import RepartiEditor from "./RepartiEditor";
 import ComposizioneEditor from "./ComposizioneEditor";
 import TaglieEditor from "./TaglieEditor";
 
 type MiniRestaurant = { id: string; multilingua: boolean; lingue: string[] };
 type SaveState = "saving" | "saved" | "error";
-type TabId = "piatti" | "categorie" | "varianti" | "extra" | "etichette";
+type TabId = "piatti" | "categorie" | "varianti" | "extra" | "etichette" | "reparti";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "piatti", label: "Piatti" },
@@ -42,6 +43,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "varianti", label: "Varianti" },
   { id: "extra", label: "Extra" },
   { id: "etichette", label: "Etichette" },
+  { id: "reparti", label: "Reparti" },
 ];
 
 export interface MenuActions {
@@ -53,6 +55,7 @@ export interface MenuActions {
   updateAggiunte: (aggiunte: CategoryAddon[]) => Promise<void>;
   updateNoteConfig?: (noteConfig: NoteConfig[]) => Promise<void>;
   updateEtichette?: (etichette: string[]) => Promise<void>;
+  updateReparti?: (reparti: Reparto[]) => Promise<void>;
   reorder: (updates: { id: string; ordine: number }[]) => Promise<void>;
 }
 
@@ -392,7 +395,9 @@ export default function MenuManager({
 
       {/* Tab bar */}
       <div className="mb-5 flex flex-wrap gap-1 border-b border-neutral-200">
-        {TABS.filter((t) => t.id !== "etichette" || etichetteOn).map((t) => (
+        {TABS.filter(
+          (t) => (t.id !== "etichette" || etichetteOn) && (t.id !== "reparti" || repartoOn),
+        ).map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
@@ -556,6 +561,14 @@ export default function MenuManager({
         <EtichetteEditor
           value={initialEtichette}
           onSave={(e) => run(() => actions.updateEtichette!(e))}
+        />
+      )}
+
+      {/* ── Reparti (kitchen departments) ────────────────────── */}
+      {tab === "reparti" && repartoOn && actions.updateReparti && (
+        <RepartiEditor
+          value={reparti}
+          onSave={(r) => run(() => actions.updateReparti!(r))}
         />
       )}
 

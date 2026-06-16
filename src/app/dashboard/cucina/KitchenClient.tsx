@@ -595,6 +595,8 @@ function Card({
 
   const headBg =
     stage === "pronti" ? "bg-green-600" : stage === "in_preparazione" ? "bg-sky-700" : served ? "bg-neutral-700" : "bg-neutral-900";
+  const prioColor =
+    o.priorita === "alta" ? "#dc2626" : o.priorita === "media" ? "#d97706" : o.priorita === "bassa" ? "#525252" : null;
 
   return (
     <article
@@ -651,40 +653,46 @@ function Card({
         </div>
       )}
 
-      <ul className="flex-1 space-y-1.5 px-3 py-2">
-        {o.items.map((it, i) => {
-          const det = itemDetails(it);
-          return (
-            <li key={`${o.id}-${i}`} className={served ? "text-base" : "text-lg"}>
-              <span className="font-extrabold">{it.qta}×</span> {it.nome}
-              {it.taglia && <span className="font-bold text-neutral-500"> · {it.taglia}</span>}
-              {det.length > 0 && (
-                <span className="block pl-5 text-sm font-medium text-neutral-600">{det.join(", ")}</span>
-              )}
-            </li>
-          );
-        })}
-        {o.note && (
-          <li className="mt-1 rounded-lg bg-amber-100 px-2.5 py-1.5 text-base font-semibold text-amber-900">📝 {o.note}</li>
-        )}
-      </ul>
+      {/* Body: order lines on the left, large action icons on the right */}
+      <div className="flex flex-1 items-stretch">
+        <ul className="min-w-0 flex-1 space-y-1.5 px-3 py-2">
+          {o.items.map((it, i) => {
+            const det = itemDetails(it);
+            return (
+              <li key={`${o.id}-${i}`} className={served ? "text-base" : "text-lg"}>
+                <span className="font-extrabold">{it.qta}×</span> {it.nome}
+                {it.taglia && <span className="font-bold text-neutral-500"> · {it.taglia}</span>}
+                {det.length > 0 && (
+                  <span className="block pl-5 text-sm font-medium text-neutral-600">{det.join(", ")}</span>
+                )}
+              </li>
+            );
+          })}
+          {o.note && (
+            <li className="mt-1 rounded-lg bg-amber-100 px-2.5 py-1.5 text-base font-semibold text-amber-900">📝 {o.note}</li>
+          )}
+        </ul>
 
-      {/* Secondary controls */}
-      <div className="flex items-center gap-1 px-2 pb-1 text-[11px]">
-        <button
-          onClick={() => onCyclePriorita(o)}
-          className="rounded-md px-1.5 py-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800"
-          title="Priorità"
-        >
-          ⚑ Priorità
-        </button>
-        <button
-          onClick={() => onRistampa(o)}
-          className="rounded-md px-1.5 py-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800"
-          title="Ristampa comanda"
-        >
-          🖨 Ristampa
-        </button>
+        {/* Large icon controls — priorità (flag) + ristampa (printer) */}
+        <div className="flex shrink-0 flex-col items-center justify-center gap-2 px-3 py-2">
+          <button
+            onClick={() => onCyclePriorita(o)}
+            title={`Priorità${o.priorita ? `: ${o.priorita}` : ""} (tocca per cambiare)`}
+            aria-label="Cambia priorità ordine"
+            className="grid h-12 w-12 place-items-center rounded-xl border-2 transition hover:bg-neutral-50 active:scale-95"
+            style={prioColor ? { borderColor: prioColor, color: prioColor } : { borderColor: "#e5e5e5", color: "#9ca3af" }}
+          >
+            <FlagIcon filled={Boolean(o.priorita)} />
+          </button>
+          <button
+            onClick={() => onRistampa(o)}
+            title="Ristampa comanda"
+            aria-label="Ristampa comanda"
+            className="grid h-12 w-12 place-items-center rounded-xl border-2 border-neutral-200 text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-800 active:scale-95"
+          >
+            <PrinterIcon />
+          </button>
+        </div>
       </div>
 
       {/* Primary action(s) by stage */}
@@ -729,5 +737,26 @@ function Card({
         </button>
       )}
     </article>
+  );
+}
+
+/** Priority flag — outline when none, filled when a priority is set. */
+function FlagIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V4s-1 1-4 1-5-2-8-2-4 1-4 1z" fill={filled ? "currentColor" : "none"} />
+      <line x1="4" y1="22" x2="4" y2="15" />
+    </svg>
+  );
+}
+
+/** Thermal-printer (ristampa comanda). */
+function PrinterIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <polyline points="6 9 6 2 18 2 18 9" />
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <rect x="6" y="14" width="12" height="8" />
+    </svg>
   );
 }
