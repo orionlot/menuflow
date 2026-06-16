@@ -61,7 +61,7 @@ export default function InventoryManager({
       </div>
       {error && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="space-y-6">
         <IngredientsTable
           value={ingredienti}
           upsert={actions.upsertIngredient}
