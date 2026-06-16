@@ -234,6 +234,12 @@ export async function adminDuplicateItem(itemId: string) {
     composizione: item.composizione ?? [],
     composizione_taglie: item.composizione_taglie ?? [],
     nota: item.nota ?? {},
+    tempo_preparazione: item.tempo_preparazione ?? null,
+    reparto: item.reparto ?? "",
+    prezzo_asporto: item.prezzo_asporto ?? null,
+    etichette: item.etichette ?? [],
+    solo_pranzo: item.solo_pranzo ?? false,
+    solo_cena: item.solo_cena ?? false,
   });
   if (error) throw new Error(error.message);
   revalidatePath("/admin");

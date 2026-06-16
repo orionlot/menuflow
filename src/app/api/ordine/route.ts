@@ -109,7 +109,10 @@ export async function POST(req: Request) {
       restaurant.id,
       body.items ?? [],
       restaurant.aggiunte ?? [],
-      { enforceScorte: isFeatureOn(restaurant, "scorte") },
+      {
+        enforceScorte: isFeatureOn(restaurant, "scorte"),
+        asportoPrezzo: asporto && isFeatureOn(restaurant, "prezzo_asporto"),
+      },
       componibiliOn ? (restaurant.composizione ?? []) : [],
       componibiliOn ? (restaurant.composizione_taglie ?? []) : [],
       componibiliOn,

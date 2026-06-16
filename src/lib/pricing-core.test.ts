@@ -360,6 +360,23 @@ describe("priceLines + taglie", () => {
   });
 });
 
+describe("priceLines + prezzo_asporto", () => {
+  it("uses the takeaway price as base when asportoPrezzo is on and set", () => {
+    const r = priceLines([item({ id: "x", prezzo: 10, prezzo_asporto: 8 })], [{ item_id: "x", qta: 2 }], [], {
+      asportoPrezzo: true,
+    });
+    expect(r.itemsTotaleCents).toBe(1600);
+  });
+  it("uses the regular price when asportoPrezzo is off", () => {
+    const r = priceLines([item({ id: "x", prezzo: 10, prezzo_asporto: 8 })], [{ item_id: "x", qta: 1 }]);
+    expect(r.itemsTotaleCents).toBe(1000);
+  });
+  it("falls back to the regular price when no takeaway price is set", () => {
+    const r = priceLines([item({ id: "x", prezzo: 10 })], [{ item_id: "x", qta: 1 }], [], { asportoPrezzo: true });
+    expect(r.itemsTotaleCents).toBe(1000);
+  });
+});
+
 describe("priceLines + per-line nota", () => {
   it("carries a trimmed customer note onto the order line (no price effect)", () => {
     const r = priceLines(

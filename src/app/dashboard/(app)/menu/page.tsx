@@ -9,6 +9,7 @@ import {
   deleteItem,
   updateAggiunte,
   updateNoteConfig,
+  updateEtichette,
   reorderItems,
   duplicateItem,
   importItems,
@@ -52,10 +53,16 @@ export default async function MenuPage() {
       initialItems={(data as MenuItem[]) ?? []}
       initialAggiunte={restaurant.aggiunte ?? []}
       initialNoteConfig={restaurant.note_config ?? []}
+      initialEtichette={restaurant.etichette ?? []}
+      reparti={restaurant.reparti ?? []}
       scorteOn={isFeatureOn(restaurant, "scorte")}
       descrizioneOn={isFeatureOn(restaurant, "descrizione")}
       ingredientiOn={ingredientiOn}
       componibiliOn={componibiliOn}
+      repartoOn={isFeatureOn(restaurant, "reparto")}
+      prezzoAsportoOn={isFeatureOn(restaurant, "prezzo_asporto")}
+      etichetteOn={isFeatureOn(restaurant, "etichette")}
+      fasceOrarieOn={isFeatureOn(restaurant, "fasce_orarie")}
       ingredientiList={ingredientiList}
       actions={{
         createItem,
@@ -65,6 +72,7 @@ export default async function MenuPage() {
         importItems,
         updateAggiunte,
         updateNoteConfig,
+        updateEtichette,
         reorder: reorderItems,
       }}
     />

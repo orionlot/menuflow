@@ -190,6 +190,10 @@ export default function MenuClient({
   const descrizioneOn = tenant.funzioni_attive?.descrizione !== false; // default on
   const ingredientiItemsOn = Boolean(tenant.funzioni_attive?.ingredienti);
   const asportoOn = Boolean(tenant.funzioni_attive?.asporto);
+  const etichetteOn = Boolean(tenant.funzioni_attive?.etichette);
+  const fasceOrarieOn = Boolean(tenant.funzioni_attive?.fasce_orarie);
+  const prezzoAsportoOn = Boolean(tenant.funzioni_attive?.prezzo_asporto);
+  const itemById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const ingredientiById = useMemo(
     () => new Map(ingredienti.map((i) => [i.id, i])),
     [ingredienti],
@@ -302,7 +306,16 @@ export default function MenuClient({
       : [activeCat || categories[0]];
   const lines = Object.values(cart).filter((l) => l.qta > 0);
   const count = lines.reduce((s, l) => s + l.qta, 0);
-  const itemsCents = lines.reduce((s, l) => s + l.unitCents * l.qta, 0);
+  // Asporto price: when "Da asporto" is chosen and the item has a takeaway price,
+  // the effective unit swaps the base price (keeps display == server charge).
+  const asportoActive = asporto && prezzoAsportoOn;
+  const effUnit = (l: CartLine) => {
+    if (!asportoActive) return l.unitCents;
+    const it = itemById.get(l.item_id);
+    if (!it || it.prezzo_asporto == null) return l.unitCents;
+    return l.unitCents + Math.round((it.prezzo_asporto - it.prezzo) * 100);
+  };
+  const itemsCents = lines.reduce((s, l) => s + effUnit(l) * l.qta, 0);
 
   // Cover charge per the restaurant's configured mode.
   const cMode = tenant.coperto_modalita;
@@ -488,8 +501,19 @@ export default function MenuClient({
   const annuncioOn =
     Boolean(tenant.annuncio?.attivo && tenant.annuncio?.testo?.trim()) && !annuncioDismissed;
   const tuttoOn = activeCat === ALL_CAT;
+  // Meal-band visibility: items flagged solo pranzo/cena show only in that band.
+  const mealCena = (() => {
+    const h = new Date().getHours();
+    return h >= 17 || h < 5;
+  })();
+  const bandOk = (item: MenuItem) => {
+    if (!fasceOrarieOn || (!item.solo_pranzo && !item.solo_cena)) return true;
+    if (item.solo_pranzo && item.solo_cena) return true;
+    return mealCena ? item.solo_cena : item.solo_pranzo;
+  };
 
   const renderItem = (item: MenuItem, idx: number) => {
+    if (!bandOk(item)) return null;
     const sold = !item.disponibile || (scorteOn && item.scorta === 0);
     const qty = qtyForItem(item.id);
     const hasOpts = effectiveOptions(item, tenant.aggiunte).length > 0;
@@ -682,6 +706,20 @@ export default function MenuClient({
                 <p className="mt-1.5 text-sm leading-snug" style={{ color: p.textMuted }}>
                   {ingNames}
                 </p>
+              )}
+
+              {etichetteOn && item.etichette?.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {item.etichette.map((e) => (
+                    <span
+                      key={e}
+                      className="rounded-full px-2 py-0.5 text-[11px] font-medium"
+                      style={{ background: p.tint, color: p.brand }}
+                    >
+                      {e}
+                    </span>
+                  ))}
+                </div>
               )}
 
               <div className="my-2.5" style={{ borderTop: `1px dashed ${p.surfaceBorder}` }} />
@@ -1295,7 +1333,7 @@ export default function MenuClient({
                         </span>
                       )}
                     </div>
-                    <span className="font-semibold">{formatEUR(l.unitCents * l.qta)}</span>
+                    <span className="font-semibold">{formatEUR(effUnit(l) * l.qta)}</span>
                   </li>
                 ))}
               </ul>

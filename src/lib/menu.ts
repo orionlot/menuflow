@@ -199,6 +199,23 @@ export function sanitizeNoteConfig(raw: unknown): NoteConfig[] {
     .filter((g) => g.categorie.length);
 }
 
+/** Whitelist a dish-label catalog: trimmed, de-duped (case-insensitive), capped. */
+export function sanitizeEtichette(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const x of raw) {
+    const v = String(x ?? "").trim().slice(0, 30);
+    const key = v.toLowerCase();
+    if (v && !seen.has(key)) {
+      seen.add(key);
+      out.push(v);
+    }
+    if (out.length >= 30) break;
+  }
+  return out;
+}
+
 /** Resolve the effective customer-note prompt for an item: its own `nota` wins
  *  (when active) over a category-level rule; null if no note applies. */
 export function effectiveNota(

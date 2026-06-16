@@ -68,12 +68,6 @@ export interface Reparto {
   colore?: string;
 }
 
-/** A reusable dish label (e.g. "Vegetariano"). */
-export interface Etichetta {
-  id: string;
-  nome: string;
-}
-
 /** Kitchen order priority. */
 export type Priorita = "alta" | "media" | "bassa";
 
@@ -115,7 +109,8 @@ export interface Restaurant {
   annuncio: Annuncio;
   note_config: NoteConfig[];
   reparti: Reparto[];
-  etichette: Etichetta[];
+  /** Reusable dish-label catalog (label names, e.g. "Vegetariano"). */
+  etichette: string[];
   attivo: boolean;
   owner_id: string | null;
   created_at: string;

@@ -22,7 +22,7 @@ export async function priceCartServerSide(
   restaurantId: string,
   cart: IncomingCartLine[],
   aggiunte: CategoryAddon[] = [],
-  opts: { enforceScorte?: boolean } = {},
+  opts: { enforceScorte?: boolean; asportoPrezzo?: boolean } = {},
   composizione: ComposizioneGruppo[] = [],
   taglie: TagliaComposizione[] = [],
   /** Whether the `componibili` feature is on. When off, per-item composition
@@ -38,7 +38,7 @@ export async function priceCartServerSide(
   const { data: items, error } = await admin
     .from("menu_items")
     .select(
-      "id, nome, prezzo, disponibile, restaurant_id, categoria, opzioni, scorta, composizione, composizione_taglie",
+      "id, nome, prezzo, disponibile, restaurant_id, categoria, opzioni, scorta, composizione, composizione_taglie, prezzo_asporto",
     )
     .in("id", ids)
     .eq("restaurant_id", restaurantId);

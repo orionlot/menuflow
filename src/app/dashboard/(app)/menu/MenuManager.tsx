@@ -20,7 +20,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { CategoryAddon, ItemOption, MenuItem, NoteConfig, PublicIngredient } from "@/types/db";
+import type { CategoryAddon, ItemOption, MenuItem, NoteConfig, PublicIngredient, Reparto } from "@/types/db";
 import type { ItemPatch } from "@/lib/menu";
 import { ALLERGENI } from "@/lib/config/allergeni";
 import { formatEUR } from "@/lib/config/plans";
@@ -42,6 +42,7 @@ export interface MenuActions {
   importItems?: (csv: string) => Promise<{ added: number; skipped: number }>;
   updateAggiunte: (aggiunte: CategoryAddon[]) => Promise<void>;
   updateNoteConfig?: (noteConfig: NoteConfig[]) => Promise<void>;
+  updateEtichette?: (etichette: string[]) => Promise<void>;
   reorder: (updates: { id: string; ordine: number }[]) => Promise<void>;
 }
 
@@ -68,10 +69,16 @@ export default function MenuManager({
   initialItems,
   initialAggiunte,
   initialNoteConfig = [],
+  initialEtichette = [],
+  reparti = [],
   scorteOn,
   descrizioneOn = true,
   ingredientiOn = false,
   componibiliOn = false,
+  repartoOn = false,
+  prezzoAsportoOn = false,
+  etichetteOn = false,
+  fasceOrarieOn = false,
   ingredientiList = [],
   actions,
 }: {
@@ -79,10 +86,16 @@ export default function MenuManager({
   initialItems: MenuItem[];
   initialAggiunte: CategoryAddon[];
   initialNoteConfig?: NoteConfig[];
+  initialEtichette?: string[];
+  reparti?: Reparto[];
   scorteOn: boolean;
   descrizioneOn?: boolean;
   ingredientiOn?: boolean;
   componibiliOn?: boolean;
+  repartoOn?: boolean;
+  prezzoAsportoOn?: boolean;
+  etichetteOn?: boolean;
+  fasceOrarieOn?: boolean;
   ingredientiList?: PublicIngredient[];
   actions: MenuActions;
 }) {
@@ -483,6 +496,12 @@ export default function MenuManager({
           descrizioneOn={descrizioneOn}
           ingredientiOn={ingredientiOn}
           componibiliOn={componibiliOn}
+          repartoOn={repartoOn}
+          prezzoAsportoOn={prezzoAsportoOn}
+          etichetteOn={etichetteOn}
+          fasceOrarieOn={fasceOrarieOn}
+          reparti={reparti}
+          etichetteCatalog={initialEtichette}
           ingredientiList={ingredientiList}
           onClose={() => setEditingId(null)}
         />
@@ -616,6 +635,12 @@ function QuickEditDrawer({
   descrizioneOn,
   ingredientiOn,
   componibiliOn,
+  repartoOn,
+  prezzoAsportoOn,
+  etichetteOn,
+  fasceOrarieOn,
+  reparti,
+  etichetteCatalog,
   ingredientiList,
   onClose,
 }: {
@@ -624,6 +649,12 @@ function QuickEditDrawer({
   descrizioneOn: boolean;
   ingredientiOn: boolean;
   componibiliOn: boolean;
+  repartoOn: boolean;
+  prezzoAsportoOn: boolean;
+  etichetteOn: boolean;
+  fasceOrarieOn: boolean;
+  reparti: Reparto[];
+  etichetteCatalog: string[];
   ingredientiList: PublicIngredient[];
   onClose: () => void;
 }) {
@@ -632,6 +663,8 @@ function QuickEditDrawer({
     prezzo: String(item.prezzo),
     descrizione: item.descrizione ?? "",
   });
+  const [newEtichetta, setNewEtichetta] = useState("");
+  const etichetteOptions = [...new Set([...etichetteCatalog, ...(item.etichette ?? [])])];
   const uploading = h.uploadingIds.has(item.id);
   const st = h.status[item.id];
   const allergenCount = item.allergeni?.length ?? 0;
@@ -750,7 +783,129 @@ function QuickEditDrawer({
                 />
               </label>
             )}
+            {prezzoAsportoOn && (
+              <label className="w-28" title="Prezzo per asporto/delivery (vuoto = come al tavolo)">
+                <span className="mb-1 block text-xs font-medium text-neutral-500">Prezzo asporto €</span>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  placeholder="="
+                  defaultValue={item.prezzo_asporto ?? ""}
+                  onBlur={(e) => {
+                    const raw = e.target.value.trim();
+                    const v = raw === "" ? null : Math.max(0, parseFloat(raw) || 0);
+                    if (v !== item.prezzo_asporto) h.save(item.id, { prezzo_asporto: v });
+                  }}
+                  className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+                />
+              </label>
+            )}
           </div>
+
+          {/* Tempo di preparazione (always) + Reparto (gated) */}
+          <div className="flex flex-wrap gap-2">
+            <label className="w-36" title="Minuti stimati di preparazione (usato dal timer in Cucina)">
+              <span className="mb-1 block text-xs font-medium text-neutral-500">Tempo prep. (min)</span>
+              <input
+                type="number"
+                min="0"
+                placeholder="—"
+                defaultValue={item.tempo_preparazione ?? ""}
+                onBlur={(e) => {
+                  const raw = e.target.value.trim();
+                  const v = raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0);
+                  if (v !== item.tempo_preparazione) h.save(item.id, { tempo_preparazione: v });
+                }}
+                className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+              />
+            </label>
+            {repartoOn && (
+              <label className="min-w-32 flex-1">
+                <span className="mb-1 block text-xs font-medium text-neutral-500">Reparto cucina</span>
+                <select
+                  value={item.reparto || ""}
+                  onChange={(e) => h.save(item.id, { reparto: e.target.value })}
+                  className="w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm"
+                >
+                  <option value="">—</option>
+                  {reparti.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
+
+          {/* Etichette (gated) */}
+          {etichetteOn && (
+            <div>
+              <span className="mb-1.5 block text-xs font-medium text-neutral-500">Etichette</span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {etichetteOptions.map((label) => {
+                  const on = (item.etichette ?? []).includes(label);
+                  return (
+                    <button
+                      key={label}
+                      onClick={() => {
+                        const cur = item.etichette ?? [];
+                        const next = on ? cur.filter((x) => x !== label) : [...cur, label];
+                        h.save(item.id, { etichette: next });
+                      }}
+                      aria-pressed={on}
+                      className={`rounded-full px-2.5 py-1 text-xs transition ${
+                        on ? "bg-[var(--brand-soft)] text-brand" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+                <span className="inline-flex items-center gap-1">
+                  <input
+                    value={newEtichetta}
+                    onChange={(e) => setNewEtichetta(e.target.value)}
+                    placeholder="+ nuova"
+                    className="w-24 rounded-full border border-dashed border-neutral-300 px-2.5 py-1 text-xs"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const v = newEtichetta.trim();
+                        const cur = item.etichette ?? [];
+                        if (v && !cur.includes(v)) h.save(item.id, { etichette: [...cur, v] });
+                        setNewEtichetta("");
+                      }
+                    }}
+                  />
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Fasce orarie (gated) */}
+          {fasceOrarieOn && (
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 text-sm text-neutral-700">
+                <input
+                  type="checkbox"
+                  checked={item.solo_pranzo}
+                  onChange={(e) => h.save(item.id, { solo_pranzo: e.target.checked })}
+                  className="h-4 w-4 rounded border-neutral-300 accent-[var(--brand)]"
+                />
+                Solo a pranzo
+              </label>
+              <label className="flex items-center gap-2 text-sm text-neutral-700">
+                <input
+                  type="checkbox"
+                  checked={item.solo_cena}
+                  onChange={(e) => h.save(item.id, { solo_cena: e.target.checked })}
+                  className="h-4 w-4 rounded border-neutral-300 accent-[var(--brand)]"
+                />
+                Solo a cena
+              </label>
+            </div>
+          )}
 
           {/* Description (toggleable feature) */}
           {descrizioneOn && (

@@ -14,6 +14,7 @@ import {
   sanitizeComposizione,
   sanitizeTaglie,
   sanitizeNoteConfig,
+  sanitizeEtichette,
   type ItemPatch,
 } from "@/lib/menu";
 import { parseCsv, rowsToItemPatches } from "@/lib/csv";
@@ -82,6 +83,12 @@ export async function duplicateItem(itemId: string) {
     composizione: item.composizione ?? [],
     composizione_taglie: item.composizione_taglie ?? [],
     nota: item.nota ?? {},
+    tempo_preparazione: item.tempo_preparazione ?? null,
+    reparto: item.reparto ?? "",
+    prezzo_asporto: item.prezzo_asporto ?? null,
+    etichette: item.etichette ?? [],
+    solo_pranzo: item.solo_pranzo ?? false,
+    solo_cena: item.solo_cena ?? false,
   });
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/menu");
@@ -287,6 +294,19 @@ export async function updateChiusure(chiusure: unknown) {
     .eq("id", restaurantId);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/funzionalita");
+  revalidatePath("/[domain]", "page");
+}
+
+/** Reusable dish-label catalog (Etichette tab). */
+export async function updateEtichette(etichette: unknown) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ etichette: sanitizeEtichette(etichette) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/menu");
   revalidatePath("/[domain]", "page");
 }
 

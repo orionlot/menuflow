@@ -41,6 +41,8 @@ export interface PricedItem {
   composizione?: ComposizioneGruppo[];
   /** Per-item size variants (override category-level when non-empty). */
   composizione_taglie?: TagliaComposizione[];
+  /** Separate takeaway price; used as the base when the order is asporto. */
+  prezzo_asporto?: number | null;
 }
 
 /** Live ingredient info (price + stock) keyed by id, for composable products. */
@@ -115,7 +117,7 @@ export function priceLines(
   items: PricedItem[],
   cart: IncomingCartLine[],
   aggiunte: CategoryAddon[] = [],
-  opts: { enforceScorte?: boolean } = {},
+  opts: { enforceScorte?: boolean; asportoPrezzo?: boolean } = {},
   composizione: ComposizioneGruppo[] = [],
   ingredients: Map<string, IngredientInfo> = new Map(),
   taglie: TagliaComposizione[] = [],
@@ -214,8 +216,12 @@ export function priceLines(
       sizeMax,
     );
 
+    // Base price: the takeaway price when the order is asporto and the item has
+    // one set; otherwise the regular price.
+    const baseEuro =
+      opts.asportoPrezzo && item.prezzo_asporto != null ? item.prezzo_asporto : item.prezzo;
     const unitCents =
-      Math.round(Number(item.prezzo) * 100) +
+      Math.round(Number(baseEuro) * 100) +
       optionDeltaCents +
       compo.deltaCents +
       tagliaPrezzoCents;
