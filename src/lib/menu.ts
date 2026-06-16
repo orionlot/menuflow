@@ -325,6 +325,7 @@ export function sanitizeSale(raw: unknown): Sala[] {
         posti?: unknown;
         note?: unknown;
         nota?: unknown;
+        forma?: unknown;
       };
       const tnome = String(t.nome ?? "").trim().slice(0, 20);
       if (!tnome) continue;
@@ -341,6 +342,9 @@ export function sanitizeSale(raw: unknown): Sala[] {
         .map((x) => String(x ?? "").trim().slice(0, 120))
         .filter(Boolean)
         .slice(0, 5);
+      // Shape: only the non-default values are persisted (unset ⇒ rounded square).
+      const formaRaw = String(t.forma ?? "");
+      const forma = formaRaw === "rotondo" || formaRaw === "rettangolare" ? formaRaw : undefined;
       tavoli.push({
         id: tid,
         nome: tnome,
@@ -348,6 +352,7 @@ export function sanitizeSale(raw: unknown): Sala[] {
         y: clamp(t.y),
         ...(Number.isInteger(posti) && posti > 0 && posti <= 50 ? { posti } : {}),
         ...(note.length ? { note } : {}),
+        ...(forma ? { forma } : {}),
       });
       if (tavoli.length >= 100) break;
     }

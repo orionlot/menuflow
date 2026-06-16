@@ -45,6 +45,21 @@ describe("sanitizeSale", () => {
     const out = sanitizeSale([{ nome: "S", tavoli: [{ nome: "1", x: 0, y: 0, nota: "Riservato" }] }]);
     expect(out[0].tavoli[0].note).toEqual(["Riservato"]);
   });
+
+  it("keeps valid table shapes and drops invalid/default ones", () => {
+    const out = sanitizeSale([
+      {
+        nome: "S",
+        tavoli: [
+          { nome: "1", x: 0, y: 0, forma: "rotondo" },
+          { nome: "2", x: 0, y: 0, forma: "rettangolare" },
+          { nome: "3", x: 0, y: 0, forma: "quadrato" },
+          { nome: "4", x: 0, y: 0, forma: "triangolo" },
+        ],
+      },
+    ]);
+    expect(out[0].tavoli.map((t) => t.forma)).toEqual(["rotondo", "rettangolare", undefined, undefined]);
+  });
 });
 
 describe("sanitizeReparti", () => {

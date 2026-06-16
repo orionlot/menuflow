@@ -250,6 +250,10 @@ export default function SalaClient({
           >
             {(room?.tavoli ?? []).map((t) => {
               const isSel = selected === t.id;
+              const radius =
+                t.forma === "rotondo" ? "rounded-full" : t.forma === "rettangolare" ? "rounded-lg" : "rounded-xl";
+              const dims =
+                t.forma === "rettangolare" ? { width: 94, height: 56 } : { width: 64, height: 64 };
               return (
                 <button
                   key={t.id}
@@ -259,14 +263,14 @@ export default function SalaClient({
                   onClick={() => {
                     if (mode === "servizio") setOrderTavolo(t.nome);
                   }}
-                  className={`absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl border-2 text-center shadow-sm transition ${
+                  className={`absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center border-2 text-center shadow-sm transition ${radius} ${
                     mode === "modifica" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer hover:brightness-95"
                   } ${isSel ? "border-brand ring-2 ring-[var(--brand-ring)]" : "border-neutral-300"}`}
                   style={{
                     left: `${t.x}%`,
                     top: `${t.y}%`,
-                    width: 64,
-                    height: 64,
+                    width: dims.width,
+                    height: dims.height,
                     background: mode === "servizio" ? "var(--brand-soft)" : "#fff",
                   }}
                 >
@@ -324,6 +328,48 @@ export default function SalaClient({
                   className="w-20 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
                 />
               </label>
+              <div className="text-sm">
+                <span className="mb-1 block text-xs text-neutral-500">Forma</span>
+                <div className="flex gap-1">
+                  {(
+                    [
+                      { id: "quadrato", label: "▢" },
+                      { id: "rotondo", label: "○" },
+                      { id: "rettangolare", label: "▭" },
+                    ] as const
+                  ).map((f) => {
+                    const cur = selectedTable.forma ?? "quadrato";
+                    const on = cur === f.id;
+                    const forma = f.id === "quadrato" ? undefined : f.id;
+                    return (
+                      <button
+                        key={f.id}
+                        onClick={() =>
+                          persist(
+                            sale.map((r, i) =>
+                              i === roomIdx
+                                ? {
+                                    ...r,
+                                    tavoli: r.tavoli.map((tt) =>
+                                      tt.id === selectedTable.id ? { ...tt, forma } : tt,
+                                    ),
+                                  }
+                                : r,
+                            ),
+                          )
+                        }
+                        title={f.id}
+                        aria-pressed={on}
+                        className={`grid h-9 w-9 place-items-center rounded-lg border text-lg transition ${
+                          on ? "border-brand bg-[var(--brand-soft)] text-brand" : "border-neutral-300 hover:bg-neutral-50"
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <button
                 onClick={() => removeTable(selectedTable.id)}
                 className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"

@@ -77,6 +77,8 @@ export interface SalaTavolo {
   posti?: number;
   /** Free notes shown as bubbles on the table (max 5), e.g. "vicino finestra". */
   note?: string[];
+  /** Shape on the map; defaults to a rounded square when unset. */
+  forma?: "quadrato" | "rotondo" | "rettangolare";
 }
 /** A room of the floor plan, holding positioned tables. */
 export interface Sala {
