@@ -24,6 +24,28 @@ const MAINTENANCE_MSG =
 
 const ALL_CAT = "__all__";
 
+// Customer-facing order phase → chip label + colours (for "Segui il tuo ordine").
+const FASE_META: Record<string, { label: string; bg: string; fg: string }> = {
+  attesa_pagamento: { label: "Attesa pagamento", bg: "#fef3c7", fg: "#92400e" },
+  ricevuto: { label: "Ricevuto", bg: "#e5e7eb", fg: "#374151" },
+  in_preparazione: { label: "In preparazione", bg: "#e0f2fe", fg: "#075985" },
+  pronto: { label: "Pronto 🔔", bg: "#dcfce7", fg: "#166534" },
+  servito: { label: "Servito", bg: "#e5e7eb", fg: "#6b7280" },
+  fallito: { label: "Pagamento fallito", bg: "#fee2e2", fg: "#991b1b" },
+};
+function FaseChip({ fase }: { fase?: string }) {
+  const m = fase ? FASE_META[fase] : undefined;
+  if (!m) return null;
+  return (
+    <span
+      className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold"
+      style={{ background: m.bg, color: m.fg }}
+    >
+      {m.label}
+    </span>
+  );
+}
+
 /** A monochrome line icon (currentColor) for a category section header. */
 function catIcon(name: string) {
   const n = name.toLowerCase();
@@ -242,6 +264,7 @@ export default function MenuClient({
   const [catOpen, setCatOpen] = useState(false);
   const [annuncioDismissed, setAnnuncioDismissed] = useState(false);
   const [myOrders, setMyOrders] = useState<{ id: string; at: number }[]>([]);
+  const [orderFasi, setOrderFasi] = useState<Record<string, string>>({});
   const [myAllergens, setMyAllergens] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [voted, setVoted] = useState<number | null>(null);
@@ -325,6 +348,41 @@ export default function MenuClient({
       setMyOrders([]);
     }
   }, [tenant.slug, done?.orderId, pending?.orderId]);
+
+  // Poll the live phase of each tracked order so the banner shows a status chip
+  // per row. Bounded (≤10 orders, capped polls); stops once all are terminal.
+  const myOrderIds = myOrders.map((o) => o.id).join(",");
+  useEffect(() => {
+    if (!trackingOn || !myOrderIds) return;
+    const ids = myOrderIds.split(",");
+    let alive = true;
+    let polls = 0;
+    const tick = async () => {
+      const entries = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const r = await fetch(`/api/ordine/${id}`, { cache: "no-store" });
+            const d = await r.json();
+            return d?.ok ? ([id, String(d.fase)] as const) : null;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      if (!alive) return;
+      const map: Record<string, string> = {};
+      for (const e of entries) if (e) map[e[0]] = e[1];
+      setOrderFasi(map);
+      const allDone = ids.every((id) => map[id] === "servito" || map[id] === "fallito");
+      if (allDone || ++polls > 40) clearInterval(timer);
+    };
+    const timer = setInterval(tick, 10000);
+    tick();
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [trackingOn, myOrderIds]);
 
   const t = (it: string, i18n: Record<string, string> | undefined) =>
     lang !== "it" && i18n?.[lang] ? i18n[lang] : it;
@@ -954,6 +1012,7 @@ export default function MenuClient({
               >
                 <span aria-hidden>🔔</span>
                 <span>Segui il tuo ordine</span>
+                <FaseChip fase={orderFasi[myOrders[0].id]} />
                 <span className="ml-auto" aria-hidden>
                   →
                 </span>
@@ -981,8 +1040,11 @@ export default function MenuClient({
                             minute: "2-digit",
                           })}
                         </span>
-                        <span className="ml-auto" aria-hidden style={{ color: p.brand }}>
-                          →
+                        <span className="ml-auto flex items-center gap-2">
+                          <FaseChip fase={orderFasi[mo.id]} />
+                          <span aria-hidden style={{ color: p.brand }}>
+                            →
+                          </span>
                         </span>
                       </a>
                     </li>
