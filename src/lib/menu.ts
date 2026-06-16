@@ -317,7 +317,7 @@ export function sanitizeSale(raw: unknown): Sala[] {
     const usedTable = new Set<string>();
     const tavoli: SalaTavolo[] = [];
     for (const tv of Array.isArray(room.tavoli) ? room.tavoli : []) {
-      const t = (tv ?? {}) as { id?: unknown; nome?: unknown; x?: unknown; y?: unknown; posti?: unknown };
+      const t = (tv ?? {}) as { id?: unknown; nome?: unknown; x?: unknown; y?: unknown; posti?: unknown; nota?: unknown };
       const tnome = String(t.nome ?? "").trim().slice(0, 20);
       if (!tnome) continue;
       const tableBase = slugId(String(t.id ?? "").trim(), slugId(tnome, "t"));
@@ -326,12 +326,14 @@ export function sanitizeSale(raw: unknown): Sala[] {
       while (usedTable.has(tid)) tid = `${tableBase}-${m++}`;
       usedTable.add(tid);
       const posti = Number(t.posti);
+      const nota = String(t.nota ?? "").trim().slice(0, 120);
       tavoli.push({
         id: tid,
         nome: tnome,
         x: clamp(t.x),
         y: clamp(t.y),
         ...(Number.isInteger(posti) && posti > 0 && posti <= 50 ? { posti } : {}),
+        ...(nota ? { nota } : {}),
       });
       if (tavoli.length >= 100) break;
     }

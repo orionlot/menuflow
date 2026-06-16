@@ -258,6 +258,12 @@ export default function SalaClient({
                   {t.posti ? (
                     <span className="mt-0.5 text-[10px] text-neutral-500">{t.posti} posti</span>
                   ) : null}
+                  {t.nota ? (
+                    <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-max max-w-[140px] -translate-x-1/2 whitespace-normal rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[10px] font-medium leading-tight text-amber-900 shadow-sm">
+                      {t.nota}
+                      <span className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-[5px] border-t-[5px] border-x-transparent border-t-amber-300" />
+                    </span>
+                  ) : null}
                 </button>
               );
             })}
@@ -293,6 +299,17 @@ export default function SalaClient({
                   }}
                   onBlur={() => persist(sale)}
                   className="w-20 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+                />
+              </label>
+              <label className="min-w-[12rem] flex-1 text-sm">
+                <span className="mb-1 block text-xs text-neutral-500">Nota (bubble)</span>
+                <input
+                  value={selectedTable.nota ?? ""}
+                  onChange={(e) => patchTableLocal(selectedTable.id, { nota: e.target.value || undefined })}
+                  onBlur={() => persist(sale)}
+                  maxLength={120}
+                  placeholder="es. vicino finestra, riservato…"
+                  className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
                 />
               </label>
               <button
