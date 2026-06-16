@@ -5,14 +5,15 @@ import type { Order } from "@/types/db";
 import { formatEUR } from "@/lib/config/plans";
 import { markOrdersRead } from "@/app/dashboard/actions";
 
+const BADGE_BASE = "rounded-full px-2 py-0.5 text-[11px] font-semibold";
 function statoBadge(o: Order): { text: string; cls: string } {
   if (o.stato === "in_attesa_pagamento")
     return { text: "In attesa pagamento", cls: "bg-amber-100 text-amber-700" };
   if (o.stato === "fallito")
     return { text: "Pagamento fallito", cls: "bg-red-100 text-red-700" };
-  if (o.servito_at) return { text: "Servito", cls: "bg-neutral-200 text-neutral-600" };
+  if (o.servito_at) return { text: "Servito", cls: "bg-neutral-100 text-neutral-500" };
   if (o.pronto_at) return { text: "Pronto", cls: "bg-green-100 text-green-700" };
-  return { text: "In preparazione", cls: "bg-blue-100 text-blue-700" };
+  return { text: "In preparazione", cls: "bg-neutral-100 text-neutral-500" };
 }
 
 type StateKey = "in_attesa" | "fallito" | "servito" | "pronto" | "in_preparazione";
@@ -152,7 +153,9 @@ export default function OrdiniClient({
       )}
       <div className="mb-3 flex flex-wrap items-center gap-3">
         {soundOn ? (
-          <span className="text-sm text-neutral-500">🔔 Avvisi sonori attivi</span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--brand-soft)] px-3 py-1.5 text-sm font-medium text-brand ring-1 ring-[var(--brand-ring)]">
+            🔔 Avvisi sonori attivi
+          </span>
         ) : (
           <button
             onClick={enableSound}
@@ -163,7 +166,7 @@ export default function OrdiniClient({
         )}
         {unread.length > 0 && (
           <>
-            <span className="rounded-full bg-blue-100 px-2.5 py-1 text-sm font-semibold text-blue-700">
+            <span className="rounded-full bg-[var(--brand-soft)] px-2.5 py-1 text-sm font-semibold text-brand">
               {unread.length} {unread.length === 1 ? "nuovo" : "nuovi"}
             </span>
             <button
@@ -187,10 +190,10 @@ export default function OrdiniClient({
               key={f.key}
               onClick={() => setFilter(f.key)}
               aria-pressed={filter === f.key}
-              className={`rounded-full px-3 py-1 text-sm transition ${
+              className={`rounded-full px-3 py-1 text-sm font-medium transition ${
                 filter === f.key
                   ? "bg-neutral-900 text-white"
-                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                  : "bg-neutral-100 text-neutral-600 hover:bg-[var(--brand-soft)] hover:text-brand"
               }`}
             >
               {f.label}
@@ -200,9 +203,13 @@ export default function OrdiniClient({
       )}
 
       {orders.length === 0 ? (
-        <p className="text-neutral-500">Nessun ordine in questo giorno.</p>
+        <div className="rounded-xl border border-dashed border-neutral-300 p-6 text-center">
+          <p className="text-sm font-medium text-neutral-700">Nessun ordine in questo giorno.</p>
+        </div>
       ) : visible.length === 0 ? (
-        <p className="text-neutral-500">Nessun ordine con questo stato.</p>
+        <div className="rounded-xl border border-dashed border-neutral-300 p-6 text-center">
+          <p className="text-sm font-medium text-neutral-700">Nessun ordine con questo stato.</p>
+        </div>
       ) : (
         <ul className="space-y-3">
           {visible.map((o) => {
@@ -211,13 +218,14 @@ export default function OrdiniClient({
             return (
               <li
                 key={o.id}
-                className="rounded-xl border bg-white p-4 transition"
-                style={{ borderColor: nuovo ? "#3b82f6" : "#e5e5e5" }}
+                className={`rounded-xl border bg-white p-4 transition ${
+                  nuovo ? "border-brand ring-1 ring-[var(--brand-ring)]" : "border-neutral-200"
+                }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     {nuovo && (
-                      <span className="mr-2 rounded-full bg-blue-600 px-2 py-0.5 text-xs font-bold text-white">
+                      <span className={`mr-2 bg-[var(--brand-soft)] text-brand ${BADGE_BASE}`}>
                         NUOVO
                       </span>
                     )}
@@ -228,7 +236,7 @@ export default function OrdiniClient({
                         minute: "2-digit",
                       })}
                     </span>
-                    <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ${b.cls}`}>
+                    <span className={`ml-2 ${BADGE_BASE} ${b.cls}`}>
                       {b.text}
                     </span>
                     {o.voto ? (

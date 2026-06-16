@@ -35,9 +35,9 @@ export default async function OrdiniPage({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <h1 className="text-xl font-bold">Ordini</h1>
-        <form className="flex items-center gap-2 text-sm">
+        <form className="flex flex-wrap items-center gap-2 text-sm">
           <label className="text-neutral-500">Giorno</label>
           <input
             type="date"
