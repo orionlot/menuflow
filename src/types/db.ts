@@ -207,7 +207,8 @@ export interface OrderItem {
 export interface Order {
   id: string;
   restaurant_id: string;
-  tavolo: string | null;
+  tavolo: string | null; // table number, or the customer name when `asporto`
+  asporto: boolean;
   items: OrderItem[];
   totale: number;
   mancia: number;

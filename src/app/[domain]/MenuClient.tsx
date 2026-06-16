@@ -186,6 +186,7 @@ export default function MenuClient({
   const componibiliOn = Boolean(tenant.funzioni_attive?.componibili);
   const descrizioneOn = tenant.funzioni_attive?.descrizione !== false; // default on
   const ingredientiItemsOn = Boolean(tenant.funzioni_attive?.ingredienti);
+  const asportoOn = Boolean(tenant.funzioni_attive?.asporto);
   const ingredientiById = useMemo(
     () => new Map(ingredienti.map((i) => [i.id, i])),
     [ingredienti],
@@ -203,6 +204,7 @@ export default function MenuClient({
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [tavolo, setTavolo] = useState("");
   const [asporto, setAsporto] = useState(false);
+  const [pagaInCassa, setPagaInCassa] = useState(false);
   const [note, setNote] = useState("");
   const [coperti, setCoperti] = useState(0);
   const [manciaCents, setManciaCents] = useState(0);
@@ -290,16 +292,20 @@ export default function MenuClient({
   // Cover charge per the restaurant's configured mode.
   const cMode = tenant.coperto_modalita;
   const cLabel = tenant.coperto_label || "Coperto";
-  const copertoCents =
-    cMode === "persona"
+  const payAtCounter = asporto && pagaInCassa;
+  // Asporto has no cover charge.
+  const copertoCents = asporto
+    ? 0
+    : cMode === "persona"
       ? Math.round(tenant.coperto * 100) * coperti
       : cMode === "ordine"
         ? Math.round(tenant.coperto * 100)
         : cMode === "servizio"
           ? Math.round((itemsCents * tenant.coperto) / 100)
           : 0;
-  const copertiMissing = cMode === "persona" && coperti < 1;
-  const tipEligible = tenant.pagamenti_attivi && tenant.accetta_mancia;
+  const copertiMissing = !asporto && cMode === "persona" && coperti < 1;
+  // The in-app tip only applies to an online payment (not pay-at-counter).
+  const tipEligible = tenant.pagamenti_attivi && tenant.accetta_mancia && !payAtCounter;
   const totalCents = itemsCents + copertoCents + (tipEligible ? manciaCents : 0);
 
   const qtyForItem = (id: string) =>
@@ -370,9 +376,11 @@ export default function MenuClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slug: tenant.slug,
-          tavolo: asporto ? "Asporto" : tavolo,
+          tavolo,
+          asporto,
+          paga_in_cassa: payAtCounter,
           note,
-          coperti: cMode === "persona" ? coperti : undefined,
+          coperti: !asporto && cMode === "persona" ? coperti : undefined,
           mancia: tipEligible ? manciaCents / 100 : undefined,
           items: lines.map((l) => ({
             item_id: l.item_id,
@@ -449,7 +457,7 @@ export default function MenuClient({
   }
 
   const initial = tenant.nome.trim().charAt(0).toUpperCase();
-  const tavoloMissing = !asporto && !tavolo.trim();
+  const tavoloMissing = !tavolo.trim();
   const closed = Boolean(tenant.funzioni_attive?.orari) && !isOpenNow(tenant.orari);
   const ordersBlocked = backend === "down" || closed;
   const tuttoOn = activeCat === ALL_CAT;
@@ -1207,43 +1215,77 @@ export default function MenuClient({
                 className="mt-4 rounded-xl border border-dashed p-3"
                 style={{ borderColor: tavoloMissing ? "#ef4444" : p.brand }}
               >
-                <div className="mb-2 flex gap-2">
-                  {[
-                    { val: false, label: "Al tavolo" },
-                    { val: true, label: "🛍 Da asporto" },
-                  ].map((opt) => {
-                    const on = asporto === opt.val;
-                    return (
-                      <button
-                        key={opt.label}
-                        type="button"
-                        onClick={() => setAsporto(opt.val)}
-                        aria-pressed={on}
-                        className="flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition"
-                        style={{
-                          background: on ? p.tint : "transparent",
-                          border: `1px solid ${on ? p.brand : p.surfaceBorder}`,
-                          color: on ? p.brand : p.text,
-                        }}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                {!asporto && (
-                  <>
-                    <label className="text-xs" style={{ color: p.textMuted }}>
-                      Numero tavolo <span style={{ color: "#ef4444" }}>*</span>
-                    </label>
-                    <input
-                      value={tavolo}
-                      onChange={(e) => setTavolo(e.target.value)}
-                      placeholder="es. 7 — obbligatorio"
-                      className="mt-1 w-full bg-transparent text-lg font-semibold outline-none"
-                      style={{ color: p.text }}
-                    />
-                  </>
+                {asportoOn && (
+                  <div className="mb-2 flex gap-2">
+                    {[
+                      { val: false, label: "Al tavolo" },
+                      { val: true, label: "🛍 Da asporto" },
+                    ].map((opt) => {
+                      const on = asporto === opt.val;
+                      return (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          onClick={() => {
+                            setAsporto(opt.val);
+                            setTavolo("");
+                            if (!opt.val) setPagaInCassa(false);
+                          }}
+                          aria-pressed={on}
+                          className="flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition"
+                          style={{
+                            background: on ? p.tint : "transparent",
+                            border: `1px solid ${on ? p.brand : p.surfaceBorder}`,
+                            color: on ? p.brand : p.text,
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                <label className="text-xs" style={{ color: p.textMuted }}>
+                  {asporto ? "Nome per il ritiro" : "Numero tavolo"}{" "}
+                  <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <input
+                  value={tavolo}
+                  onChange={(e) => setTavolo(e.target.value)}
+                  placeholder={asporto ? "es. Mario — obbligatorio" : "es. 7 — obbligatorio"}
+                  className="mt-1 w-full bg-transparent text-lg font-semibold outline-none"
+                  style={{ color: p.text }}
+                />
+                {asporto && tenant.pagamenti_attivi && (
+                  <div className="mt-3">
+                    <span className="text-xs" style={{ color: p.textMuted }}>
+                      Pagamento
+                    </span>
+                    <div className="mt-1 flex gap-2">
+                      {[
+                        { val: false, label: "Paga ora" },
+                        { val: true, label: "Paga in cassa" },
+                      ].map((opt) => {
+                        const on = pagaInCassa === opt.val;
+                        return (
+                          <button
+                            key={opt.label}
+                            type="button"
+                            onClick={() => setPagaInCassa(opt.val)}
+                            aria-pressed={on}
+                            className="flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition"
+                            style={{
+                              background: on ? p.tint : "transparent",
+                              border: `1px solid ${on ? p.brand : p.surfaceBorder}`,
+                              color: on ? p.brand : p.text,
+                            }}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
                 <input
                   value={note}
@@ -1254,8 +1296,8 @@ export default function MenuClient({
                 />
               </div>
 
-              {/* Coperto — per persona (obbligatorio): stepper */}
-              {cMode === "persona" && (
+              {/* Coperto — per persona (obbligatorio): stepper. Not for asporto. */}
+              {!asporto && cMode === "persona" && (
                 <div
                   className="mt-3 flex items-center justify-between rounded-xl px-3 py-2 text-sm"
                   style={{
@@ -1277,7 +1319,7 @@ export default function MenuClient({
                 </div>
               )}
               {/* Coperto — fisso a ordine / servizio %: riga informativa */}
-              {(cMode === "ordine" || cMode === "servizio") && copertoCents >= 0 && (
+              {!asporto && (cMode === "ordine" || cMode === "servizio") && copertoCents >= 0 && (
                 <div className="mt-3 flex items-center justify-between text-sm">
                   <span>
                     {cLabel}{" "}
@@ -1356,7 +1398,9 @@ export default function MenuClient({
                 {submitting
                   ? "Invio…"
                   : tavoloMissing
-                    ? "Inserisci il tavolo"
+                    ? asporto
+                      ? "Inserisci il nome"
+                      : "Inserisci il tavolo"
                     : copertiMissing
                       ? "Indica i coperti"
                       : tenant.pagamenti_attivi

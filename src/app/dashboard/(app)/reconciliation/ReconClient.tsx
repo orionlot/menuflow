@@ -57,7 +57,9 @@ export default function ReconClient({ orders }: { orders: Order[] }) {
                 className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--brand)]"
               />
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="font-medium">Tavolo {o.tavolo ?? "—"}</span>
+                <span className="font-medium">
+                  {o.asporto ? `🛍 Asporto · ${o.tavolo ?? "—"}` : `Tavolo ${o.tavolo ?? "—"}`}
+                </span>
                 <span className="text-sm text-neutral-500">
                   {o.pagato_at
                     ? new Date(o.pagato_at).toLocaleTimeString("it-IT", {

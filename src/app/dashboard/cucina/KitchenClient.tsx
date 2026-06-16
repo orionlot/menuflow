@@ -29,6 +29,7 @@ function itemDetails(it: KItem): string[] {
 interface KOrder {
   id: string;
   tavolo: string | null;
+  asporto?: boolean;
   items: KItem[];
   totale: number;
   note: string | null;
@@ -331,7 +332,7 @@ export default function KitchenClient({
                     const m = mins(o.created_at);
                     const col = ageColor(m);
                     const isNew = pulseIds.has(o.id);
-                    const dest = o.tavolo === "Asporto" ? "🛍 Asporto" : `Tavolo ${o.tavolo ?? "—"}`;
+                    const dest = o.asporto ? `🛍 Asporto · ${o.tavolo ?? "—"}` : `Tavolo ${o.tavolo ?? "—"}`;
                     return (
                       <article
                         key={o.id}
@@ -424,7 +425,7 @@ export default function KitchenClient({
                   style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}
                 >
                   {ready.map((o) => {
-                    const dest = o.tavolo === "Asporto" ? "🛍 Asporto" : `Tavolo ${o.tavolo ?? "—"}`;
+                    const dest = o.asporto ? `🛍 Asporto · ${o.tavolo ?? "—"}` : `Tavolo ${o.tavolo ?? "—"}`;
                     return (
                     <article
                       key={o.id}

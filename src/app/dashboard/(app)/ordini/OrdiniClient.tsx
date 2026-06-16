@@ -215,7 +215,7 @@ export default function OrdiniClient({
           {visible.map((o) => {
             const b = statoBadge(o);
             const nuovo = !o.visto_at;
-            const dest = o.tavolo === "Asporto" ? "🛍 Asporto" : `Tavolo ${o.tavolo ?? "—"}`;
+            const dest = o.asporto ? `🛍 Asporto · ${o.tavolo ?? "—"}` : `Tavolo ${o.tavolo ?? "—"}`;
             return (
               <li
                 key={o.id}

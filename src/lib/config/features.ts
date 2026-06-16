@@ -18,7 +18,8 @@ export type FeatureId =
   | "scorte"
   | "componibili"
   | "descrizione"
-  | "ingredienti";
+  | "ingredienti"
+  | "asporto";
 
 export interface FeatureDef {
   id: FeatureId;
@@ -110,6 +111,14 @@ export const FEATURES: FeatureDef[] = [
     nome: "Ingredienti del prodotto",
     descrizione:
       "Spunta gli ingredienti del piatto: compaiono in elenco, separati da virgola.",
+    pianoMinimo: "base",
+    defaultOn: false,
+  },
+  {
+    id: "asporto",
+    nome: "Ordini da asporto",
+    descrizione:
+      "Il cliente sceglie «Da asporto» col nome per il ritiro; se i pagamenti sono attivi può pagare in cassa.",
     pianoMinimo: "base",
     defaultOn: false,
   },

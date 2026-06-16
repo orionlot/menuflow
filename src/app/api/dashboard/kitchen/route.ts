@@ -15,7 +15,7 @@ export async function GET() {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("orders")
-    .select("id, tavolo, items, totale, note, created_at, pronto_at, stato")
+    .select("id, tavolo, asporto, items, totale, note, created_at, pronto_at, stato")
     .eq("restaurant_id", restaurant.id)
     .in("stato", ["ricevuto", "pagato"])
     .is("servito_at", null)

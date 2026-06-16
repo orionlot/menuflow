@@ -33,6 +33,8 @@ export async function POST(req: Request) {
   let body: {
     slug?: string;
     tavolo?: string;
+    asporto?: boolean;
+    paga_in_cassa?: boolean;
     note?: string;
     coperti?: number;
     mancia?: number;
@@ -83,11 +85,17 @@ export async function POST(req: Request) {
       );
     }
 
-    // Table number is mandatory (the customer must say which table).
+    // Destination: a table number, or the customer name for takeaway (asporto).
+    const asporto = isFeatureOn(restaurant, "asporto") && Boolean(body.asporto);
     const tavolo = clean(body.tavolo, 40);
     if (!tavolo) {
       return NextResponse.json(
-        { ok: false, error: "Inserisci il numero del tavolo." },
+        {
+          ok: false,
+          error: asporto
+            ? "Inserisci il nome per il ritiro."
+            : "Inserisci il numero del tavolo.",
+        },
         { status: 400 },
       );
     }
@@ -104,12 +112,14 @@ export async function POST(req: Request) {
     );
 
     const note = clean(body.note, 280);
-    const payments = restaurant.pagamenti_attivi;
+    // Takeaway can pay at the counter → treat as a non-online (case A) order.
+    const payAtCounter = asporto && Boolean(body.paga_in_cassa);
+    const useOnline = restaurant.pagamenti_attivi && !payAtCounter;
 
     // Coperto: applied server-side per the restaurant's configured mode.
-    // "persona" needs a valid cover count from the client; validate it here.
+    // Asporto has no cover charge; "persona" otherwise needs a valid count.
     let coperti: number | null = null;
-    if (restaurant.coperto_modalita === "persona") {
+    if (!asporto && restaurant.coperto_modalita === "persona") {
       const c = Number(body.coperti);
       if (!Number.isInteger(c) || c < 1 || c > 50) {
         return NextResponse.json(
@@ -119,14 +129,17 @@ export async function POST(req: Request) {
       }
       coperti = c;
     }
-    const copertoCents = computeCopertoCents(
-      restaurant.coperto_modalita,
-      restaurant.coperto,
-      coperti ?? 0,
-      itemsTotaleCents,
-    );
+    const copertoCents = asporto
+      ? 0
+      : computeCopertoCents(
+          restaurant.coperto_modalita,
+          restaurant.coperto,
+          coperti ?? 0,
+          itemsTotaleCents,
+        );
+    // The in-app tip only applies to an online payment.
     const manciaCents = computeManciaCents(
-      payments,
+      useOnline,
       restaurant.accetta_mancia,
       body.mancia,
     );
@@ -139,13 +152,14 @@ export async function POST(req: Request) {
       .insert({
         restaurant_id: restaurant.id,
         tavolo,
+        asporto,
         items: lines,
         totale,
         mancia: manciaCents / 100,
         coperti,
         coperto_tot: copertoCents / 100,
         note,
-        stato: payments ? "in_attesa_pagamento" : "ricevuto",
+        stato: useOnline ? "in_attesa_pagamento" : "ricevuto",
       })
       .select("*")
       .single();
@@ -155,8 +169,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, maintenance: true }, { status: 503 });
     }
 
-    // ── Case A: no online payments → order is valid now, notify Orders bot ──
-    if (!payments) {
+    // ── Case A: no online payment (payments off OR pay-at-counter) → valid now ──
+    if (!useOnline) {
       // Decrement stock for items that track it.
       if (isFeatureOn(restaurant, "scorte")) {
         const ids = lines.map((l) => l.item_id);

@@ -55,6 +55,7 @@ describe("funzioniAttive", () => {
     const m = funzioniAttive({ piano: "base" });
     expect(Object.keys(m).sort()).toEqual(
       [
+        "asporto",
         "componibili",
         "descrizione",
         "feedback",
