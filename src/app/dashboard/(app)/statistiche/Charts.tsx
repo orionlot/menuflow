@@ -39,7 +39,7 @@ const dayLabel = (iso: string) => {
 
 function TooltipBox({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs shadow-lg">
+    <div className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs shadow-md">
       {children}
     </div>
   );

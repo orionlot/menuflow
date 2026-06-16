@@ -75,15 +75,15 @@ export default async function StatistichePage({
           >
             ⬇ Esporta CSV
           </a>
-          <div className="flex overflow-hidden rounded-lg border border-neutral-300 text-sm">
+          <div className="flex items-center gap-0.5 rounded-lg border border-neutral-200 p-0.5">
             {RANGES.map((r) => (
               <Link
                 key={r}
                 href={`/dashboard/statistiche?range=${r}`}
-                className={`px-3 py-1.5 ${
+                className={`rounded-md px-3 py-1.5 text-sm font-medium ${
                   r === range
-                    ? "bg-neutral-900 text-white"
-                    : "bg-white text-neutral-600 hover:bg-neutral-100"
+                    ? "bg-[var(--brand-soft)] text-brand"
+                    : "text-neutral-600 hover:bg-neutral-100"
                 }`}
               >
                 {r}g
@@ -94,14 +94,21 @@ export default async function StatistichePage({
       </div>
 
       {s.ordersCount === 0 ? (
-        <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-10 text-center text-neutral-500">
-          Nessun ordine in questo periodo. Quando arriveranno ordini, qui vedrai
-          incassi, prodotti più venduti e fasce orarie.
+        <div className="rounded-xl border border-dashed border-neutral-300 p-6 text-center">
+          <div className="text-3xl">📊</div>
+          <div className="mt-2 text-sm font-medium text-neutral-700">
+            Nessun ordine in questo periodo
+          </div>
+          <p className="mt-1 text-sm text-neutral-500">
+            Quando arriveranno ordini, qui vedrai incassi, prodotti più venduti
+            e fasce orarie. Prova ad ampliare l&apos;intervallo o condividi il QR
+            del menù per ricevere i primi ordini.
+          </p>
         </div>
       ) : (
         <div className="space-y-5">
           {/* KPI */}
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Kpi
               label="Incasso"
               value={formatEUR(s.revenueCents)}
@@ -146,7 +153,7 @@ export default async function StatistichePage({
           {s.scontriniToRegister > 0 && (
             <Link
               href="/dashboard/reconciliation"
-              className="block rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 hover:bg-amber-100"
+              className="block rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 hover:bg-amber-100"
             >
               ⚠️ {s.scontriniToRegister} scontrin
               {s.scontriniToRegister === 1 ? "o" : "i"} da registrare → vai alla
@@ -228,13 +235,17 @@ function Kpi({
 }) {
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-4">
-      <div className="text-xs text-neutral-500">{label}</div>
-      <div className="mt-1 text-2xl font-bold">{value}</div>
+      <div className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+        {label}
+      </div>
+      <div className="mt-1.5 text-2xl font-bold tracking-tight text-neutral-900">
+        {value}
+      </div>
       {delta === null ? (
-        <div className="mt-1 text-xs text-neutral-400">nuovo periodo</div>
+        <div className="mt-2 text-xs text-neutral-400">nuovo periodo</div>
       ) : delta !== undefined ? (
         <div
-          className={`mt-1 text-xs font-medium ${
+          className={`mt-2 text-xs font-medium ${
             delta >= 0 ? "text-green-600" : "text-red-600"
           }`}
         >
@@ -257,7 +268,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 function Track({ children }: { children: React.ReactNode }) {
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100">
+    <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100/70">
       {children}
     </div>
   );
