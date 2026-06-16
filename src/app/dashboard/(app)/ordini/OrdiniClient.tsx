@@ -215,6 +215,7 @@ export default function OrdiniClient({
           {visible.map((o) => {
             const b = statoBadge(o);
             const nuovo = !o.visto_at;
+            const dest = o.tavolo === "Asporto" ? "🛍 Asporto" : `Tavolo ${o.tavolo ?? "—"}`;
             return (
               <li
                 key={o.id}
@@ -229,7 +230,7 @@ export default function OrdiniClient({
                         NUOVO
                       </span>
                     )}
-                    <span className="font-medium">Tavolo {o.tavolo ?? "—"}</span>
+                    <span className="font-medium">{dest}</span>
                     <span className="ml-2 text-sm text-neutral-500">
                       {new Date(o.created_at).toLocaleTimeString("it-IT", {
                         hour: "2-digit",

@@ -331,6 +331,7 @@ export default function KitchenClient({
                     const m = mins(o.created_at);
                     const col = ageColor(m);
                     const isNew = pulseIds.has(o.id);
+                    const dest = o.tavolo === "Asporto" ? "🛍 Asporto" : `Tavolo ${o.tavolo ?? "—"}`;
                     return (
                       <article
                         key={o.id}
@@ -348,7 +349,7 @@ export default function KitchenClient({
                         )}
                         <div className="flex items-center justify-between gap-2 bg-neutral-900 px-4 py-3 text-white">
                           <span className="text-2xl font-extrabold">
-                            Tavolo {o.tavolo ?? "—"}
+                            {dest}
                           </span>
                           <span className="text-right text-xs leading-tight">
                             <span
@@ -422,7 +423,9 @@ export default function KitchenClient({
                   className="grid gap-4"
                   style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}
                 >
-                  {ready.map((o) => (
+                  {ready.map((o) => {
+                    const dest = o.tavolo === "Asporto" ? "🛍 Asporto" : `Tavolo ${o.tavolo ?? "—"}`;
+                    return (
                     <article
                       key={o.id}
                       className="flex flex-col overflow-hidden rounded-2xl bg-green-50 text-neutral-900 shadow-lg"
@@ -430,7 +433,7 @@ export default function KitchenClient({
                     >
                       <div className="flex items-center justify-between gap-2 bg-green-600 px-4 py-3 text-white">
                         <span className="text-2xl font-extrabold">
-                          Tavolo {o.tavolo ?? "—"}
+                          {dest}
                         </span>
                         <span className="text-right text-xs leading-tight">
                           <span className="block text-sm font-bold">PRONTO 🔔</span>
@@ -468,7 +471,8 @@ export default function KitchenClient({
                         </button>
                       </div>
                     </article>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>
