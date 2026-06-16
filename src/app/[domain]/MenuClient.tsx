@@ -1568,7 +1568,7 @@ export default function MenuClient({
                     <div className="mt-1 flex gap-2">
                       {[
                         { val: false, label: "Paga ora" },
-                        { val: true, label: "Paga in cassa" },
+                        { val: true, label: delivery ? "Paga alla consegna" : "Paga in cassa" },
                       ].map((opt) => {
                         const on = pagaInCassa === opt.val;
                         return (
