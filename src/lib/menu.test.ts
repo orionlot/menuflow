@@ -4,7 +4,38 @@ import {
   sanitizeAggiunte,
   sanitizeItemPatch,
   sanitizeComposizione,
+  sanitizeReparti,
 } from "@/lib/menu";
+
+describe("sanitizeReparti", () => {
+  it("keeps an existing id stable (so dish references don't break)", () => {
+    const out = sanitizeReparti([{ id: "pizzeria", nome: "Pizzeria", colore: "#ef4444" }]);
+    expect(out).toEqual([{ id: "pizzeria", nome: "Pizzeria", colore: "#ef4444" }]);
+  });
+
+  it("derives a slug id from the name when none is given", () => {
+    const out = sanitizeReparti([{ nome: "Banco Sushi" }]);
+    expect(out[0].id).toBe("banco-sushi");
+    expect(out[0].nome).toBe("Banco Sushi");
+  });
+
+  it("de-duplicates generated ids", () => {
+    const out = sanitizeReparti([{ nome: "Bar" }, { nome: "Bar" }]);
+    expect(out.map((r) => r.id)).toEqual(["bar", "bar-2"]);
+  });
+
+  it("drops entries without a name and defaults a bad colour", () => {
+    const out = sanitizeReparti([{ nome: "  " }, { nome: "Griglia", colore: "notacolor" }]);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toEqual({ id: "griglia", nome: "Griglia", colore: "#64748b" });
+  });
+
+  it("ignores non-arrays and caps the list at 20", () => {
+    expect(sanitizeReparti("nope")).toEqual([]);
+    const many = Array.from({ length: 30 }, (_, i) => ({ nome: `R${i}` }));
+    expect(sanitizeReparti(many)).toHaveLength(20);
+  });
+});
 
 describe("sanitizeOpzioni", () => {
   it("returns [] for non-arrays", () => {

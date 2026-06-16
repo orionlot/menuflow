@@ -5,8 +5,13 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeBranding } from "@/lib/branding";
-import { sanitizeFunzionalita } from "@/lib/config/features";
+import { sanitizeFunzionalita, isFeatureOn } from "@/lib/config/features";
 import { sanitizeUnita } from "@/lib/config/units";
+import { priceCartServerSide } from "@/lib/pricing";
+import { computeCopertoCents } from "@/lib/pricing-core";
+import { notifyNewOrder } from "@/lib/telegram";
+import { decrementMenuItemStock } from "@/lib/menu-stock";
+import { decrementIngredientStock, composableCategories } from "@/lib/ingredients";
 import { sanitizeOrari, sanitizeChiusure } from "@/lib/orari";
 import { notifyTest } from "@/lib/telegram";
 import {
@@ -24,7 +29,9 @@ import type {
   BrandingPatch,
   CategoryAddon,
   ComposizioneGruppo,
+  Order,
   PublicIngredient,
+  Restaurant,
   TagliaComposizione,
 } from "@/types/db";
 
@@ -516,6 +523,131 @@ export async function setOrderPriorita(orderId: string, priorita: "alta" | "medi
     .update({ priorita: value })
     .eq("id", orderId);
   if (error) throw new Error(error.message);
+}
+
+/** Cancel an order (or restore it). Cancelled orders leave the kitchen feed and
+ *  the day's sales/incasso but stay in the order history. RLS-scoped. */
+export async function annullaOrdine(orderId: string, annulla = true) {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("orders")
+    .update({ annullato_at: annulla ? new Date().toISOString() : null })
+    .eq("id", orderId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/ordini");
+}
+
+/** Mark a service request (call-waiter / ask-bill) as handled. RLS-scoped. */
+export async function markServiceRequestHandled(id: string) {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("service_requests")
+    .update({ gestita_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/ordini");
+}
+
+/**
+ * Create an order manually from the dashboard (a waiter taking the order). The
+ * total is recomputed server-side from DB prices (never trusted) exactly like
+ * the public endpoint; the order is created as `ricevuto` (paid at the counter,
+ * no online payment) and the Orders bot is notified.
+ */
+export async function createManualOrder(input: {
+  tavolo?: string;
+  tipo?: string;
+  sala?: string;
+  indirizzo?: string;
+  coperti?: number;
+  note?: string;
+  items?: { item_id: string; qta: number; opzioni?: { gruppo: string; scelta: string }[] }[];
+}): Promise<{ orderId: string }> {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { data: rRow } = await admin.from("restaurants").select("*").eq("id", restaurantId).maybeSingle();
+  const restaurant = rRow as Restaurant | null;
+  if (!restaurant) throw new Error("Ristorante non trovato.");
+
+  // Asporto/delivery are only valid when the feature is on (mirror /api/ordine);
+  // otherwise it falls back to a table order so the coperto rules still apply.
+  const asportoOn = isFeatureOn(restaurant, "asporto");
+  const tipo =
+    asportoOn && input.tipo === "delivery"
+      ? "delivery"
+      : asportoOn && input.tipo === "asporto"
+        ? "asporto"
+        : "tavolo";
+  const asporto = tipo !== "tavolo";
+  const tavolo = String(input.tavolo ?? "").trim().slice(0, 40);
+  if (!tavolo) throw new Error(asporto ? "Inserisci il nome." : "Inserisci il tavolo.");
+
+  const componibiliOn = isFeatureOn(restaurant, "componibili");
+  const scorteOn = isFeatureOn(restaurant, "scorte");
+  const ingredientiOn = isFeatureOn(restaurant, "ingredienti");
+  const { lines, itemsTotaleCents } = await priceCartServerSide(
+    admin,
+    restaurant.id,
+    input.items ?? [],
+    restaurant.aggiunte ?? [],
+    { enforceScorte: scorteOn },
+    componibiliOn ? (restaurant.composizione ?? []) : [],
+    componibiliOn ? (restaurant.composizione_taglie ?? []) : [],
+    componibiliOn,
+  );
+  if (!lines.length) throw new Error("Aggiungi almeno un prodotto.");
+
+  // Coperto applies to table orders per the restaurant's configured mode. Like
+  // the public flow, a per-person cover charge requires a valid covers count.
+  let coperti: number | null = null;
+  if (!asporto && restaurant.coperto_modalita === "persona") {
+    const c = Number(input.coperti);
+    if (!Number.isInteger(c) || c < 1 || c > 50) throw new Error("Indica il numero di coperti.");
+    coperti = c;
+  }
+  const copertoCents = asporto
+    ? 0
+    : computeCopertoCents(restaurant.coperto_modalita, restaurant.coperto, coperti ?? 0, itemsTotaleCents);
+  const totaleCents = itemsTotaleCents + copertoCents;
+
+  const { data: orderRow, error } = await admin
+    .from("orders")
+    .insert({
+      restaurant_id: restaurant.id,
+      tavolo,
+      asporto,
+      tipo,
+      sala: String(input.sala ?? "").trim().slice(0, 60) || null,
+      indirizzo: tipo === "delivery" ? String(input.indirizzo ?? "").trim().slice(0, 200) || null : null,
+      items: lines,
+      totale: totaleCents / 100,
+      coperti,
+      coperto_tot: copertoCents / 100,
+      note: String(input.note ?? "").trim().slice(0, 280) || null,
+      stato: "ricevuto",
+      visto_at: new Date().toISOString(), // created by staff → already "seen"
+    })
+    .select("*")
+    .single();
+  const order = orderRow as Order | null;
+  if (error || !order) throw new Error(error?.message ?? "Errore nella creazione dell'ordine.");
+
+  // Decrement stock just like the public Case-A order so manual orders don't
+  // oversell (per-product scorte + ingredient stock for composable/simple items).
+  if (scorteOn) await decrementMenuItemStock(admin, lines);
+  if (componibiliOn || ingredientiOn) {
+    await decrementIngredientStock(
+      admin,
+      lines,
+      { composizione: componibiliOn, ingredienti: ingredientiOn },
+      composableCategories(restaurant.composizione, componibiliOn),
+    );
+  }
+
+  await notifyNewOrder(restaurant, order);
+  revalidatePath("/dashboard/ordini");
+  revalidatePath("/[domain]", "page");
+  return { orderId: order.id };
 }
 
 /**

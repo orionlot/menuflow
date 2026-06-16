@@ -31,7 +31,8 @@ export function computeStats(
   orders: Order[],
   catByItemId: Map<string, string>,
 ): Stats {
-  const sales = orders.filter((o) => SALES_STATES.has(o.stato));
+  // Cancelled orders never count toward sales/revenue/charts.
+  const sales = orders.filter((o) => SALES_STATES.has(o.stato) && !o.annullato_at);
 
   let revenueCents = 0;
   let units = 0;

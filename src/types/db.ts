@@ -299,7 +299,27 @@ export interface Order {
   /** Estimated prep minutes (max prep time of the order's items, at creation). */
   tempo_stimato: number | null;
   priorita: Priorita | null;
+  /** Set when the order is cancelled (leaves the kitchen + sales, stays in history). */
+  annullato_at: string | null;
+  /** Optional room / zone label (e.g. "Interno", "Dehors"). */
+  sala: string | null;
+  /** Destination type: a table order, takeaway, or home delivery. */
+  tipo: OrderTipo;
+  /** Delivery address (only for `tipo === "delivery"`). */
+  indirizzo: string | null;
   created_at: string;
+}
+
+export type OrderTipo = "tavolo" | "asporto" | "delivery";
+
+/** A customer-at-table service request (call waiter / ask for the bill). */
+export interface ServiceRequest {
+  id: string;
+  restaurant_id: string;
+  tavolo: string;
+  tipo: "cameriere" | "conto";
+  created_at: string;
+  gestita_at: string | null;
 }
 
 export interface CustomDomain {

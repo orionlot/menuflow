@@ -1,8 +1,10 @@
 import { requireOwner } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Order } from "@/types/db";
-import OrdiniClient from "./OrdiniClient";
+import type { Order, ServiceRequest, MenuItem } from "@/types/db";
+import OrdiniClient, { type PickerItem } from "./OrdiniClient";
 import { isFeatureOn } from "@/lib/config/features";
+import { effectiveOptions } from "@/lib/menu";
+import { annullaOrdine, markServiceRequestHandled, createManualOrder } from "@/app/dashboard/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -33,30 +35,69 @@ export default async function OrdiniPage({
     .order("created_at", { ascending: false });
   const orders = (data as Order[]) ?? [];
 
-  return (
-    <div>
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold">Ordini</h1>
-        <form className="flex flex-wrap items-center gap-2 text-sm">
-          <label className="text-neutral-500">Giorno</label>
-          <input
-            type="date"
-            name="day"
-            defaultValue={day}
-            className="rounded-md border border-neutral-300 px-2 py-1"
-          />
-          <button className="rounded-md border border-neutral-300 px-3 py-1 hover:bg-neutral-100">
-            Filtra
-          </button>
-        </form>
-      </div>
+  // Pending service requests (call-waiter / ask-bill), last 6h.
+  const since6h = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  const { data: reqRows } = await supabase
+    .from("service_requests")
+    .select("*")
+    .eq("restaurant_id", restaurant.id)
+    .is("gestita_at", null)
+    .gte("created_at", since6h)
+    .order("created_at", { ascending: false });
+  const requests = (reqRows as ServiceRequest[]) ?? [];
 
-      <OrdiniClient
-        initialOrders={orders}
-        day={day}
-        stampaOn={isFeatureOn(restaurant, "stampa")}
-        riepilogoOn={isFeatureOn(restaurant, "riepilogo")}
-      />
-    </div>
+  // Menu items for the manual-order picker. The picker adds bare {item_id, qta}
+  // (no option/size selection), so we only offer items that can be priced
+  // without a mandatory choice — otherwise createManualOrder would reject them.
+  const componibiliOn = isFeatureOn(restaurant, "componibili");
+  const aggiunte = restaurant.aggiunte ?? [];
+  const compoCat = restaurant.composizione ?? [];
+  const taglieCat = restaurant.composizione_taglie ?? [];
+  const { data: itemRows } = await supabase
+    .from("menu_items")
+    .select("id, nome, prezzo, categoria, disponibile, opzioni, composizione, composizione_taglie")
+    .eq("restaurant_id", restaurant.id)
+    .eq("disponibile", true)
+    .order("categoria", { ascending: true })
+    .order("ordine", { ascending: true });
+
+  function requiresChoice(item: MenuItem): boolean {
+    if (effectiveOptions(item, aggiunte).some((g) => g.obbligatorio)) return true;
+    if (componibiliOn) {
+      const taglie = item.composizione_taglie?.length
+        ? item.composizione_taglie
+        : taglieCat.filter((t) => t.categorie.includes(item.categoria));
+      if (taglie.length) return true;
+      const compo = item.composizione?.length
+        ? item.composizione
+        : compoCat.filter((g) => g.categorie.includes(item.categoria));
+      if (compo.some((g) => (g.min ?? 0) >= 1)) return true;
+    }
+    return false;
+  }
+
+  const pickerItems: PickerItem[] = ((itemRows as MenuItem[]) ?? [])
+    .filter((i) => !requiresChoice(i))
+    .map((i) => ({
+      id: i.id,
+      nome: i.nome,
+      prezzo: Number(i.prezzo),
+      categoria: i.categoria,
+      disponibile: i.disponibile,
+    }));
+
+  return (
+    <OrdiniClient
+      initialOrders={orders}
+      initialRequests={requests}
+      pickerItems={pickerItems}
+      day={day}
+      restaurantId={restaurant.id}
+      stampaOn={isFeatureOn(restaurant, "stampa")}
+      riepilogoOn={isFeatureOn(restaurant, "riepilogo")}
+      asportoOn={isFeatureOn(restaurant, "asporto")}
+      copertoModalita={restaurant.coperto_modalita}
+      actions={{ annullaOrdine, markServiceRequestHandled, createManualOrder }}
+    />
   );
 }

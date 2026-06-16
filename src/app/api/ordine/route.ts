@@ -76,6 +76,8 @@ export async function POST(req: Request) {
     slug?: string;
     tavolo?: string;
     asporto?: boolean;
+    tipo?: string;
+    indirizzo?: string;
     paga_in_cassa?: boolean;
     note?: string;
     coperti?: number;
@@ -128,8 +130,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Destination: a table number, or the customer name for takeaway (asporto).
-    const asporto = isFeatureOn(restaurant, "asporto") && Boolean(body.asporto);
+    // Destination: a table number, or the customer name for takeaway/delivery.
+    // Delivery is a takeaway-style order (no coperto) that also carries an address.
+    const asportoOn = isFeatureOn(restaurant, "asporto");
+    const delivery = asportoOn && body.tipo === "delivery";
+    const asporto = asportoOn && (Boolean(body.asporto) || delivery);
+    const tipo = delivery ? "delivery" : asporto ? "asporto" : "tavolo";
     const tavolo = clean(body.tavolo, 40);
     if (!tavolo) {
       return NextResponse.json(
@@ -139,6 +145,13 @@ export async function POST(req: Request) {
             ? "Inserisci il nome per il ritiro."
             : "Inserisci il numero del tavolo.",
         },
+        { status: 400 },
+      );
+    }
+    const indirizzo = delivery ? clean(body.indirizzo, 200) : null;
+    if (delivery && !indirizzo) {
+      return NextResponse.json(
+        { ok: false, error: "Inserisci l'indirizzo di consegna." },
         { status: 400 },
       );
     }
@@ -218,6 +231,8 @@ export async function POST(req: Request) {
         restaurant_id: restaurant.id,
         tavolo,
         asporto,
+        tipo,
+        indirizzo,
         items: lines,
         totale,
         mancia: manciaCents / 100,

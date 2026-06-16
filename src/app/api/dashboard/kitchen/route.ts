@@ -30,6 +30,7 @@ export async function GET() {
     )
     .eq("restaurant_id", restaurant.id)
     .in("stato", ["ricevuto", "pagato"])
+    .is("annullato_at", null)
     .or(`servito_at.is.null,servito_at.gte.${since2h}`)
     .order("created_at", { ascending: true })
     .limit(300);

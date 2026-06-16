@@ -21,11 +21,12 @@ export default async function DashboardHome() {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("orders")
-    .select("totale, stato, scontrino_registrato")
+    .select("totale, stato, scontrino_registrato, annullato_at")
     .eq("restaurant_id", restaurant.id)
+    .is("annullato_at", null)
     .gte("created_at", since.toISOString());
   const today =
-    (data as Pick<Order, "totale" | "stato" | "scontrino_registrato">[]) ?? [];
+    (data as Pick<Order, "totale" | "stato" | "scontrino_registrato" | "annullato_at">[]) ?? [];
   const valid = today.filter((o) => o.stato === "ricevuto" || o.stato === "pagato");
   const incassoCents = Math.round(
     valid.reduce((s, o) => s + Number(o.totale || 0), 0) * 100,

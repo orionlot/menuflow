@@ -39,6 +39,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Non disponibile." }, { status: 404 });
   }
 
+  // Persist for the dashboard (Richieste di servizio) + notify the Orders bot.
+  await admin
+    .from("service_requests")
+    .insert({ restaurant_id: restaurant.id, tavolo, tipo });
   await notifyServiceRequest(restaurant, tavolo, tipo);
   return NextResponse.json({ ok: true });
 }

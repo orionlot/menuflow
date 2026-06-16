@@ -36,6 +36,7 @@ export async function GET(req: Request) {
     .select("*")
     .eq("restaurant_id", restaurant.id)
     .in("stato", ["ricevuto", "pagato"])
+    .is("annullato_at", null)
     .gte("created_at", since.toISOString())
     .order("created_at", { ascending: true });
 
