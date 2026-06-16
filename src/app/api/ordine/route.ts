@@ -118,6 +118,23 @@ export async function POST(req: Request) {
       componibiliOn,
     );
 
+    // Estimated prep time = longest prep time among the ordered dishes. Anchors
+    // the kitchen countdown once a cook starts preparation. Best-effort: a query
+    // failure just leaves it null (the countdown then simply doesn't show).
+    let tempoStimato: number | null = null;
+    const orderedIds = [...new Set(lines.map((l) => l.item_id).filter(Boolean))] as string[];
+    if (orderedIds.length) {
+      const { data: prepRows } = await admin
+        .from("menu_items")
+        .select("tempo_preparazione")
+        .eq("restaurant_id", restaurant.id)
+        .in("id", orderedIds);
+      const times = (prepRows ?? [])
+        .map((r) => (r as { tempo_preparazione: number | null }).tempo_preparazione)
+        .filter((t): t is number => typeof t === "number" && t > 0);
+      if (times.length) tempoStimato = Math.max(...times);
+    }
+
     const note = clean(body.note, 280);
     // Takeaway can pay at the counter → treat as a non-online (case A) order.
     const payAtCounter = asporto && Boolean(body.paga_in_cassa);
@@ -165,6 +182,7 @@ export async function POST(req: Request) {
         mancia: manciaCents / 100,
         coperti,
         coperto_tot: copertoCents / 100,
+        tempo_stimato: tempoStimato,
         note,
         stato: useOnline ? "in_attesa_pagamento" : "ricevuto",
       })

@@ -444,32 +444,62 @@ export async function markOrdersRead(ids?: string[]) {
   revalidatePath("/dashboard/ordini");
 }
 
-/** Kitchen: cook marks an order ready (rings the bell for waiters). */
-export async function markOrderReady(orderId: string) {
+/** The four kitchen lifecycle stages, derived from the prep/ready/served stamps. */
+export type KitchenStage = "da_preparare" | "in_preparazione" | "pronti" | "serviti";
+
+/**
+ * Kitchen: move an order to a lifecycle stage (button taps + drag&drop both use
+ * this). Stamps are set forward and cleared going back; existing prep/ready
+ * stamps are preserved so the timer/metrics anchors stay meaningful. RLS scopes
+ * the update to the caller's own orders.
+ */
+const KITCHEN_STAGES: KitchenStage[] = ["da_preparare", "in_preparazione", "pronti", "serviti"];
+const PRIORITA_VALUES = ["alta", "media", "bassa"] as const;
+
+export async function setOrderStage(orderId: string, stage: KitchenStage) {
+  // Server actions are public endpoints: never trust the (type-erased) argument.
+  if (!KITCHEN_STAGES.includes(stage)) throw new Error("Stato cucina non valido.");
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
+  const { data: cur, error: rErr } = await supabase
     .from("orders")
-    .update({ pronto_at: new Date().toISOString() })
-    .eq("id", orderId);
+    .select("preparazione_at, pronto_at")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (rErr) throw new Error(rErr.message);
+  const now = new Date().toISOString();
+  const prep = (cur?.preparazione_at as string | null) ?? null;
+  const ready = (cur?.pronto_at as string | null) ?? null;
+
+  let patch: Record<string, string | null>;
+  switch (stage) {
+    case "da_preparare":
+      patch = { preparazione_at: null, pronto_at: null, servito_at: null };
+      break;
+    case "in_preparazione":
+      patch = { preparazione_at: prep ?? now, pronto_at: null, servito_at: null };
+      break;
+    case "pronti":
+      patch = { preparazione_at: prep ?? now, pronto_at: ready ?? now, servito_at: null };
+      break;
+    case "serviti":
+      patch = { servito_at: now };
+      break;
+    default:
+      throw new Error("Stato cucina non valido.");
+  }
+  const { error } = await supabase.from("orders").update(patch).eq("id", orderId);
   if (error) throw new Error(error.message);
 }
 
-/** Kitchen: a waiter picked it up — leaves the kitchen screen. */
-export async function markOrderServed(orderId: string) {
+/** Kitchen: set (or clear) an order's priority flag. RLS-scoped. The value is
+ *  validated against the allow-list — an out-of-contract string is coerced to
+ *  null rather than persisted (it would otherwise crash the board render). */
+export async function setOrderPriorita(orderId: string, priorita: "alta" | "media" | "bassa" | null) {
+  const value = PRIORITA_VALUES.includes(priorita as (typeof PRIORITA_VALUES)[number]) ? priorita : null;
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("orders")
-    .update({ servito_at: new Date().toISOString() })
-    .eq("id", orderId);
-  if (error) throw new Error(error.message);
-}
-
-/** Kitchen: undo "ready" (back to to-prepare). */
-export async function undoOrderReady(orderId: string) {
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("orders")
-    .update({ pronto_at: null })
+    .update({ priorita: value })
     .eq("id", orderId);
   if (error) throw new Error(error.message);
 }
