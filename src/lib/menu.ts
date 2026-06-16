@@ -197,6 +197,7 @@ export function sanitizeTaglie(raw: unknown): TagliaComposizione[] {
         nome: String(o.nome ?? "").trim().slice(0, 40),
         categorie,
         max,
+        prezzo: Math.max(0, Math.round((Number(o.prezzo) || 0) * 100) / 100),
       };
     })
     .filter((t) => t.nome && t.categorie.length);

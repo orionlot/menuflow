@@ -142,7 +142,7 @@ interface CartLine {
   unitCents: number;
   opzioni: Chosen[];
   composizione: OrderComposizione[];
-  taglia?: { id: string; nome: string };
+  taglia?: { id: string; nome: string; prezzo?: number };
 }
 
 function lineKey(
@@ -315,10 +315,11 @@ export default function MenuClient({
     item: MenuItem,
     chosen: Chosen[],
     composizione: OrderComposizione[] = [],
-    taglia?: { id: string; nome: string },
+    taglia?: { id: string; nome: string; prezzo?: number },
   ) {
     const unitCents =
       Math.round(item.prezzo * 100) +
+      Math.round((taglia?.prezzo ?? 0) * 100) +
       chosen.reduce((s, c) => s + Math.round(c.prezzo * 100), 0) +
       composizione.reduce((s, c) => s + Math.round(c.prezzo * 100) * c.qta, 0);
     const key = lineKey(item.id, chosen, composizione, taglia?.id);
@@ -1555,7 +1556,7 @@ function OptionsModal({
   onConfirm: (
     chosen: Chosen[],
     composizione: OrderComposizione[],
-    taglia?: { id: string; nome: string },
+    taglia?: { id: string; nome: string; prezzo?: number },
   ) => void;
 }) {
   // default: preselect first choice of required single groups
@@ -1619,6 +1620,7 @@ function OptionsModal({
     groups.some((g) => g.obbligatorio && (sel[g.id]?.length ?? 0) === 0) || compoMissing;
   const unitCents =
     Math.round(item.prezzo * 100) +
+    Math.round((taglia?.prezzo ?? 0) * 100) +
     chosen.reduce((s, c) => s + Math.round(c.prezzo * 100), 0) +
     composed.reduce((s, c) => s + Math.round(c.prezzo * 100) * c.qta, 0);
 
@@ -1658,6 +1660,12 @@ function OptionsModal({
                       }}
                     >
                       {tg.nome}
+                      {tg.prezzo > 0 && (
+                        <span className="font-normal" style={{ color: on ? p.brand : p.textMuted }}>
+                          {" "}
+                          · +{formatEUR(Math.round(tg.prezzo * 100))}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -1783,7 +1791,11 @@ function OptionsModal({
         <div className="border-t px-5 py-4" style={{ borderColor: p.surfaceBorder }}>
           <button
             onClick={() =>
-              onConfirm(chosen, composed, taglia ? { id: taglia.id, nome: taglia.nome } : undefined)
+              onConfirm(
+                chosen,
+                composed,
+                taglia ? { id: taglia.id, nome: taglia.nome, prezzo: taglia.prezzo } : undefined,
+              )
             }
             disabled={missing}
             className="w-full rounded-xl py-3.5 font-semibold disabled:opacity-50"

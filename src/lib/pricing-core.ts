@@ -178,11 +178,13 @@ export function priceLines(
     const itemTaglie = taglie.filter((t) => t.categorie.includes(item.categoria));
     let sizeMax: Record<string, number> = {};
     let tagliaNome: string | undefined;
+    let tagliaPrezzoCents = 0;
     if (itemTaglie.length) {
       const t = itemTaglie.find((x) => x.id === line.taglia_id);
       if (!t) throw new Error(`Scegli una taglia per ${item.nome}`);
       sizeMax = t.max ?? {};
       tagliaNome = t.nome;
+      tagliaPrezzoCents = Math.max(0, Math.round((Number(t.prezzo) || 0) * 100));
     }
 
     const compo = priceComposizione(
@@ -194,7 +196,10 @@ export function priceLines(
     );
 
     const unitCents =
-      Math.round(Number(item.prezzo) * 100) + optionDeltaCents + compo.deltaCents;
+      Math.round(Number(item.prezzo) * 100) +
+      optionDeltaCents +
+      compo.deltaCents +
+      tagliaPrezzoCents;
     itemsTotaleCents += unitCents * qta;
 
     lines.push({

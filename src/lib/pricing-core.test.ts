@@ -320,8 +320,8 @@ describe("priceComposizione + taglie (size caps the group max)", () => {
 });
 
 const TAGLIE = [
-  { id: "m", nome: "Medium", categorie: ["Poke"], max: { prot: 1, base: 1 } },
-  { id: "l", nome: "Large", categorie: ["Poke"], max: { prot: 2, base: 1 } },
+  { id: "m", nome: "Medium", categorie: ["Poke"], max: { prot: 1, base: 1 }, prezzo: 0 },
+  { id: "l", nome: "Large", categorie: ["Poke"], max: { prot: 2, base: 1 }, prezzo: 3 },
 ];
 
 describe("priceLines + taglie", () => {
@@ -347,5 +347,15 @@ describe("priceLines + taglie", () => {
       [], {}, GRUPPI, ING(), TAGLIE,
     );
     expect(r.lines[0].taglia).toBe("Large");
+  });
+  it("adds the size surcharge to the unit price", () => {
+    // base 9 + Large surcharge 3 + composition (2× tonno €2) = 16.
+    const r = priceLines(
+      [pokeItem],
+      [{ item_id: "poke", qta: 1, taglia_id: "l", composizione: [{ ingredient_id: "tonno", qta: 2 }, { ingredient_id: "riso", qta: 1 }] }],
+      [], {}, GRUPPI, ING(), TAGLIE,
+    );
+    expect(r.itemsTotaleCents).toBe(900 + 300 + 400);
+    expect(r.lines[0].prezzo).toBe(16);
   });
 });

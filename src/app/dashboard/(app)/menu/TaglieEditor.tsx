@@ -53,7 +53,7 @@ export default function TaglieEditor({
   }
   const persist = () => onSave(ref.current);
   function addTaglia() {
-    apply([...taglie, { id: crypto.randomUUID(), nome: "Nuova taglia", categorie: [], max: {} }], true);
+    apply([...taglie, { id: crypto.randomUUID(), nome: "Nuova taglia", categorie: [], max: {}, prezzo: 0 }], true);
   }
   function removeTaglia(ti: number) {
     apply(taglie.filter((_, i) => i !== ti), true);
@@ -83,7 +83,8 @@ export default function TaglieEditor({
     <div className="space-y-3">
       <p className="text-xs text-neutral-500">
         Una taglia (es. Medium, Large) imposta il <b>massimo</b> di scelte per
-        gruppo. Il minimo resta quello del gruppo e il prezzo non cambia.
+        gruppo (il minimo resta quello del gruppo) e può aggiungere una
+        <b> maggiorazione</b> al prezzo base del prodotto.
       </p>
 
       {taglie.length === 0 ? (
@@ -181,6 +182,24 @@ function TagliaCard({
           placeholder="Nome taglia (es. Large)"
           className="min-w-0 flex-1 rounded-md border border-neutral-300 px-2 py-1 text-sm font-medium"
         />
+        <label
+          className="flex shrink-0 items-center gap-1"
+          title="Maggiorazione sul prezzo base del prodotto (vuoto/0 = nessun supplemento)"
+        >
+          <span className="text-xs text-neutral-500">+€</span>
+          <input
+            type="number"
+            step="0.5"
+            min="0"
+            defaultValue={t.prezzo ?? 0}
+            onBlur={(e) => {
+              const v = Math.max(0, parseFloat(e.target.value) || 0);
+              if (v !== (t.prezzo ?? 0)) onUpdate({ prezzo: v });
+            }}
+            aria-label={`Maggiorazione prezzo ${t.nome}`}
+            className="w-16 rounded-md border border-neutral-300 px-2 py-1 text-sm"
+          />
+        </label>
         {confirming ? (
           <span className="flex items-center gap-1.5 text-xs">
             <button

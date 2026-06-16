@@ -129,11 +129,12 @@ update public.restaurants set composizione = '[
 ]'::jsonb
 where slug = 'pizzeria-mario';
 
--- Sizes (Medium / Large) for the Poke: each caps the max selections per group.
+-- Sizes (Medium / Large) for the Poke: each caps the max selections per group
+-- and may add a price surcharge on top of the item's base price (Large +3,00 €).
 update public.restaurants set composizione_taglie = '[
   {"id":"taglia-medium","nome":"Medium","categorie":["Poke"],
-   "max":{"g-base":1,"g-prot":1,"g-top":3,"g-salse":2}},
+   "max":{"g-base":1,"g-prot":1,"g-top":3,"g-salse":2},"prezzo":0},
   {"id":"taglia-large","nome":"Large","categorie":["Poke"],
-   "max":{"g-base":1,"g-prot":2,"g-top":5,"g-salse":2}}
+   "max":{"g-base":1,"g-prot":2,"g-top":5,"g-salse":2},"prezzo":3}
 ]'::jsonb
 where slug = 'pizzeria-mario';

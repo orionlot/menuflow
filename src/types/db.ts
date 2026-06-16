@@ -152,12 +152,13 @@ export interface ComposizioneGruppo {
 }
 
 /** A size variant for a composable category (e.g. Medium / Large). It caps the
- *  max per group; the min stays the group's own. Price is unchanged by size. */
+ *  max per group; the min stays the group's own. May add a price surcharge. */
 export interface TagliaComposizione {
   id: string;
   nome: string; // "Medium", "Large"
   categorie: string[]; // categories this size applies to (e.g. ["Poke"])
   max: Record<string, number>; // gruppo_id -> max selections for this size
+  prezzo: number; // surcharge added to the item base price (EUR; 0 = no extra)
 }
 
 /** A chosen ingredient (with quantity) on an order line. */
