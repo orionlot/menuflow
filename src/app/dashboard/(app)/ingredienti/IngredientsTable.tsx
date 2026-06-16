@@ -182,37 +182,56 @@ export default function IngredientsTable({
   })();
   const manual = sort === null;
 
-  const Th = ({ col, label, className = "" }: { col: SortCol; label: string; className?: string }) => (
-    <button
-      onClick={() => toggleSort(col)}
-      className={`flex items-center gap-1 text-left ${className}`}
-    >
-      {label}
-      <span className="text-[10px] text-neutral-400">
-        {sort?.col === col ? (sort.dir === "asc" ? "▲" : "▼") : "↕"}
+  const Th = ({ col, label, className = "" }: { col: SortCol; label: string; className?: string }) => {
+    const active = sort?.col === col;
+    const ariaSort: React.AriaAttributes["aria-sort"] = active
+      ? sort.dir === "asc"
+        ? "ascending"
+        : "descending"
+      : "none";
+    const nextAction = active
+      ? sort.dir === "asc"
+        ? "decrescente"
+        : "ordine manuale"
+      : "crescente";
+    return (
+      <span role="columnheader" aria-sort={ariaSort} className="flex">
+        <button
+          type="button"
+          onClick={() => toggleSort(col)}
+          aria-label={`Ordina per ${label} (${nextAction})`}
+          className={`flex items-center gap-1 rounded text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 ${className}`}
+        >
+          {label}
+          <span aria-hidden className="text-[11px] text-neutral-500">
+            {active ? (sort.dir === "asc" ? "▲" : "▼") : "↕"}
+          </span>
+        </button>
       </span>
-    </button>
-  );
+    );
+  };
 
   return (
     <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-100 p-3">
         <h2 className="font-medium">
-          Ingredienti <span className="text-sm font-normal text-neutral-400">({list.length})</span>
+          Ingredienti <span className="text-sm font-normal text-neutral-500">({list.length})</span>
         </h2>
         <div className="flex items-center gap-2">
           {!manual && (
             <button
+              type="button"
               onClick={() => setSort(null)}
-              className="rounded-lg border border-neutral-300 px-2.5 py-1.5 text-xs text-neutral-600 hover:bg-neutral-50"
+              className="rounded-lg border border-neutral-300 px-2.5 py-1.5 text-xs text-neutral-700 hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500"
               title="Torna all'ordine manuale (riattiva il trascinamento)"
             >
               ⠿ Ordine manuale
             </button>
           )}
           <button
+            type="button"
             onClick={() => save({ nome: "Nuovo ingrediente", prezzo: 0, scorta: null, ordine: list.length + 1 })}
-            className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-700"
+            className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 focus-visible:ring-offset-1"
           >
             + Aggiungi ingrediente
           </button>
@@ -220,26 +239,31 @@ export default function IngredientsTable({
       </div>
 
       <div className="overflow-x-auto">
-        <div className="min-w-[640px]">
-          <div className={`grid ${COLS} gap-2 border-b border-neutral-100 px-3 py-2 text-xs font-medium text-neutral-500`}>
-            <span />
+        <div role="table" aria-label="Ingredienti" className="min-w-[640px]">
+          <div
+            role="row"
+            className={`grid ${COLS} gap-2 border-b border-neutral-200 px-3 py-2 text-xs font-semibold text-neutral-600`}
+          >
+            <span role="columnheader" aria-hidden />
             <Th col="nome" label="Nome" />
             <Th col="categoria" label="Categoria" />
             <Th col="scorta" label="Scorta" />
             <Th col="prezzo" label="Prezzo €" />
-            <span>Unità</span>
+            <span role="columnheader">Unità</span>
             <Th col="stato" label="Stato" />
-            <span />
+            <span role="columnheader" aria-hidden />
           </div>
 
           {list.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-neutral-500">
-              Nessun ingrediente. Aggiungine uno con il pulsante qui sopra.
-            </p>
+            <div role="row">
+              <p role="cell" className="px-3 py-6 text-center text-sm text-neutral-600">
+                Nessun ingrediente. Aggiungine uno con il pulsante qui sopra.
+              </p>
+            </div>
           ) : manual ? (
             <DndContext id="ing-table" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
               <SortableContext items={list.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-                <ul>
+                <ul role="rowgroup">
                   {list.map((ing, idx) => (
                     <Row
                       key={ing.id}
@@ -258,7 +282,7 @@ export default function IngredientsTable({
               </SortableContext>
             </DndContext>
           ) : (
-            <ul>
+            <ul role="rowgroup">
               {display.map((ing) => (
                 <Row
                   key={ing.id}
@@ -313,56 +337,70 @@ function Row({
   const sortable = useSortableRow(ing.id);
   const [confirming, setConfirming] = useState(false);
   const s = stato(ing.scorta);
-  const inputCls = "w-full rounded-md border border-neutral-200 px-1.5 py-1 text-sm focus:border-neutral-400";
+  const inputCls =
+    "w-full rounded-md border border-neutral-300 px-1.5 py-1.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500";
 
   return (
     <li
       ref={manual ? sortable.setNodeRef : undefined}
       style={manual ? sortable.style : undefined}
-      className={`grid ${COLS} items-center gap-2 border-b border-neutral-100 px-3 py-1.5 last:border-b-0`}
+      role="row"
+      className={`grid ${COLS} items-center gap-2 border-b border-neutral-100 px-3 py-2 last:border-b-0`}
     >
-      <span className="flex items-center">
+      <span role="cell" className="flex items-center">
         {manual ? (
           <span className="flex flex-col items-center">
             <DragHandle {...sortable.handleProps} />
           </span>
         ) : (
-          <span className="px-2 text-neutral-300" title="Ordina dalle intestazioni o torna all'ordine manuale">
+          <span
+            aria-hidden
+            className="px-2 text-neutral-400"
+            title="Ordina dalle intestazioni o torna all'ordine manuale"
+          >
             ⠿
           </span>
         )}
       </span>
 
-      <input
-        value={ing.nome}
-        onChange={(e) => onPatch({ nome: e.target.value })}
-        onBlur={onSave}
-        placeholder="Nome"
-        className={`${inputCls} font-medium`}
-        aria-label={`Aggiungi ${ing.nome}`}
-      />
-      <input
-        value={ing.categoria}
-        list="ing-cat-suggestions"
-        onChange={(e) => onPatch({ categoria: e.target.value })}
-        onBlur={onSave}
-        placeholder="—"
-        className={inputCls}
-      />
-      <input
-        type="number"
-        min="0"
-        placeholder="∞"
-        value={ing.scorta ?? ""}
-        onChange={(e) => {
-          const raw = e.target.value.trim();
-          onPatch({ scorta: raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0) });
-        }}
-        onBlur={onSave}
-        className={inputCls}
-      />
-      <span className="relative">
-        <span className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400">
+      <span role="cell">
+        <input
+          value={ing.nome}
+          onChange={(e) => onPatch({ nome: e.target.value })}
+          onBlur={onSave}
+          placeholder="Nome"
+          className={`${inputCls} font-medium`}
+          aria-label="Nome"
+        />
+      </span>
+      <span role="cell">
+        <input
+          value={ing.categoria}
+          list="ing-cat-suggestions"
+          onChange={(e) => onPatch({ categoria: e.target.value })}
+          onBlur={onSave}
+          placeholder="—"
+          className={inputCls}
+          aria-label="Categoria"
+        />
+      </span>
+      <span role="cell">
+        <input
+          type="number"
+          min="0"
+          placeholder="∞"
+          value={ing.scorta ?? ""}
+          onChange={(e) => {
+            const raw = e.target.value.trim();
+            onPatch({ scorta: raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0) });
+          }}
+          onBlur={onSave}
+          className={inputCls}
+          aria-label="Scorta"
+        />
+      </span>
+      <span role="cell" className="relative">
+        <span className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-neutral-500">
           €
         </span>
         <input
@@ -373,21 +411,25 @@ function Row({
           onChange={(e) => onPatch({ prezzo: parseFloat(e.target.value) || 0 })}
           onBlur={onSave}
           className={`${inputCls} pl-5`}
+          aria-label="Prezzo"
         />
       </span>
-      <input
-        value={ing.unita ?? ""}
-        onChange={(e) => onPatch({ unita: e.target.value })}
-        onBlur={onSave}
-        placeholder="—"
-        className={inputCls}
-      />
-      <span className="flex items-center gap-1.5">
+      <span role="cell">
+        <input
+          value={ing.unita ?? ""}
+          onChange={(e) => onPatch({ unita: e.target.value })}
+          onBlur={onSave}
+          placeholder="—"
+          className={inputCls}
+          aria-label="Unità"
+        />
+      </span>
+      <span role="cell" className="flex items-center gap-1.5">
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${s.cls}`}>{s.label}</span>
         <SaveBadge st={st} />
       </span>
 
-      <span className="flex items-center justify-end gap-0.5">
+      <span role="cell" className="flex items-center justify-end gap-0.5">
         {manual && (
           <MoveButtons
             onUp={() => onMove(-1)}
@@ -399,25 +441,33 @@ function Row({
         {confirming ? (
           <span className="flex flex-col text-[11px] leading-tight">
             <button
+              type="button"
               onClick={() => {
                 setConfirming(false);
                 onDelete();
               }}
-              className="font-medium text-red-600"
+              aria-label="Conferma eliminazione"
+              className="rounded px-1 font-semibold text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
             >
               Sì
             </button>
-            <button onClick={() => setConfirming(false)} className="text-neutral-500">
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              aria-label="Annulla eliminazione"
+              className="rounded px-1 text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500"
+            >
               No
             </button>
           </span>
         ) : (
           <button
+            type="button"
             onClick={() => setConfirming(true)}
             aria-label="Elimina ingrediente"
-            className="rounded-md px-1.5 py-1 text-neutral-400 transition hover:bg-red-50 hover:text-red-600"
+            className="rounded-md px-1.5 py-1 text-neutral-500 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
           >
-            🗑
+            <span aria-hidden>🗑</span>
           </button>
         )}
       </span>
