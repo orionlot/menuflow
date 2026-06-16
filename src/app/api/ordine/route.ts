@@ -5,7 +5,7 @@ import { computeCopertoCents, computeManciaCents } from "@/lib/pricing-core";
 import { notifyNewOrder } from "@/lib/telegram";
 import { isStripeConfigured } from "@/lib/env";
 import { isFeatureOn } from "@/lib/config/features";
-import { decrementIngredientStock } from "@/lib/ingredients";
+import { decrementIngredientStock, composableCategories } from "@/lib/ingredients";
 import { hitRateLimit } from "@/lib/ratelimit";
 import { isOpenNow } from "@/lib/orari";
 import { createConnectPaymentIntent } from "@/lib/stripe/connect";
@@ -192,8 +192,17 @@ export async function POST(req: Request) {
             ),
         );
       }
-      if (isFeatureOn(restaurant, "componibili")) {
-        await decrementIngredientStock(admin, lines);
+      // Decrement ingredient stock: composable products consume their chosen
+      // composition; simple products consume their listed ingredients.
+      const componibiliOn = isFeatureOn(restaurant, "componibili");
+      const ingredientiOn = isFeatureOn(restaurant, "ingredienti");
+      if (componibiliOn || ingredientiOn) {
+        await decrementIngredientStock(
+          admin,
+          lines,
+          { composizione: componibiliOn, ingredienti: ingredientiOn },
+          composableCategories(restaurant.composizione, componibiliOn),
+        );
       }
       await notifyNewOrder(restaurant, order);
       return NextResponse.json({ ok: true, mode: "placed", orderId: order.id });

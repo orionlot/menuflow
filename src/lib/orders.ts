@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Order, Restaurant } from "@/types/db";
 import { notifyPaidOrder } from "@/lib/telegram";
 import { isFeatureOn } from "@/lib/config/features";
-import { decrementIngredientStock } from "@/lib/ingredients";
+import { decrementIngredientStock, composableCategories } from "@/lib/ingredients";
 
 /**
  * Transition an order to `pagato` and fire the Payments bot. Shared by the
@@ -48,8 +48,17 @@ export async function markOrderPaid(
   const restaurant = restaurantRow as Restaurant | null;
 
   if (restaurant) {
-    if (isFeatureOn(restaurant, "componibili"))
-      await decrementIngredientStock(admin, updated.items);
+    // Mirror the route's Case A decrement for the online-paid flow: composable
+    // products consume their composition, simple products their ingredient list.
+    const componibiliOn = isFeatureOn(restaurant, "componibili");
+    const ingredientiOn = isFeatureOn(restaurant, "ingredienti");
+    if (componibiliOn || ingredientiOn)
+      await decrementIngredientStock(
+        admin,
+        updated.items,
+        { composizione: componibiliOn, ingredienti: ingredientiOn },
+        composableCategories(restaurant.composizione, componibiliOn),
+      );
     await notifyPaidOrder(restaurant, updated);
   }
   return updated;

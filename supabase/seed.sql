@@ -138,3 +138,24 @@ update public.restaurants set composizione_taglie = '[
    "max":{"g-base":1,"g-prot":2,"g-top":5,"g-salse":2},"prezzo":3}
 ]'::jsonb
 where slug = 'pizzeria-mario';
+
+-- ───────────── Demo: ingredienti per prodotti "semplici" + scorte ─────────────
+-- I prodotti non componibili possono elencare i propri ingredienti: quelli con
+-- scorta attiva vengono scalati automaticamente a ogni ordine (Pomodoro e
+-- Mozzarella tracciati; Basilico illimitato per mostrare che gli ingredienti
+-- senza scorta vengono ignorati). "ingredienti" è una funzione base: basta
+-- l'interruttore del ristoratore.
+update public.restaurants
+  set funzionalita = funzionalita || '{"ingredienti": true}'::jsonb
+  where slug = 'pizzeria-mario';
+
+insert into public.ingredients (id, restaurant_id, nome, prezzo, scorta, unita, ordine) values
+  ('cccc0001-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Pomodoro',   0, 40,   null, 21),
+  ('cccc0001-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'Mozzarella', 0, 30,   null, 22),
+  ('cccc0001-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'Basilico',   0, null, null, 23)
+on conflict (id) do nothing;
+
+update public.menu_items
+  set ingredienti =
+    '["cccc0001-0000-0000-0000-000000000001","cccc0001-0000-0000-0000-000000000002","cccc0001-0000-0000-0000-000000000003"]'::jsonb
+  where restaurant_id = '11111111-1111-1111-1111-111111111111' and nome = 'Margherita';
