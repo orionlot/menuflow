@@ -9,9 +9,21 @@ export default function QrClient({ slug, nome }: { slug: string; nome: string })
   const [tables, setTables] = useState(8);
   const [menuQr, setMenuQr] = useState("");
   const [tableQrs, setTableQrs] = useState<{ n: number; url: string; qr: string }[]>([]);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => setBase(window.location.origin), []);
   const menuUrl = base ? buildTenantUrl(base, slug) : "";
+
+  const copyMenuUrl = () => {
+    if (!menuUrl) return;
+    navigator.clipboard
+      ?.writeText(menuUrl)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => {});
+  };
 
   useEffect(() => {
     if (!menuUrl) return;
@@ -50,18 +62,31 @@ export default function QrClient({ slug, nome }: { slug: string; nome: string })
       {/* Menu QR */}
       <section className="mb-8 rounded-xl border border-neutral-200 bg-white p-5">
         <h2 className="mb-1 font-semibold">QR del menu — {nome}</h2>
-        <p className="mb-3 break-all text-xs text-neutral-500">{menuUrl}</p>
-        <div className="flex flex-wrap items-center gap-5">
+        <div className="mb-3 flex items-center gap-2">
+          <code className="min-w-0 flex-1 break-all rounded bg-[var(--brand-soft)] px-2 py-1 text-xs text-neutral-600">
+            {menuUrl}
+          </code>
+          <button
+            type="button"
+            onClick={copyMenuUrl}
+            disabled={!menuUrl}
+            title="Copia il link del menu"
+            className="shrink-0 rounded-lg border border-neutral-300 px-2 py-1 text-xs font-medium hover:bg-neutral-100 disabled:opacity-50 print:hidden"
+          >
+            {copied ? "Copiato" : "Copia"}
+          </button>
+        </div>
+        <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
           {menuQr && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={menuQr} alt="QR menu" className="h-44 w-44 rounded-lg border border-neutral-200" />
           )}
-          <div className="flex flex-col gap-2 text-sm">
+          <div className="flex w-full flex-col gap-2 text-sm sm:w-auto">
             {menuQr && (
               <a
                 href={menuQr}
                 download={`menuflow-${slug}.png`}
-                className="rounded-lg bg-neutral-900 px-4 py-2 font-medium text-white hover:bg-neutral-700"
+                className="rounded-lg bg-neutral-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-neutral-700"
               >
                 Scarica PNG
               </a>
@@ -70,7 +95,7 @@ export default function QrClient({ slug, nome }: { slug: string; nome: string })
               href={menuUrl || "#"}
               target="_blank"
               rel="noreferrer"
-              className="rounded-lg border border-neutral-300 px-4 py-2 text-center font-medium hover:bg-neutral-100"
+              className="rounded-lg border border-neutral-300 px-4 py-2 text-center text-sm font-medium hover:bg-neutral-100"
             >
               Apri menu
             </a>
@@ -95,7 +120,7 @@ export default function QrClient({ slug, nome }: { slug: string; nome: string })
             <button
               onClick={() => window.print()}
               title="Apre la stampa: scegli «Salva come PDF» per il foglio completo"
-              className="rounded-lg border border-neutral-300 px-3 py-1 hover:bg-neutral-100"
+              className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-100"
             >
               Stampa / Salva PDF (tutti)
             </button>
@@ -106,14 +131,17 @@ export default function QrClient({ slug, nome }: { slug: string; nome: string })
         </h3>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           {tableQrs.map((t) => (
-            <div key={t.n} className="flex flex-col items-center rounded-lg border border-neutral-200 p-3">
+            <div
+              key={t.n}
+              className="flex flex-col items-center rounded-lg border border-neutral-200 p-3 transition hover:border-neutral-300 hover:shadow-sm"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={t.qr} alt={`QR tavolo ${t.n}`} className="h-32 w-32" />
               <div className="mt-2 text-sm font-bold">Tavolo {t.n}</div>
               <a
                 href={t.qr}
                 download={`menuflow-${slug}-tavolo-${t.n}.png`}
-                className="mt-1 text-xs text-blue-600 hover:underline print:hidden"
+                className="mt-1 text-xs text-brand hover:underline print:hidden"
               >
                 Scarica
               </a>
