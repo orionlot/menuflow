@@ -32,6 +32,15 @@
   outline: none;
 }
 
+/* Hand (pointer) cursor on hover for interactive elements; disabled stays default. */
+button:not(:disabled),
+[role="button"],
+summary,
+a[href],
+label[for] {
+  cursor: pointer;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
