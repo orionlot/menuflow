@@ -28,11 +28,21 @@ import { uploadImage } from "@/app/actions/upload";
 import OptionsEditor from "./OptionsEditor";
 import CategoryAddonsEditor from "./CategoryAddonsEditor";
 import NotesEditor from "./NotesEditor";
+import EtichetteEditor from "./EtichetteEditor";
 import ComposizioneEditor from "./ComposizioneEditor";
 import TaglieEditor from "./TaglieEditor";
 
 type MiniRestaurant = { id: string; multilingua: boolean; lingue: string[] };
 type SaveState = "saving" | "saved" | "error";
+type TabId = "piatti" | "categorie" | "varianti" | "extra" | "etichette";
+
+const TABS: { id: TabId; label: string }[] = [
+  { id: "piatti", label: "Piatti" },
+  { id: "categorie", label: "Categorie" },
+  { id: "varianti", label: "Varianti" },
+  { id: "extra", label: "Extra" },
+  { id: "etichette", label: "Etichette" },
+];
 
 export interface MenuActions {
   createItem: (patch: ItemPatch) => Promise<void>;
@@ -80,6 +90,7 @@ export default function MenuManager({
   etichetteOn = false,
   fasceOrarieOn = false,
   ingredientiList = [],
+  popularIds = [],
   actions,
 }: {
   restaurant: MiniRestaurant;
@@ -97,6 +108,7 @@ export default function MenuManager({
   etichetteOn?: boolean;
   fasceOrarieOn?: boolean;
   ingredientiList?: PublicIngredient[];
+  popularIds?: string[];
   actions: MenuActions;
 }) {
   const router = useRouter();
@@ -108,6 +120,8 @@ export default function MenuManager({
   const [status, setStatus] = useState<Record<string, SaveState>>({});
   const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [tab, setTab] = useState<TabId>("piatti");
+  const popularSet = useMemo(() => new Set(popularIds), [popularIds]);
 
   useEffect(() => setItems(initialItems), [initialItems]);
 
@@ -376,116 +390,173 @@ export default function MenuManager({
         <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
       )}
 
-      {/* Aggiunte per categoria */}
-      <details className="mb-4 rounded-xl border border-neutral-200 bg-white p-4">
-        <summary className="cursor-pointer font-medium">
-          Aggiunte per categoria{" "}
-          <span className="text-sm font-normal text-neutral-500">
-            {initialAggiunte.length ? `(${initialAggiunte.length})` : "— facoltative"}
-          </span>
-        </summary>
-        <p className="mb-3 mt-2 text-sm text-neutral-500">
-          Es. &ldquo;Patatine fritte +3 €&rdquo; valida per tutta la categoria
-          &ldquo;Pizze&rdquo;: comparirà come opzione su ogni prodotto di quelle categorie.
-        </p>
-        <CategoryAddonsEditor
-          value={initialAggiunte}
-          categories={categoryNames}
-          onSave={(g) => run(() => actions.updateAggiunte(g))}
-        />
-      </details>
-
-      {/* Note cliente per categoria */}
-      {actions.updateNoteConfig && (
-      <details className="mb-4 rounded-xl border border-neutral-200 bg-white p-4">
-        <summary className="cursor-pointer font-medium">
-          Note cliente per categoria{" "}
-          <span className="text-sm font-normal text-neutral-500">
-            {initialNoteConfig.length ? `(${initialNoteConfig.length})` : "— facoltative"}
-          </span>
-        </summary>
-        <p className="mb-3 mt-2 text-sm text-neutral-500">
-          Es. &ldquo;Note di cottura&rdquo; su tutte le &ldquo;Pizze&rdquo;: un campo nota
-          comparirà su ogni prodotto di quelle categorie. Per un singolo prodotto usa la sezione
-          &ldquo;Nota cliente&rdquo; nella sua scheda.
-        </p>
-        <NotesEditor
-          value={initialNoteConfig}
-          categories={categoryNames}
-          onSave={(g) => run(() => actions.updateNoteConfig!(g))}
-        />
-      </details>
-      )}
-
-      <p className="mb-3 text-xs text-neutral-400">
-        Tocca una voce per modificarla. Trascina la maniglia ⠿ per riordinare i
-        prodotti dentro una categoria.
-      </p>
-
-      {/* One accordion per category, each with its own sortable list */}
-      <div className="space-y-3">
-        {categoryNames.map((cat) => {
-          const catItems = grouped.get(cat) ?? [];
-          const open = !closedCats.has(cat);
-          return (
-            <div key={cat} className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
-              <div className="flex items-center gap-2 px-4 py-3">
-                <button
-                  onClick={() => toggleCat(cat)}
-                  className="flex flex-1 items-center justify-between text-left font-medium"
-                >
-                  <span>
-                    {cat}{" "}
-                    <span className="text-sm font-normal text-neutral-400">
-                      ({catItems.length})
-                    </span>
-                  </span>
-                  <span className="text-neutral-400">{open ? "▲" : "▼"}</span>
-                </button>
-                <button
-                  onClick={() => addTo(cat)}
-                  disabled={pending}
-                  className="shrink-0 rounded-lg bg-[var(--brand-soft)] px-3 py-1.5 text-xs font-medium text-brand transition hover:opacity-80 disabled:opacity-50"
-                >
-                  + Aggiungi
-                </button>
-              </div>
-              {open && (
-                <div className="border-t border-neutral-100 p-3">
-                  <DndContext
-                    id={`cat-${cat}`}
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={(e) => onDragEnd(cat, e)}
-                  >
-                    <SortableContext
-                      items={catItems.map((i) => i.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <ul className="space-y-2">
-                        {catItems.map((item) => (
-                          <SortableItem
-                            key={item.id}
-                            item={item}
-                            h={handlers}
-                            onEdit={(it) => setEditingId(it.id)}
-                            selected={editingId === item.id}
-                          />
-                        ))}
-                      </ul>
-                    </SortableContext>
-                  </DndContext>
-                </div>
-              )}
-            </div>
-          );
-        })}
+      {/* Tab bar */}
+      <div className="mb-5 flex flex-wrap gap-1 border-b border-neutral-200">
+        {TABS.filter((t) => t.id !== "etichette" || etichetteOn).map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`-mb-px cursor-pointer rounded-t-lg border-b-2 px-3.5 py-2 text-sm font-medium transition ${
+              tab === t.id
+                ? "border-brand text-brand"
+                : "border-transparent text-neutral-500 hover:text-neutral-800"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      {items.length === 0 && (
-        <p className="text-neutral-500">
-          Nessuna voce. Aggiungi la prima con il pulsante in alto.
-        </p>
+      {/* ── Piatti ───────────────────────────────────────────── */}
+      {tab === "piatti" && (
+        <>
+          <p className="mb-3 text-xs text-neutral-400">
+            Tocca una voce per modificarla. Trascina la maniglia ⠿ per riordinare i
+            prodotti dentro una categoria.
+          </p>
+          <div className="space-y-3">
+            {categoryNames.map((cat) => {
+              const catItems = grouped.get(cat) ?? [];
+              const open = !closedCats.has(cat);
+              return (
+                <div key={cat} className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
+                  <div className="flex items-center gap-2 px-4 py-3">
+                    <button
+                      onClick={() => toggleCat(cat)}
+                      className="flex flex-1 cursor-pointer items-center justify-between text-left font-medium"
+                    >
+                      <span>
+                        {cat}{" "}
+                        <span className="text-sm font-normal text-neutral-400">
+                          ({catItems.length})
+                        </span>
+                      </span>
+                      <span className="text-neutral-400">{open ? "▲" : "▼"}</span>
+                    </button>
+                    <button
+                      onClick={() => addTo(cat)}
+                      disabled={pending}
+                      className="shrink-0 cursor-pointer rounded-lg bg-[var(--brand-soft)] px-3 py-1.5 text-xs font-medium text-brand transition hover:opacity-80 disabled:opacity-50"
+                    >
+                      + Aggiungi
+                    </button>
+                  </div>
+                  {open && (
+                    <div className="border-t border-neutral-100 p-3">
+                      <DndContext
+                        id={`cat-${cat}`}
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={(e) => onDragEnd(cat, e)}
+                      >
+                        <SortableContext
+                          items={catItems.map((i) => i.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <ul className="space-y-2">
+                            {catItems.map((item) => (
+                              <SortableItem
+                                key={item.id}
+                                item={item}
+                                h={handlers}
+                                onEdit={(it) => setEditingId(it.id)}
+                                selected={editingId === item.id}
+                                popolare={popularSet.has(item.id)}
+                              />
+                            ))}
+                          </ul>
+                        </SortableContext>
+                      </DndContext>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {items.length === 0 && (
+            <p className="text-neutral-500">
+              Nessuna voce. Aggiungi la prima con il pulsante in alto.
+            </p>
+          )}
+        </>
+      )}
+
+      {/* ── Categorie ────────────────────────────────────────── */}
+      {tab === "categorie" && (
+        <CategoriesTab
+          categories={categoryNames}
+          grouped={grouped}
+          disabled={pending}
+          onRename={(oldName, newName) => {
+            const targets = (grouped.get(oldName) ?? []).map((i) => i.id);
+            setItems((prev) =>
+              prev.map((i) => (i.categoria === oldName ? { ...i, categoria: newName } : i)),
+            );
+            run(async () => {
+              for (const id of targets) await actions.updateItem(id, { categoria: newName });
+              router.refresh();
+            });
+          }}
+          onAdd={(name) => {
+            run(async () => {
+              await actions.createItem({ nome: "Nuovo prodotto", categoria: name, prezzo: 0 });
+              router.refresh();
+            });
+          }}
+        />
+      )}
+
+      {/* ── Varianti (per-dish options) ──────────────────────── */}
+      {tab === "varianti" && (
+        <VariantiTab
+          categoryNames={categoryNames}
+          grouped={grouped}
+          onEdit={(id) => {
+            setTab("piatti");
+            setEditingId(id);
+          }}
+        />
+      )}
+
+      {/* ── Extra (category add-ons + customer notes) ────────── */}
+      {tab === "extra" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-neutral-200 bg-white p-4">
+            <h2 className="font-medium">Aggiunte per categoria</h2>
+            <p className="mb-3 mt-1 text-sm text-neutral-500">
+              Es. &ldquo;Patatine fritte +3 €&rdquo; valida per tutta la categoria
+              &ldquo;Pizze&rdquo;: comparirà come opzione su ogni prodotto di quelle categorie.
+            </p>
+            <CategoryAddonsEditor
+              value={initialAggiunte}
+              categories={categoryNames}
+              onSave={(g) => run(() => actions.updateAggiunte(g))}
+            />
+          </div>
+          {actions.updateNoteConfig && (
+            <div className="rounded-xl border border-neutral-200 bg-white p-4">
+              <h2 className="font-medium">Note cliente per categoria</h2>
+              <p className="mb-3 mt-1 text-sm text-neutral-500">
+                Es. &ldquo;Note di cottura&rdquo; su tutte le &ldquo;Pizze&rdquo;: un campo nota
+                comparirà su ogni prodotto di quelle categorie. Per un singolo prodotto usa la
+                sezione &ldquo;Nota cliente&rdquo; nella sua scheda.
+              </p>
+              <NotesEditor
+                value={initialNoteConfig}
+                categories={categoryNames}
+                onSave={(g) => run(() => actions.updateNoteConfig!(g))}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Etichette (reusable label catalog) ───────────────── */}
+      {tab === "etichette" && etichetteOn && actions.updateEtichette && (
+        <EtichetteEditor
+          value={initialEtichette}
+          onSave={(e) => run(() => actions.updateEtichette!(e))}
+        />
       )}
 
       {editingItem && (
@@ -530,11 +601,13 @@ function SortableItem({
   h,
   onEdit,
   selected,
+  popolare = false,
 }: {
   item: MenuItem;
   h: ItemHandlers;
   onEdit: (item: MenuItem) => void;
   selected: boolean;
+  popolare?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
@@ -592,6 +665,11 @@ function SortableItem({
             {!item.disponibile && (
               <span className="rounded bg-neutral-200 px-1 text-[10px] font-semibold text-neutral-600">
                 esaurito
+              </span>
+            )}
+            {popolare && (
+              <span className="rounded bg-amber-100 px-1 text-[10px] font-semibold text-amber-700">
+                🔥 popolare
               </span>
             )}
             {item.consigliato && <span className="text-amber-500">★</span>}
@@ -1198,6 +1276,187 @@ function QuickEditDrawer({
           </button>
         </div>
       </aside>
+    </div>
+  );
+}
+
+/** Categorie tab: rename existing categories (bulk) and create a new one. */
+function CategoriesTab({
+  categories,
+  grouped,
+  disabled,
+  onRename,
+  onAdd,
+}: {
+  categories: string[];
+  grouped: Map<string, MenuItem[]>;
+  disabled: boolean;
+  onRename: (oldName: string, newName: string) => void;
+  onAdd: (name: string) => void;
+}) {
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [newCat, setNewCat] = useState("");
+
+  function commitRename(oldName: string) {
+    const v = draft.trim();
+    if (v && v !== oldName && !categories.some((c) => c.toLowerCase() === v.toLowerCase())) {
+      onRename(oldName, v);
+    }
+    setEditing(null);
+  }
+
+  return (
+    <div className="rounded-xl border border-neutral-200 bg-white p-4">
+      <h2 className="font-medium">Categorie</h2>
+      <p className="mb-3 mt-1 text-sm text-neutral-500">
+        Rinomina una categoria (aggiorna tutti i suoi prodotti) o creane una nuova. Per spostare
+        un prodotto, cambia la sua categoria dalla scheda nel tab Piatti.
+      </p>
+      <ul className="divide-y divide-neutral-100">
+        {categories.map((cat) => {
+          const count = grouped.get(cat)?.length ?? 0;
+          const isException = cat === "Senza categoria";
+          return (
+            <li key={cat} className="flex items-center gap-2 py-2.5">
+              {editing === cat ? (
+                <>
+                  <input
+                    autoFocus
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commitRename(cat);
+                      if (e.key === "Escape") setEditing(null);
+                    }}
+                    maxLength={60}
+                    className="flex-1 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+                  />
+                  <button
+                    onClick={() => commitRename(cat)}
+                    disabled={disabled}
+                    className="cursor-pointer rounded-lg bg-neutral-900 px-3 py-1.5 text-sm text-white hover:bg-neutral-700 disabled:opacity-50"
+                  >
+                    Salva
+                  </button>
+                  <button
+                    onClick={() => setEditing(null)}
+                    className="cursor-pointer rounded-lg border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50"
+                  >
+                    Annulla
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="flex-1 font-medium">
+                    {cat}{" "}
+                    <span className="text-sm font-normal text-neutral-400">({count})</span>
+                  </span>
+                  {isException ? (
+                    <span className="text-xs text-neutral-400">non rinominabile</span>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setEditing(cat);
+                        setDraft(cat);
+                      }}
+                      className="cursor-pointer rounded-md px-2 py-1 text-sm text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+                    >
+                      ✎ Rinomina
+                    </button>
+                  )}
+                </>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-3 flex items-center gap-2 border-t border-neutral-100 pt-3">
+        <input
+          value={newCat}
+          onChange={(e) => setNewCat(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && newCat.trim()) {
+              onAdd(newCat.trim());
+              setNewCat("");
+            }
+          }}
+          placeholder="Nuova categoria"
+          maxLength={60}
+          className="w-56 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
+        />
+        <button
+          onClick={() => {
+            if (newCat.trim()) {
+              onAdd(newCat.trim());
+              setNewCat("");
+            }
+          }}
+          disabled={disabled || !newCat.trim()}
+          className="cursor-pointer rounded-lg border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50 disabled:opacity-50"
+        >
+          + Crea categoria
+        </button>
+      </div>
+      <p className="mt-2 text-xs text-neutral-400">
+        Creando una categoria viene aggiunto un prodotto vuoto da personalizzare.
+      </p>
+    </div>
+  );
+}
+
+/** Varianti tab: lists dishes that have (or could have) per-item variant groups,
+ *  with a shortcut to edit them in the product detail panel. */
+function VariantiTab({
+  categoryNames,
+  grouped,
+  onEdit,
+}: {
+  categoryNames: string[];
+  grouped: Map<string, MenuItem[]>;
+  onEdit: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-neutral-500">
+        Le varianti (es. taglia, cottura, gusto) si configurano per singolo prodotto. Apri un
+        prodotto per gestirne i gruppi di varianti.
+      </p>
+      {categoryNames.map((cat) => {
+        const catItems = grouped.get(cat) ?? [];
+        return (
+          <div key={cat} className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
+            <div className="border-b border-neutral-100 px-4 py-2.5 text-sm font-medium text-neutral-700">
+              {cat}
+            </div>
+            <ul className="divide-y divide-neutral-100">
+              {catItems.map((item) => {
+                const n = item.opzioni?.length ?? 0;
+                return (
+                  <li key={item.id} className="flex items-center gap-2 px-4 py-2.5">
+                    <span className="flex-1 truncate">{item.nome || "—"}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        n
+                          ? "bg-[var(--brand-soft)] text-brand"
+                          : "bg-neutral-100 text-neutral-400"
+                      }`}
+                    >
+                      {n ? `${n} ${n === 1 ? "variante" : "varianti"}` : "nessuna"}
+                    </span>
+                    <button
+                      onClick={() => onEdit(item.id)}
+                      className="cursor-pointer rounded-lg border border-neutral-300 px-3 py-1 text-sm hover:bg-neutral-50"
+                    >
+                      Gestisci
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
     </div>
   );
 }

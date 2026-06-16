@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { MenuItem, PublicIngredient } from "@/types/db";
 import MenuManager from "./MenuManager";
 import { isFeatureOn } from "@/lib/config/features";
+import { getPopularItemIds } from "@/lib/tenant";
 import {
   createItem,
   updateItem,
@@ -43,6 +44,8 @@ export default async function MenuPage() {
     prezzo: Number(i.prezzo),
   }));
 
+  const popularIds = await getPopularItemIds(restaurant.id);
+
   return (
     <MenuManager
       restaurant={{
@@ -64,6 +67,7 @@ export default async function MenuPage() {
       etichetteOn={isFeatureOn(restaurant, "etichette")}
       fasceOrarieOn={isFeatureOn(restaurant, "fasce_orarie")}
       ingredientiList={ingredientiList}
+      popularIds={popularIds}
       actions={{
         createItem,
         updateItem,
