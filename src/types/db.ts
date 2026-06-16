@@ -61,6 +61,22 @@ export interface ItemNota {
   obbligatoria?: boolean;
 }
 
+/** A configurable kitchen department (KDS routing). */
+export interface Reparto {
+  id: string;
+  nome: string;
+  colore?: string;
+}
+
+/** A reusable dish label (e.g. "Vegetariano"). */
+export interface Etichetta {
+  id: string;
+  nome: string;
+}
+
+/** Kitchen order priority. */
+export type Priorita = "alta" | "media" | "bassa";
+
 export interface Restaurant {
   id: string;
   slug: string;
@@ -98,6 +114,8 @@ export interface Restaurant {
   chiusure: Chiusura[];
   annuncio: Annuncio;
   note_config: NoteConfig[];
+  reparti: Reparto[];
+  etichette: Etichetta[];
   attivo: boolean;
   owner_id: string | null;
   created_at: string;
@@ -135,6 +153,7 @@ export type PublicRestaurant = Pick<
   | "chiusure"
   | "annuncio"
   | "note_config"
+  | "etichette"
   | "attivo"
 > & {
   /** Effective on/off per feature (plan ∪ admin entitlement, then owner switch). */
@@ -231,6 +250,16 @@ export interface MenuItem {
   composizione_taglie: TagliaComposizione[];
   /** Per-product customer-note override (wins over the category-level note_config). */
   nota: ItemNota;
+  /** Prep time in minutes (drives the KDS countdown). */
+  tempo_preparazione: number | null;
+  /** Kitchen department id (refs Restaurant.reparti); "" = unassigned. */
+  reparto: string;
+  /** Separate takeaway/delivery price (used when the order is asporto). */
+  prezzo_asporto: number | null;
+  /** Reusable label ids (refs Restaurant.etichette). */
+  etichette: string[];
+  solo_pranzo: boolean;
+  solo_cena: boolean;
   created_at: string;
 }
 
@@ -266,10 +295,15 @@ export interface Order {
   pagato_at: string | null;
   scontrino_registrato: boolean;
   stripe_payment_intent: string | null;
+  /** Cook's first click → state "in preparazione" + KDS countdown anchor. */
+  preparazione_at: string | null;
   pronto_at: string | null;
   servito_at: string | null;
   visto_at: string | null;
   voto: number | null;
+  /** Estimated prep minutes (max prep time of the order's items, at creation). */
+  tempo_stimato: number | null;
+  priorita: Priorita | null;
   created_at: string;
 }
 

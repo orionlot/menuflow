@@ -19,7 +19,11 @@ export type FeatureId =
   | "componibili"
   | "descrizione"
   | "ingredienti"
-  | "asporto";
+  | "asporto"
+  | "reparto"
+  | "prezzo_asporto"
+  | "etichette"
+  | "fasce_orarie";
 
 export interface FeatureDef {
   id: FeatureId;
@@ -119,6 +123,36 @@ export const FEATURES: FeatureDef[] = [
     nome: "Ordini da asporto",
     descrizione:
       "Il cliente sceglie «Da asporto» col nome per il ritiro; se i pagamenti sono attivi può pagare in cassa.",
+    pianoMinimo: "base",
+    defaultOn: false,
+  },
+  {
+    id: "reparto",
+    nome: "Reparti cucina",
+    descrizione:
+      "Assegna ogni piatto a un reparto (Pizzeria, Cucina, Friggitoria…) e filtra la Cucina per reparto.",
+    pianoMinimo: "plus",
+    defaultOn: false,
+  },
+  {
+    id: "prezzo_asporto",
+    nome: "Prezzo asporto",
+    descrizione: "Prezzo separato per asporto/delivery, diverso dal prezzo al tavolo.",
+    pianoMinimo: "base",
+    defaultOn: false,
+  },
+  {
+    id: "etichette",
+    nome: "Etichette piatti",
+    descrizione:
+      "Tag riutilizzabili (Vegetariano, Senza lattosio, Piccante…) mostrati sul menu pubblico.",
+    pianoMinimo: "base",
+    defaultOn: false,
+  },
+  {
+    id: "fasce_orarie",
+    nome: "Solo pranzo / cena",
+    descrizione: "Mostra un piatto solo a pranzo o solo a cena.",
     pianoMinimo: "base",
     defaultOn: false,
   },

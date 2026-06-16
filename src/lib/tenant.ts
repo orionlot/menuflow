@@ -11,7 +11,7 @@ import type {
 } from "@/types/db";
 
 const SAFE_RESTAURANT_COLUMNS =
-  "id, slug, nome, sottotitolo, logo_url, colore_primario, colore_secondario, tema, layout, piano, multilingua, lingue, pagamenti_attivi, coperto, coperto_modalita, coperto_label, accetta_mancia, aggiunte, composizione, composizione_taglie, funzionalita, funzionalita_admin, google_review_url, orari, aperto_override, chiusure, annuncio, note_config, attivo";
+  "id, slug, nome, sottotitolo, logo_url, colore_primario, colore_secondario, tema, layout, piano, multilingua, lingue, pagamenti_attivi, coperto, coperto_modalita, coperto_label, accetta_mancia, aggiunte, composizione, composizione_taglie, funzionalita, funzionalita_admin, google_review_url, orari, aperto_override, chiusure, annuncio, note_config, etichette, attivo";
 
 /**
  * Resolve a tenant from the `[domain]` route param, which is either:
@@ -83,7 +83,7 @@ export async function getMenuItems(restaurantId: string): Promise<MenuItem[]> {
   const { data } = await admin
     .from("menu_items")
     .select(
-      "id, restaurant_id, categoria, nome, nome_i18n, descrizione, descrizione_i18n, prezzo, foto_url, disponibile, ordine, allergeni, opzioni, consigliato, scorta, ingredienti, composizione, composizione_taglie, nota, created_at",
+      "id, restaurant_id, categoria, nome, nome_i18n, descrizione, descrizione_i18n, prezzo, foto_url, disponibile, ordine, allergeni, opzioni, consigliato, scorta, ingredienti, composizione, composizione_taglie, nota, tempo_preparazione, reparto, prezzo_asporto, etichette, solo_pranzo, solo_cena, created_at",
     )
     .eq("restaurant_id", restaurantId)
     .order("categoria", { ascending: true })

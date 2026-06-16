@@ -79,6 +79,12 @@ export interface ItemPatch {
   composizione?: ComposizioneGruppo[]; // per-item composition groups (category-less)
   composizione_taglie?: TagliaComposizione[]; // per-item size variants (category-less)
   nota?: ItemNota; // per-product customer-note override
+  tempo_preparazione?: number | null;
+  reparto?: string;
+  prezzo_asporto?: number | null;
+  etichette?: string[];
+  solo_pranzo?: boolean;
+  solo_cena?: boolean;
 }
 
 export function sanitizeOpzioni(raw: unknown): ItemOption[] {
@@ -143,6 +149,25 @@ export function sanitizeItemPatch(patch: ItemPatch): ItemPatch {
   if (Array.isArray(patch.composizione_taglie))
     out.composizione_taglie = sanitizeTaglie(patch.composizione_taglie, { requireCategorie: false });
   if (patch.nota && typeof patch.nota === "object") out.nota = sanitizeNota(patch.nota);
+  if ("tempo_preparazione" in patch)
+    out.tempo_preparazione =
+      patch.tempo_preparazione == null
+        ? null
+        : Math.max(0, Math.min(600, Math.floor(Number(patch.tempo_preparazione) || 0)));
+  if (typeof patch.reparto === "string") out.reparto = patch.reparto.trim().slice(0, 40);
+  if ("prezzo_asporto" in patch)
+    out.prezzo_asporto =
+      patch.prezzo_asporto == null
+        ? null
+        : Math.max(0, Math.round(Number(patch.prezzo_asporto) * 100) / 100);
+  if (Array.isArray(patch.etichette))
+    out.etichette = patch.etichette
+      .filter((x): x is string => typeof x === "string")
+      .map((x) => x.trim().slice(0, 40))
+      .filter(Boolean)
+      .slice(0, 20);
+  if (typeof patch.solo_pranzo === "boolean") out.solo_pranzo = patch.solo_pranzo;
+  if (typeof patch.solo_cena === "boolean") out.solo_cena = patch.solo_cena;
   return out;
 }
 
