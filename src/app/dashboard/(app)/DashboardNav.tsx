@@ -29,7 +29,7 @@ export default function DashboardNav({ componibiliOn = false }: { componibiliOn?
   return (
     <nav
       aria-label="Sezioni"
-      className="no-scrollbar -mx-1 flex gap-1 overflow-x-auto px-1"
+      className="no-scrollbar -mx-1 flex gap-1 overflow-x-auto px-1 [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] sm:[mask-image:none]"
     >
       {items.map((it) => {
         const active =

@@ -20,22 +20,22 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900" style={brandVars}>
       <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/90 backdrop-blur">
-        <Container className="flex items-center justify-between gap-3 py-2.5">
-          <span className="truncate font-display text-base font-bold">
+        <Container className="flex items-center justify-between gap-3 py-3">
+          <span className="truncate font-display text-lg font-bold tracking-tight">
             {restaurant.nome}
           </span>
-          <form action={signOut}>
-            <button className="rounded-lg px-3 py-1.5 text-sm font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900">
+          <form action={signOut} className="shrink-0">
+            <button className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-900">
               Esci
             </button>
           </form>
         </Container>
-        <Container className="pb-2">
+        <Container className="pb-3">
           <DashboardNav componibiliOn={isFeatureOn(restaurant, "componibili")} />
         </Container>
       </header>
       <main>
-        <Container className="py-6">{children}</Container>
+        <Container className="py-8">{children}</Container>
       </main>
     </div>
   );
