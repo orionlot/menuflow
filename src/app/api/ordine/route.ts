@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { priceCartServerSide } from "@/lib/pricing";
 import { computeCopertoCents, computeManciaCents } from "@/lib/pricing-core";
@@ -18,6 +19,46 @@ function clean(s: unknown, max = 280): string | null {
   if (typeof s !== "string") return null;
   const v = s.trim().slice(0, max);
   return v.length ? v : null;
+}
+
+/**
+ * Remember a just-placed order in the `mf_ordini` cookie (2h) so the customer
+ * can follow it from the menu ("Segui il tuo ordine"). Not httpOnly — the menu
+ * reads it client-side to list recent orders. Best-effort: never fails the order.
+ * No localStorage/sessionStorage (project rule); a cookie is the allowed store.
+ */
+async function recordOrderCookie(slug: string, orderId: string) {
+  try {
+    const store = await cookies();
+    const now = Date.now();
+    let list: { id: string; slug: string; at: number }[] = [];
+    const raw = store.get("mf_ordini")?.value;
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) list = parsed;
+      } catch {
+        /* ignore malformed cookie */
+      }
+    }
+    list = list.filter(
+      (e) =>
+        e &&
+        typeof e.id === "string" &&
+        typeof e.at === "number" &&
+        now - e.at < 7_200_000 &&
+        e.id !== orderId,
+    );
+    list.unshift({ id: orderId, slug, at: now });
+    store.set("mf_ordini", JSON.stringify(list.slice(0, 10)), {
+      maxAge: 7200,
+      path: "/",
+      sameSite: "lax",
+      httpOnly: false,
+    });
+  } catch {
+    /* cookie is best-effort */
+  }
 }
 
 export async function POST(req: Request) {
@@ -193,6 +234,9 @@ export async function POST(req: Request) {
     if (oErr || !order) {
       return NextResponse.json({ ok: false, maintenance: true }, { status: 503 });
     }
+
+    // Remember it for the customer's "Segui il tuo ordine" list (2h cookie).
+    await recordOrderCookie(slug, order.id);
 
     // ── Case A: no online payment (payments off OR pay-at-counter) → valid now ──
     if (!useOnline) {

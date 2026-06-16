@@ -236,6 +236,7 @@ export default function MenuClient({
   const [allergyOpen, setAllergyOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
   const [annuncioDismissed, setAnnuncioDismissed] = useState(false);
+  const [myOrders, setMyOrders] = useState<{ id: string; at: number }[]>([]);
   const [myAllergens, setMyAllergens] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [voted, setVoted] = useState<number | null>(null);
@@ -282,6 +283,43 @@ export default function MenuClient({
       clearInterval(t);
     };
   }, [trackedId]);
+
+  // Read the `mf_ordini` cookie (set when an order is placed) to surface a
+  // "Segui il tuo ordine" link for this tenant's recent orders. Cookies only —
+  // no localStorage/sessionStorage (project rule). Re-reads after each order.
+  useEffect(() => {
+    try {
+      const m = document.cookie.split("; ").find((c) => c.startsWith("mf_ordini="));
+      if (!m) {
+        setMyOrders([]);
+        return;
+      }
+      const parsed = JSON.parse(decodeURIComponent(m.slice("mf_ordini=".length)));
+      if (!Array.isArray(parsed)) {
+        setMyOrders([]);
+        return;
+      }
+      const now = Date.now();
+      const isUuid = (s: unknown) =>
+        typeof s === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+      setMyOrders(
+        parsed
+          .filter(
+            (e) =>
+              e &&
+              e.slug === tenant.slug &&
+              isUuid(e.id) &&
+              typeof e.at === "number" &&
+              now - e.at < 7_200_000,
+          )
+          .sort((a, b) => b.at - a.at)
+          .map((e) => ({ id: e.id, at: e.at })),
+      );
+    } catch {
+      setMyOrders([]);
+    }
+  }, [tenant.slug, done?.orderId, pending?.orderId]);
 
   const t = (it: string, i18n: Record<string, string> | undefined) =>
     lang !== "it" && i18n?.[lang] ? i18n[lang] : it;
@@ -891,6 +929,56 @@ export default function MenuClient({
                 ×
               </button>
             </div>
+          </div>
+        )}
+
+        {/* "Segui il tuo ordine" — recent orders placed from this device (cookie) */}
+        {myOrders.length > 0 && (
+          <div className="px-5 pt-3">
+            {myOrders.length === 1 ? (
+              <a
+                href={`/ordine/${myOrders[0].id}`}
+                className="flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm"
+                style={{ background: p.brand, color: p.onBrand }}
+              >
+                <span aria-hidden>🔔</span>
+                <span>Segui il tuo ordine</span>
+                <span className="ml-auto" aria-hidden>
+                  →
+                </span>
+              </a>
+            ) : (
+              <div
+                className="overflow-hidden rounded-2xl shadow-sm"
+                style={{ background: p.tint, border: `1px solid ${p.brand}` }}
+              >
+                <p className="px-4 pt-3 text-sm font-semibold" style={{ color: p.text }}>
+                  🔔 Segui i tuoi ordini ({myOrders.length})
+                </p>
+                <ul className="px-2 pb-2 pt-1">
+                  {myOrders.map((mo, i) => (
+                    <li key={mo.id}>
+                      <a
+                        href={`/ordine/${mo.id}`}
+                        className="flex items-center gap-2 rounded-xl px-2 py-2 text-sm font-medium transition hover:opacity-80"
+                        style={{ color: p.text }}
+                      >
+                        <span>
+                          Ordine #{myOrders.length - i} ·{" "}
+                          {new Date(mo.at).toLocaleTimeString("it-IT", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        <span className="ml-auto" aria-hidden style={{ color: p.brand }}>
+                          →
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
