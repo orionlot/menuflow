@@ -28,7 +28,16 @@ export default function ReconClient({ orders }: { orders: Order[] }) {
   }
 
   if (local.length === 0) {
-    return <p className="text-neutral-500">Nessun pagamento in questo giorno.</p>;
+    return (
+      <div className="rounded-xl border border-dashed border-neutral-300 p-6 text-center">
+        <p className="font-medium text-neutral-700">
+          Nessun pagamento in questo giorno.
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">
+          I pagamenti incassati in app compariranno qui.
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -36,7 +45,7 @@ export default function ReconClient({ orders }: { orders: Order[] }) {
       {local.map((o) => (
         <li
           key={o.id}
-          className="rounded-xl border border-neutral-200 bg-white p-3"
+          className="rounded-xl border border-neutral-200 bg-white p-4"
         >
           <div className="flex items-start justify-between gap-3">
             <label className="flex flex-1 cursor-pointer items-start gap-3">
@@ -45,11 +54,11 @@ export default function ReconClient({ orders }: { orders: Order[] }) {
                 checked={o.scontrino_registrato}
                 onChange={() => toggle(o)}
                 disabled={pending}
-                className="mt-0.5 h-5 w-5 shrink-0"
+                className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--brand)]"
               />
-              <span>
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="font-medium">Tavolo {o.tavolo ?? "—"}</span>
-                <span className="ml-2 text-sm text-neutral-500">
+                <span className="text-sm text-neutral-500">
                   {o.pagato_at
                     ? new Date(o.pagato_at).toLocaleTimeString("it-IT", {
                         hour: "2-digit",
@@ -58,8 +67,10 @@ export default function ReconClient({ orders }: { orders: Order[] }) {
                     : ""}
                 </span>
                 <span
-                  className={`ml-2 text-xs ${
-                    o.scontrino_registrato ? "text-green-600" : "text-amber-600"
+                  className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                    o.scontrino_registrato
+                      ? "bg-green-100 text-green-700"
+                      : "bg-amber-100 text-amber-700"
                   }`}
                 >
                   {o.scontrino_registrato
@@ -74,7 +85,7 @@ export default function ReconClient({ orders }: { orders: Order[] }) {
           </div>
 
           {/* Dettaglio prodotti dell'ordine */}
-          <ul className="mt-2 space-y-0.5 border-t border-neutral-100 pl-8 pt-2 text-sm">
+          <ul className="mt-2 space-y-0.5 border-t border-neutral-100 pl-4 pt-2 text-sm sm:pl-8">
             {(o.items ?? []).map((it, i) => (
               <li
                 key={`${o.id}-${it.item_id || i}`}
@@ -92,7 +103,7 @@ export default function ReconClient({ orders }: { orders: Order[] }) {
           </ul>
 
           {o.note && (
-            <p className="mt-2 pl-8 text-sm text-neutral-500">
+            <p className="mt-2 pl-4 text-sm text-neutral-500 sm:pl-8">
               📝 <span className="italic">{o.note}</span>
             </p>
           )}

@@ -58,17 +58,30 @@ export default async function ReconciliationPage({
       </div>
 
       <div className="mb-4 rounded-xl border border-neutral-200 bg-white p-4">
-        <div className="text-xs text-neutral-500">Incassato in app (giorno)</div>
-        <div className="text-3xl font-bold">{formatEUR(totalCents)}</div>
-        <div className="text-xs text-neutral-500">
-          {orders.length} pagament{orders.length === 1 ? "o" : "i"}
+        <div className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          Incassato in app (giorno)
+        </div>
+        <div className="mt-1 text-3xl font-bold tracking-tight">
+          {formatEUR(totalCents)}
+        </div>
+        <div className="mt-2 border-t border-neutral-100 pt-2 text-sm text-neutral-600">
+          {orders.length} pagament{orders.length === 1 ? "o" : "i"} registrat
+          {orders.length === 1 ? "o" : "i"} in questo giorno
         </div>
       </div>
 
-      <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-        Questa spunta è un promemoria gestionale e non sostituisce l&apos;emissione
-        dello scontrino fiscale.
-      </p>
+      <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
+        <span aria-hidden className="mt-0.5 text-base leading-none">
+          ⚠️
+        </span>
+        <div className="text-sm">
+          <p className="font-semibold">Lo scontrino lo batte il ristoratore</p>
+          <p className="mt-0.5 text-amber-900/90">
+            Questa spunta è un promemoria gestionale e non sostituisce
+            l&apos;emissione dello scontrino fiscale.
+          </p>
+        </div>
+      </div>
 
       <ReconClient orders={orders} />
     </div>
