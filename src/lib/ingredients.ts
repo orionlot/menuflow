@@ -62,18 +62,25 @@ export async function decrementIngredientStock(
     if (ids.length) {
       const { data } = await admin
         .from("menu_items")
-        .select("id, categoria, ingredienti")
+        .select("id, categoria, ingredienti, composizione")
         .in("id", ids);
       const composable = new Set(composableCategorie);
       const byId = new Map(
         (data ?? []).map((r) => [
           r.id as string,
-          { categoria: r.categoria as string, ingredienti: (r.ingredienti as string[] | null) ?? [] },
+          {
+            categoria: r.categoria as string,
+            ingredienti: (r.ingredienti as string[] | null) ?? [],
+            // per-item composition groups (empty for non per-item-composable items)
+            composable: Array.isArray(r.composizione) && r.composizione.length > 0,
+          },
         ]),
       );
       for (const l of simple) {
         const row = byId.get(l.item_id);
-        if (!row || composable.has(row.categoria)) continue;
+        // Skip composition-driven products: category-level composable, or
+        // per-item composable (its own groups own ingredient consumption).
+        if (!row || composable.has(row.categoria) || row.composable) continue;
         for (const ingId of row.ingredienti)
           used.set(ingId, (used.get(ingId) ?? 0) + l.qta);
       }

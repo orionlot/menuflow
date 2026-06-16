@@ -5,7 +5,14 @@ import { decrementIngredientStock, composableCategories } from "./ingredients";
 
 /** Minimal stub of the bits of the admin client decrementIngredientStock uses:
  *  `from("menu_items").select(...).in("id", ids)` and `rpc("consume_ingredient")`. */
-function stubAdmin(menuRows: { id: string; categoria: string; ingredienti: string[] | null }[]) {
+function stubAdmin(
+  menuRows: {
+    id: string;
+    categoria: string;
+    ingredienti: string[] | null;
+    composizione?: unknown[];
+  }[],
+) {
   const rpcCalls: { p_id: string; p_n: number }[] = [];
   const inCalls: string[][] = [];
   const admin = {
@@ -131,6 +138,21 @@ describe("decrementIngredientStock — ingredienti (simple)", () => {
       [], // composable set no longer contains "Poke"
     );
     expect(consumed()).toEqual({ tonno: 1 });
+  });
+
+  it("REGRESSION: a PER-ITEM composable product (own groups) is not also decremented via its display list", async () => {
+    // Item not in a composable category, but composable via its own groups, with
+    // an empty chosen composition → must NOT consume its display `ingredienti`.
+    const { admin, consumed } = stubAdmin([
+      { id: "pizza", categoria: "Pizze", ingredienti: ["pomodoro", "mozzarella"], composizione: [{ id: "g" }] },
+    ]);
+    await decrementIngredientStock(
+      admin,
+      [line({ item_id: "pizza", qta: 2 })], // no frozen composizione on the line
+      { composizione: true, ingredienti: true },
+      [], // "Pizze" is not a category-level composable category
+    );
+    expect(consumed()).toEqual({});
   });
 
   it("REGRESSION: a composable item with an EMPTY composition consumes nothing from its display list", async () => {

@@ -25,9 +25,11 @@ export default async function MenuPage() {
     .order("categoria", { ascending: true })
     .order("ordine", { ascending: true });
 
-  // The per-product ingredient list reuses the shared ingredient table.
+  // The ingredient list feeds both the per-product ingredient checkboxes and the
+  // per-item composition builder, so load it when either feature is on.
   const ingredientiOn = isFeatureOn(restaurant, "ingredienti");
-  const { data: ingRows } = ingredientiOn
+  const componibiliOn = isFeatureOn(restaurant, "componibili");
+  const { data: ingRows } = ingredientiOn || componibiliOn
     ? await supabase
         .from("ingredients")
         .select("id, nome, categoria, prezzo, scorta, unita, ordine")
@@ -51,6 +53,7 @@ export default async function MenuPage() {
       scorteOn={isFeatureOn(restaurant, "scorte")}
       descrizioneOn={isFeatureOn(restaurant, "descrizione")}
       ingredientiOn={ingredientiOn}
+      componibiliOn={componibiliOn}
       ingredientiList={ingredientiList}
       actions={{
         createItem,

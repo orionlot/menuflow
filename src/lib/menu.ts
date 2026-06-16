@@ -74,6 +74,8 @@ export interface ItemPatch {
   consigliato?: boolean;
   scorta?: number | null;
   ingredienti?: string[]; // ingredient ids (refs public.ingredients), display-only list
+  composizione?: ComposizioneGruppo[]; // per-item composition groups (category-less)
+  composizione_taglie?: TagliaComposizione[]; // per-item size variants (category-less)
 }
 
 export function sanitizeOpzioni(raw: unknown): ItemOption[] {
@@ -133,11 +135,22 @@ export function sanitizeItemPatch(patch: ItemPatch): ItemPatch {
       .map((x) => x.trim().slice(0, 40))
       .filter(Boolean)
       .slice(0, 40);
+  if (Array.isArray(patch.composizione))
+    out.composizione = sanitizeComposizione(patch.composizione, { requireCategorie: false });
+  if (Array.isArray(patch.composizione_taglie))
+    out.composizione_taglie = sanitizeTaglie(patch.composizione_taglie, { requireCategorie: false });
   return out;
 }
 
-/** Whitelist the per-category composition config (groups of ingredients). */
-export function sanitizeComposizione(raw: unknown): ComposizioneGruppo[] {
+/** Whitelist a composition config (groups of ingredients). With
+ *  `requireCategorie` (the default) a group must target ≥1 category — used for
+ *  the per-category restaurant config. For per-item composition pass
+ *  `{ requireCategorie: false }`: the item itself is the scope, so `categorie`
+ *  is forced empty and not required. */
+export function sanitizeComposizione(
+  raw: unknown,
+  { requireCategorie = true }: { requireCategorie?: boolean } = {},
+): ComposizioneGruppo[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .slice(0, 12)
@@ -157,7 +170,7 @@ export function sanitizeComposizione(raw: unknown): ComposizioneGruppo[] {
             })
             .filter((s) => s.ingredient_id)
         : [];
-      const categorie = Array.isArray(o.categorie)
+      const categorie = requireCategorie && Array.isArray(o.categorie)
         ? o.categorie.map((c) => String(c).trim().slice(0, 60)).filter(Boolean).slice(0, 50)
         : [];
       const max = Math.max(1, Math.floor(Number(o.max) || 1));
@@ -171,18 +184,23 @@ export function sanitizeComposizione(raw: unknown): ComposizioneGruppo[] {
         ingredienti,
       };
     })
-    .filter((g) => g.nome && g.categorie.length && g.ingredienti.length);
+    .filter((g) => g.nome && (requireCategorie ? g.categorie.length : true) && g.ingredienti.length);
 }
 
 /** Sanitize size variants. Caps counts and shapes the per-group max map.
- *  A size is kept only if it has a name and at least one category. */
-export function sanitizeTaglie(raw: unknown): TagliaComposizione[] {
+ *  With `requireCategorie` (default) a size must target ≥1 category (per-category
+ *  config). For per-item sizes pass `{ requireCategorie: false }`: `categorie` is
+ *  forced empty and only a name is required. */
+export function sanitizeTaglie(
+  raw: unknown,
+  { requireCategorie = true }: { requireCategorie?: boolean } = {},
+): TagliaComposizione[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .slice(0, 12)
     .map((t, ti) => {
       const o = (t ?? {}) as Partial<TagliaComposizione>;
-      const categorie = Array.isArray(o.categorie)
+      const categorie = requireCategorie && Array.isArray(o.categorie)
         ? o.categorie.map((c) => String(c).trim().slice(0, 60)).filter(Boolean).slice(0, 50)
         : [];
       const max: Record<string, number> = {};
@@ -200,5 +218,5 @@ export function sanitizeTaglie(raw: unknown): TagliaComposizione[] {
         prezzo: Math.max(0, Math.round((Number(o.prezzo) || 0) * 100) / 100),
       };
     })
-    .filter((t) => t.nome && t.categorie.length);
+    .filter((t) => t.nome && (requireCategorie ? t.categorie.length : true));
 }

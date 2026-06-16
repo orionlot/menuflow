@@ -26,11 +26,15 @@ export default function ComposizioneEditor({
   value,
   ingredienti,
   categories,
+  perItem = false,
   onSave,
 }: {
   value: ComposizioneGruppo[];
   ingredienti: PublicIngredient[];
   categories: string[];
+  /** Per-item mode: the groups belong to a single product, so the category
+   *  picker ("Dove appare") is hidden and categories are irrelevant. */
+  perItem?: boolean;
   onSave: (groups: ComposizioneGruppo[]) => void;
 }) {
   const [groups, setGroups] = useState<ComposizioneGruppo[]>(value);
@@ -116,6 +120,7 @@ export default function ComposizioneEditor({
                     gi={gi}
                     count={groups.length}
                     categories={categories}
+                    perItem={perItem}
                     ingredienti={ingredienti}
                     ingById={ingById}
                     sensors={sensors}
@@ -145,6 +150,7 @@ function GroupCard({
   gi,
   count,
   categories,
+  perItem,
   ingredienti,
   ingById,
   sensors,
@@ -157,6 +163,7 @@ function GroupCard({
   gi: number;
   count: number;
   categories: string[];
+  perItem: boolean;
   ingredienti: PublicIngredient[];
   ingById: Map<string, PublicIngredient>;
   sensors: ReturnType<typeof useSensors>;
@@ -228,8 +235,8 @@ function GroupCard({
             className="w-full rounded-md border border-neutral-300 px-2 py-1 text-sm font-medium"
           />
           <p className="mt-1 truncate text-xs text-neutral-400">
-            Appare in: {g.categorie.join(", ") || "nessuna categoria"} · {g.min}–{g.max} scelte ·{" "}
-            {g.ingredienti.length} ingredienti
+            {perItem ? "" : `Appare in: ${g.categorie.join(", ") || "nessuna categoria"} · `}
+            {g.min}–{g.max} scelte · {g.ingredienti.length} ingredienti
           </p>
         </div>
         <span
@@ -268,37 +275,39 @@ function GroupCard({
         )}
       </div>
 
-      {/* Chunk 1 — Dove appare */}
-      <div className="p-3">
-        <div className="text-[13px] font-medium text-neutral-700">1 · Dove appare</div>
-        <p className="mt-0.5 text-xs text-neutral-500">
-          In quali categorie del menu compare questa scelta.
-        </p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {categories.map((cat) => {
-            const on = g.categorie.includes(cat);
-            return (
-              <button
-                key={cat}
-                onClick={() => toggleCat(cat)}
-                aria-pressed={on}
-                className={`rounded-full px-2.5 py-1 text-xs transition ${
-                  on
-                    ? "bg-[var(--brand-soft)] text-brand"
-                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-                }`}
-              >
-                {cat}
-              </button>
-            );
-          })}
-        </div>
-        {g.categorie.length === 0 && (
-          <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">
-            ⚠ Nessuna categoria: il gruppo non comparirà al cliente e non verrà salvato.
+      {/* Chunk 1 — Dove appare (only for the per-category editor) */}
+      {!perItem && (
+        <div className="p-3">
+          <div className="text-[13px] font-medium text-neutral-700">1 · Dove appare</div>
+          <p className="mt-0.5 text-xs text-neutral-500">
+            In quali categorie del menu compare questa scelta.
           </p>
-        )}
-      </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {categories.map((cat) => {
+              const on = g.categorie.includes(cat);
+              return (
+                <button
+                  key={cat}
+                  onClick={() => toggleCat(cat)}
+                  aria-pressed={on}
+                  className={`rounded-full px-2.5 py-1 text-xs transition ${
+                    on
+                      ? "bg-[var(--brand-soft)] text-brand"
+                      : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                  }`}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+          {g.categorie.length === 0 && (
+            <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">
+              ⚠ Nessuna categoria: il gruppo non comparirà al cliente e non verrà salvato.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Chunk 2 — Quante scelte */}
       <div className="border-t border-neutral-100 bg-neutral-50/60 p-3">

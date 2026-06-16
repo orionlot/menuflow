@@ -27,6 +27,8 @@ import { formatEUR } from "@/lib/config/plans";
 import { uploadImage } from "@/app/actions/upload";
 import OptionsEditor from "./OptionsEditor";
 import CategoryAddonsEditor from "./CategoryAddonsEditor";
+import ComposizioneEditor from "./ComposizioneEditor";
+import TaglieEditor from "./TaglieEditor";
 
 type MiniRestaurant = { id: string; multilingua: boolean; lingue: string[] };
 type SaveState = "saving" | "saved" | "error";
@@ -66,6 +68,7 @@ export default function MenuManager({
   scorteOn,
   descrizioneOn = true,
   ingredientiOn = false,
+  componibiliOn = false,
   ingredientiList = [],
   actions,
 }: {
@@ -75,6 +78,7 @@ export default function MenuManager({
   scorteOn: boolean;
   descrizioneOn?: boolean;
   ingredientiOn?: boolean;
+  componibiliOn?: boolean;
   ingredientiList?: PublicIngredient[];
   actions: MenuActions;
 }) {
@@ -452,6 +456,7 @@ export default function MenuManager({
           h={handlers}
           descrizioneOn={descrizioneOn}
           ingredientiOn={ingredientiOn}
+          componibiliOn={componibiliOn}
           ingredientiList={ingredientiList}
           onClose={() => setEditingId(null)}
         />
@@ -584,6 +589,7 @@ function QuickEditDrawer({
   h,
   descrizioneOn,
   ingredientiOn,
+  componibiliOn,
   ingredientiList,
   onClose,
 }: {
@@ -591,6 +597,7 @@ function QuickEditDrawer({
   h: ItemHandlers;
   descrizioneOn: boolean;
   ingredientiOn: boolean;
+  componibiliOn: boolean;
   ingredientiList: PublicIngredient[];
   onClose: () => void;
 }) {
@@ -844,6 +851,47 @@ function QuickEditDrawer({
               <OptionsEditor value={item.opzioni ?? []} onSave={(o) => h.saveOptions(item, o)} />
             </div>
           </details>
+
+          {/* Composable (this product only) */}
+          {componibiliOn && (
+            <details className="text-sm">
+              <summary className="cursor-pointer font-medium text-neutral-600">
+                Componibile{" "}
+                {item.composizione?.length ? `(${item.composizione.length} gruppi)` : ""}
+              </summary>
+              <div className="mt-2 space-y-4">
+                <p className="text-xs text-neutral-500">
+                  Rendi <b>questo prodotto</b> componibile: gruppi di ingredienti e formati
+                  validi solo per questo piatto (indipendenti dalla categoria). Lascia vuoto
+                  per un prodotto semplice.
+                </p>
+                <div>
+                  <div className="mb-1.5 text-[13px] font-medium text-neutral-700">
+                    Gruppi di composizione
+                  </div>
+                  <ComposizioneEditor
+                    perItem
+                    value={item.composizione ?? []}
+                    ingredienti={ingredientiList}
+                    categories={[]}
+                    onSave={(g) => h.save(item.id, { composizione: g })}
+                  />
+                </div>
+                <div>
+                  <div className="mb-1.5 text-[13px] font-medium text-neutral-700">
+                    Formati / taglie
+                  </div>
+                  <TaglieEditor
+                    perItem
+                    value={item.composizione_taglie ?? []}
+                    gruppi={item.composizione ?? []}
+                    categories={[]}
+                    onSave={(t) => h.save(item.id, { composizione_taglie: t })}
+                  />
+                </div>
+              </div>
+            </details>
+          )}
 
           {/* Consigliato */}
           <button

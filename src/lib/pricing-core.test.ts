@@ -209,7 +209,7 @@ const ING = (): Map<string, IngredientInfo> =>
 
 describe("priceComposizione", () => {
   it("prices chosen ingredients and returns lines", () => {
-    const r = priceComposizione("Poke", GRUPPI, ING(), [
+    const r = priceComposizione(GRUPPI, ING(), [
       { ingredient_id: "tonno", qta: 2 },
       { ingredient_id: "riso", qta: 1 },
     ]);
@@ -220,7 +220,7 @@ describe("priceComposizione", () => {
     ]);
   });
   it("uses the group's price override over the ingredient price", () => {
-    const r = priceComposizione("Poke", GRUPPI, ING(), [
+    const r = priceComposizione(GRUPPI, ING(), [
       { ingredient_id: "salmone", qta: 1 },
       { ingredient_id: "riso", qta: 1 },
     ]);
@@ -228,7 +228,7 @@ describe("priceComposizione", () => {
   });
   it("rejects quantity over the ingredient stock", () => {
     expect(() =>
-      priceComposizione("Poke", GRUPPI, ING(), [
+      priceComposizione(GRUPPI, ING(), [
         { ingredient_id: "tonno", qta: 4 },
         { ingredient_id: "riso", qta: 1 },
       ]),
@@ -238,7 +238,7 @@ describe("priceComposizione", () => {
     const ing = ING();
     ing.set("tonno", { nome: "Tonno", prezzo: 2, scorta: 0 });
     expect(() =>
-      priceComposizione("Poke", GRUPPI, ing, [
+      priceComposizione(GRUPPI, ing, [
         { ingredient_id: "tonno", qta: 1 },
         { ingredient_id: "riso", qta: 1 },
       ]),
@@ -246,7 +246,7 @@ describe("priceComposizione", () => {
   });
   it("rejects an ingredient not in any group for the category", () => {
     expect(() =>
-      priceComposizione("Poke", GRUPPI, ING(), [
+      priceComposizione(GRUPPI, ING(), [
         { ingredient_id: "ghost", qta: 1 },
         { ingredient_id: "riso", qta: 1 },
       ]),
@@ -254,13 +254,13 @@ describe("priceComposizione", () => {
   });
   it("enforces group max and min", () => {
     expect(() =>
-      priceComposizione("Poke", GRUPPI, ING(), [
+      priceComposizione(GRUPPI, ING(), [
         { ingredient_id: "tonno", qta: 2 },
         { ingredient_id: "salmone", qta: 1 },
         { ingredient_id: "riso", qta: 1 },
       ]),
     ).toThrow(/Massimo 2/);
-    expect(() => priceComposizione("Poke", GRUPPI, ING(), [{ ingredient_id: "riso", qta: 1 }])).toThrow(
+    expect(() => priceComposizione(GRUPPI, ING(), [{ ingredient_id: "riso", qta: 1 }])).toThrow(
       /almeno 1/,
     );
   });
@@ -297,14 +297,14 @@ describe("priceComposizione + taglie (size caps the group max)", () => {
   it("rejects a quantity above the size's max even if under the group max", () => {
     // "prot" group max is 2, but the Medium size caps it at 1.
     expect(() =>
-      priceComposizione("Poke", GRUPPI, ING(), [
+      priceComposizione(GRUPPI, ING(), [
         { ingredient_id: "tonno", qta: 2 },
         { ingredient_id: "riso", qta: 1 },
       ], { prot: 1 }),
     ).toThrow(/Massimo 1/);
   });
   it("allows quantities within the size's max", () => {
-    const r = priceComposizione("Poke", GRUPPI, ING(), [
+    const r = priceComposizione(GRUPPI, ING(), [
       { ingredient_id: "tonno", qta: 1 },
       { ingredient_id: "riso", qta: 1 },
     ], { prot: 1 });
@@ -312,7 +312,7 @@ describe("priceComposizione + taglie (size caps the group max)", () => {
   });
   it("clamps the min down to the size's max so it stays satisfiable", () => {
     // base group min 1 / max 1; a size capping it at 0 must not demand 1.
-    const r = priceComposizione("Poke", GRUPPI, ING(), [{ ingredient_id: "tonno", qta: 1 }], {
+    const r = priceComposizione(GRUPPI, ING(), [{ ingredient_id: "tonno", qta: 1 }], {
       base: 0,
     });
     expect(r.deltaCents).toBe(200);
@@ -357,5 +357,75 @@ describe("priceLines + taglie", () => {
     );
     expect(r.itemsTotaleCents).toBe(900 + 300 + 400);
     expect(r.lines[0].prezzo).toBe(16);
+  });
+});
+
+describe("priceLines + per-item composizione (category-independent)", () => {
+  // A product in a non-composable category ("Pizze") carrying its OWN groups.
+  const ownGroups: ComposizioneGruppo[] = [
+    { id: "cond", nome: "Condimenti", categorie: [], min: 1, max: 1, ingredienti: [{ ingredient_id: "tonno" }] },
+  ];
+  it("prices an item from its own groups even when the category has none", () => {
+    const pizza = item({ id: "p", categoria: "Pizze", prezzo: 8, composizione: ownGroups });
+    const r = priceLines(
+      [pizza],
+      [{ item_id: "p", qta: 1, composizione: [{ ingredient_id: "tonno", qta: 1 }] }],
+      [], {}, [], ING(), [], // no category-level composizione/taglie
+    );
+    expect(r.itemsTotaleCents).toBe(800 + 200); // base 8 + tonno €2
+    expect(r.lines[0].composizione).toEqual([
+      { ingredient_id: "tonno", nome: "Tonno", qta: 1, prezzo: 2 },
+    ]);
+  });
+  it("a per-item composable product does NOT inherit category-level sizes", () => {
+    // pizza is per-item composable (own groups) but has no own taglie; even
+    // though its category ("Poke") has category-level TAGLIE, they must be ignored.
+    const pizza = item({ id: "p", categoria: "Poke", prezzo: 8, composizione: ownGroups });
+    const r = priceLines(
+      [pizza],
+      [{ item_id: "p", qta: 1, composizione: [{ ingredient_id: "tonno", qta: 1 }] }],
+      [], {}, GRUPPI, ING(), TAGLIE,
+    );
+    expect(r.itemsTotaleCents).toBe(800 + 200); // no forced size, no surcharge
+    expect(r.lines[0].taglia).toBeUndefined();
+  });
+  it("item-level groups OVERRIDE category-level (an ingredient only in the category group is rejected)", () => {
+    // Category GRUPPI (Poke) allow riso, but this item's own groups allow only tonno.
+    const pokeOwn = item({ id: "po", categoria: "Poke", prezzo: 9, composizione: ownGroups });
+    expect(() =>
+      priceLines(
+        [pokeOwn],
+        [{ item_id: "po", qta: 1, composizione: [{ ingredient_id: "riso", qta: 1 }] }],
+        [], {}, GRUPPI, ING(), [],
+      ),
+    ).toThrow(/non valido/);
+  });
+  it("applies a per-item size surcharge once and caps the group max", () => {
+    const sized = item({
+      id: "ps",
+      categoria: "Pizze",
+      prezzo: 8,
+      composizione: [
+        { id: "cond", nome: "Condimenti", categorie: [], min: 0, max: 2, ingredienti: [{ ingredient_id: "tonno" }] },
+      ],
+      composizione_taglie: [{ id: "maxi", nome: "Maxi", categorie: [], max: { cond: 1 }, prezzo: 4 }],
+    });
+    // base 8 + Maxi surcharge 4 + tonno €2 = 14
+    const r = priceLines(
+      [sized],
+      [{ item_id: "ps", qta: 1, taglia_id: "maxi", composizione: [{ ingredient_id: "tonno", qta: 1 }] }],
+      [], {}, [], ING(), [],
+    );
+    expect(r.itemsTotaleCents).toBe(800 + 400 + 200);
+    expect(r.lines[0].taglia).toBe("Maxi");
+    expect(r.lines[0].prezzo).toBe(14);
+    // Maxi caps "cond" at 1 → choosing 2 must fail.
+    expect(() =>
+      priceLines(
+        [sized],
+        [{ item_id: "ps", qta: 1, taglia_id: "maxi", composizione: [{ ingredient_id: "tonno", qta: 2 }] }],
+        [], {}, [], ING(), [],
+      ),
+    ).toThrow(/Massimo 1/);
   });
 });

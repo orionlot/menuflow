@@ -186,6 +186,12 @@ export interface MenuItem {
   consigliato: boolean;
   scorta: number | null;
   ingredienti: string[]; // ingredient ids for the display-only "Ingredienti" list
+  /** Per-item composition groups. When non-empty, this product is composable on
+   *  its own (overrides the category-level Restaurant.composizione for it). The
+   *  groups' `categorie` field is unused at the item level. */
+  composizione: ComposizioneGruppo[];
+  /** Per-item size variants (overrides category-level when non-empty). */
+  composizione_taglie: TagliaComposizione[];
   created_at: string;
 }
 

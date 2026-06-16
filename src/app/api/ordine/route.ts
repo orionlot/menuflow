@@ -102,14 +102,16 @@ export async function POST(req: Request) {
     }
 
     // SECURITY: recompute total from DB prices; never trust the client.
+    const componibiliOn = isFeatureOn(restaurant, "componibili");
     const { lines, itemsTotaleCents } = await priceCartServerSide(
       admin,
       restaurant.id,
       body.items ?? [],
       restaurant.aggiunte ?? [],
       { enforceScorte: isFeatureOn(restaurant, "scorte") },
-      isFeatureOn(restaurant, "componibili") ? (restaurant.composizione ?? []) : [],
-      isFeatureOn(restaurant, "componibili") ? (restaurant.composizione_taglie ?? []) : [],
+      componibiliOn ? (restaurant.composizione ?? []) : [],
+      componibiliOn ? (restaurant.composizione_taglie ?? []) : [],
+      componibiliOn,
     );
 
     const note = clean(body.note, 280);

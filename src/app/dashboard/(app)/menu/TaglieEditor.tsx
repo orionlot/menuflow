@@ -25,11 +25,15 @@ export default function TaglieEditor({
   value,
   gruppi,
   categories,
+  perItem = false,
   onSave,
 }: {
   value: TagliaComposizione[];
   gruppi: ComposizioneGruppo[];
   categories: string[];
+  /** Per-item mode: sizes belong to a single product, so the category picker is
+   *  hidden and every passed group is a max-override candidate. */
+  perItem?: boolean;
   onSave: (taglie: TagliaComposizione[]) => void;
 }) {
   const [taglie, setTaglie] = useState<TagliaComposizione[]>(value);
@@ -114,6 +118,7 @@ export default function TaglieEditor({
                     count={taglie.length}
                     gruppi={gruppi}
                     categories={categories}
+                    perItem={perItem}
                     onUpdate={(patch, p) => update(ti, patch, p)}
                     onPersist={persist}
                     onRemove={() => removeTaglia(ti)}
@@ -141,6 +146,7 @@ function TagliaCard({
   count,
   gruppi,
   categories,
+  perItem,
   onUpdate,
   onPersist,
   onRemove,
@@ -151,6 +157,7 @@ function TagliaCard({
   count: number;
   gruppi: ComposizioneGruppo[];
   categories: string[];
+  perItem: boolean;
   onUpdate: (patch: Partial<TagliaComposizione>, persist?: boolean) => void;
   onPersist: () => void;
   onRemove: () => void;
@@ -159,8 +166,11 @@ function TagliaCard({
   const { setNodeRef, style, handleProps } = useSortableRow(t.id);
   const [confirming, setConfirming] = useState(false);
 
-  // Groups that apply to at least one of this size's categories.
-  const groups = gruppi.filter((g) => g.categorie.some((c) => t.categorie.includes(c)));
+  // Per-item: every group is a max-override candidate. Per-category: only groups
+  // that apply to at least one of this size's categories.
+  const groups = perItem
+    ? gruppi
+    : gruppi.filter((g) => g.categorie.some((c) => t.categorie.includes(c)));
 
   function toggleCat(cat: string) {
     const has = t.categorie.includes(cat);
@@ -226,40 +236,44 @@ function TagliaCard({
         )}
       </div>
 
-      <div className="p-3">
-        <div className="text-[13px] font-medium text-neutral-700">Categorie</div>
-        <div className="mt-1 flex flex-wrap gap-1.5">
-          {categories.map((cat) => {
-            const on = t.categorie.includes(cat);
-            return (
-              <button
-                key={cat}
-                onClick={() => toggleCat(cat)}
-                aria-pressed={on}
-                className={`rounded-full px-2.5 py-1 text-xs transition ${
-                  on
-                    ? "bg-[var(--brand-soft)] text-brand"
-                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-                }`}
-              >
-                {cat}
-              </button>
-            );
-          })}
+      {!perItem && (
+        <div className="p-3">
+          <div className="text-[13px] font-medium text-neutral-700">Categorie</div>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {categories.map((cat) => {
+              const on = t.categorie.includes(cat);
+              return (
+                <button
+                  key={cat}
+                  onClick={() => toggleCat(cat)}
+                  aria-pressed={on}
+                  className={`rounded-full px-2.5 py-1 text-xs transition ${
+                    on
+                      ? "bg-[var(--brand-soft)] text-brand"
+                      : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                  }`}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+          {t.categorie.length === 0 && (
+            <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">
+              ⚠ Nessuna categoria: la taglia non verrà mostrata né salvata.
+            </p>
+          )}
         </div>
-        {t.categorie.length === 0 && (
-          <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">
-            ⚠ Nessuna categoria: la taglia non verrà mostrata né salvata.
-          </p>
-        )}
-      </div>
+      )}
 
-      {t.categorie.length > 0 && (
+      {(perItem || t.categorie.length > 0) && (
         <div className="border-t border-neutral-100 p-3">
           <div className="text-[13px] font-medium text-neutral-700">Massimo per gruppo</div>
           {groups.length === 0 ? (
             <p className="mt-1 text-xs text-neutral-500">
-              Nessun gruppo di composizione per queste categorie.
+              {perItem
+                ? "Crea prima i gruppi di composizione qui sopra."
+                : "Nessun gruppo di composizione per queste categorie."}
             </p>
           ) : (
             <div className="mt-2 space-y-2">

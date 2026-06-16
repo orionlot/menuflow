@@ -191,14 +191,24 @@ export default function MenuClient({
     () => new Map(ingredienti.map((i) => [i.id, i])),
     [ingredienti],
   );
-  const composizioneFor = (categoria: string): ComposizioneGruppo[] =>
-    componibiliOn
-      ? (tenant.composizione ?? []).filter((g) => g.categorie.includes(categoria))
-      : [];
-  const taglieFor = (categoria: string): TagliaComposizione[] =>
-    componibiliOn
-      ? (tenant.composizione_taglie ?? []).filter((tg) => tg.categorie.includes(categoria))
-      : [];
+  // A product carrying ANY per-item config is self-contained: it uses ONLY its
+  // own groups + sizes (never inherits the category-level ones). Mirrors the
+  // server's pricing resolution.
+  const isPerItemComposable = (item: MenuItem): boolean =>
+    componibiliOn &&
+    ((item.composizione?.length ?? 0) > 0 || (item.composizione_taglie?.length ?? 0) > 0);
+  const composizioneFor = (item: MenuItem): ComposizioneGruppo[] =>
+    !componibiliOn
+      ? []
+      : isPerItemComposable(item)
+        ? item.composizione ?? []
+        : (tenant.composizione ?? []).filter((g) => g.categorie.includes(item.categoria));
+  const taglieFor = (item: MenuItem): TagliaComposizione[] =>
+    !componibiliOn
+      ? []
+      : isPerItemComposable(item)
+        ? item.composizione_taglie ?? []
+        : (tenant.composizione_taglie ?? []).filter((tg) => tg.categorie.includes(item.categoria));
 
   const [lang, setLang] = useState<string>(tenant.lingue?.[0] ?? "it");
   const [cart, setCart] = useState<Record<string, CartLine>>({});
@@ -345,8 +355,8 @@ export default function MenuClient({
   function tapAdd(item: MenuItem) {
     if (
       effectiveOptions(item, tenant.aggiunte).length ||
-      composizioneFor(item.categoria).length ||
-      taglieFor(item.categoria).length
+      composizioneFor(item).length ||
+      taglieFor(item).length
     )
       setOptItem(item);
     else addLine(item, []);
@@ -1143,8 +1153,8 @@ export default function MenuClient({
         <OptionsModal
           item={optItem}
           groups={effectiveOptions(optItem, tenant.aggiunte)}
-          composizione={composizioneFor(optItem.categoria)}
-          taglie={taglieFor(optItem.categoria)}
+          composizione={composizioneFor(optItem)}
+          taglie={taglieFor(optItem)}
           ingredientiById={ingredientiById}
           p={p}
           onClose={() => setOptItem(null)}

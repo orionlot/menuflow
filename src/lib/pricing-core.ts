@@ -36,6 +36,10 @@ export interface PricedItem {
   categoria: string;
   opzioni?: unknown;
   scorta?: number | null;
+  /** Per-item composition groups (override category-level when non-empty). */
+  composizione?: ComposizioneGruppo[];
+  /** Per-item size variants (override category-level when non-empty). */
+  composizione_taglie?: TagliaComposizione[];
 }
 
 /** Live ingredient info (price + stock) keyed by id, for composable products. */
@@ -53,14 +57,15 @@ export interface IngredientInfo {
  * (Total stock across multiple units is enforced atomically at decrement time.)
  */
 export function priceComposizione(
-  categoria: string,
-  gruppi: ComposizioneGruppo[],
+  /** The EFFECTIVE composition groups for this item (already resolved by the
+   *  caller: the item's own groups if it is per-item composable, otherwise the
+   *  category-level groups filtered to its category). */
+  groups: ComposizioneGruppo[],
   ingredients: Map<string, IngredientInfo>,
   chosen: { ingredient_id: string; qta: number }[] = [],
   /** Per-group max overrides from the chosen size (gruppo_id -> max). */
   sizeMax: Record<string, number> = {},
 ): { deltaCents: number; lines: OrderComposizione[] } {
-  const groups = gruppi.filter((g) => g.categorie.includes(categoria));
   const allowed = new Map<string, { group: ComposizioneGruppo; override: number | null }>();
   for (const g of groups)
     for (const s of g.ingredienti)
@@ -174,8 +179,22 @@ export function priceLines(
         throw new Error(`Selezione richiesta: "${g.nome}" (${item.nome})`);
     }
 
-    // ── Resolve the chosen size variant (if the category has any) ──
-    const itemTaglie = taglie.filter((t) => t.categorie.includes(item.categoria));
+    // ── Resolve the EFFECTIVE composition + sizes for this item ──
+    // A product that carries ANY per-item config is "per-item composable" and is
+    // self-contained: it uses ONLY its own groups + sizes (never inherits the
+    // category-level ones). Otherwise it falls back to the category-level config
+    // filtered to its category. (The caller blanks the per-item fields when the
+    // `componibili` feature is off, so disabling the feature reverts the product
+    // to the plain/category behaviour.)
+    const perItem =
+      (item.composizione?.length ?? 0) > 0 || (item.composizione_taglie?.length ?? 0) > 0;
+    const itemComposizione = perItem
+      ? item.composizione ?? []
+      : composizione.filter((g) => g.categorie.includes(item.categoria));
+    const itemTaglie = perItem
+      ? item.composizione_taglie ?? []
+      : taglie.filter((t) => t.categorie.includes(item.categoria));
+
     let sizeMax: Record<string, number> = {};
     let tagliaNome: string | undefined;
     let tagliaPrezzoCents = 0;
@@ -188,8 +207,7 @@ export function priceLines(
     }
 
     const compo = priceComposizione(
-      item.categoria,
-      composizione,
+      itemComposizione,
       ingredients,
       line.composizione,
       sizeMax,
