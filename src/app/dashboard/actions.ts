@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeBranding } from "@/lib/branding";
 import { sanitizeFunzionalita } from "@/lib/config/features";
+import { sanitizeUnita } from "@/lib/config/units";
 import { sanitizeOrari, sanitizeChiusure } from "@/lib/orari";
 import { notifyTest } from "@/lib/telegram";
 import {
@@ -199,7 +200,7 @@ export async function upsertIngredient(input: {
     prezzo: Math.max(0, Math.round((Number(input.prezzo) || 0) * 100) / 100),
     scorta:
       input.scorta == null ? null : Math.max(0, Math.floor(Number(input.scorta) || 0)),
-    unita: input.unita ? String(input.unita).trim().slice(0, 20) : null,
+    unita: sanitizeUnita(input.unita),
     ordine: Math.floor(Number(input.ordine) || 0),
   };
   const cols = "id, nome, categoria, prezzo, scorta, unita, ordine";

@@ -17,6 +17,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import type { PublicIngredient } from "@/types/db";
+import { UNITA_MISURA, UNITA_VALUES } from "@/lib/config/units";
 import { DragHandle, MoveButtons, SaveBadge, useSortableRow, type SaveState } from "../menu/sortable";
 
 type IngredientInput = {
@@ -274,6 +275,7 @@ export default function IngredientsTable({
                       manual
                       onPatch={(p) => patchLocal(ing.id, p)}
                       onSave={() => save(payload(ing))}
+                      onSaveWith={(p) => save({ ...payload(ing), ...p })}
                       onMove={(d) => move(idx, idx + d)}
                       onDelete={() => del(ing.id)}
                     />
@@ -293,6 +295,7 @@ export default function IngredientsTable({
                   manual={false}
                   onPatch={(p) => patchLocal(ing.id, p)}
                   onSave={() => save(payload(ing))}
+                  onSaveWith={(p) => save({ ...payload(ing), ...p })}
                   onMove={() => {}}
                   onDelete={() => del(ing.id)}
                 />
@@ -321,6 +324,7 @@ function Row({
   manual,
   onPatch,
   onSave,
+  onSaveWith,
   onMove,
   onDelete,
 }: {
@@ -331,6 +335,7 @@ function Row({
   manual: boolean;
   onPatch: (p: Partial<PublicIngredient>) => void;
   onSave: () => void;
+  onSaveWith: (p: Partial<PublicIngredient>) => void;
   onMove: (delta: number) => void;
   onDelete: () => void;
 }) {
@@ -415,14 +420,23 @@ function Row({
         />
       </span>
       <span role="cell">
-        <input
-          value={ing.unita ?? ""}
-          onChange={(e) => onPatch({ unita: e.target.value })}
-          onBlur={onSave}
-          placeholder="—"
-          className={inputCls}
+        <select
+          value={UNITA_VALUES.includes(ing.unita ?? "") ? ing.unita ?? "" : ""}
+          onChange={(e) => {
+            const unita = e.target.value || null;
+            onPatch({ unita });
+            onSaveWith({ unita });
+          }}
+          className={`${inputCls} cursor-pointer`}
           aria-label="Unità"
-        />
+        >
+          <option value="">—</option>
+          {UNITA_MISURA.map((u) => (
+            <option key={u.value} value={u.value}>
+              {u.label}
+            </option>
+          ))}
+        </select>
       </span>
       <span role="cell" className="flex items-center gap-1.5">
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${s.cls}`}>{s.label}</span>

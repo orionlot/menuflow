@@ -57,7 +57,7 @@ export default function InventoryManager({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold">Ingredienti &amp; inventario</h1>
+        <h1 className="text-xl font-bold">Inventario</h1>
       </div>
       {error && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 

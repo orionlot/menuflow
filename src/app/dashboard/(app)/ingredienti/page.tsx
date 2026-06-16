@@ -19,7 +19,7 @@ export default async function IngredientiPage() {
   if (!isFeatureOn(restaurant, "componibili")) {
     return (
       <div className="rounded-xl border border-neutral-200 bg-white p-6">
-        <h1 className="text-xl font-bold">Ingredienti &amp; inventario</h1>
+        <h1 className="text-xl font-bold">Inventario</h1>
         <p className="mt-2 text-sm text-neutral-500">
           Questa sezione fa parte dell&apos;add-on <b>Componibili</b>. Attivalo dalle{" "}
           <Link href="/dashboard/funzionalita" className="text-brand underline">
