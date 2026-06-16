@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PLANS } from "@/lib/config/plans";
 import { resolveLayout } from "@/lib/config/layout";
 import { FEATURES, isEntitled } from "@/lib/config/features";
-import { buildTenantUrl } from "@/lib/urls";
+import { buildTenantUrl, tenantSubdomainUrl } from "@/lib/urls";
 import { appOrigin } from "@/lib/origin";
 import type { Restaurant } from "@/types/db";
 import BrandingForm from "@/components/BrandingForm";
@@ -85,7 +85,7 @@ export default async function AdminHome() {
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <a
-                    href={buildTenantUrl(origin, r.slug)}
+                    href={tenantSubdomainUrl(origin, r.slug)}
                     target="_blank"
                     rel="noreferrer"
                     className="rounded-sm font-medium text-brand hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"

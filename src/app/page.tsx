@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/env";
-import { buildTenantUrl } from "@/lib/urls";
+import { tenantSubdomainUrl } from "@/lib/urls";
 import { appOrigin } from "@/lib/origin";
 import { PLANS, formatEUR, MULTILINGUA_ADDON } from "@/lib/config/plans";
 
@@ -58,7 +58,7 @@ export default async function Home() {
               >
                 <div>
                   <a
-                    href={buildTenantUrl(origin, t.slug)}
+                    href={tenantSubdomainUrl(origin, t.slug)}
                     className="font-medium text-blue-600 hover:underline"
                   >
                     {t.nome}

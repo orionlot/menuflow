@@ -28,8 +28,9 @@ export function tenantSubdomainUrl(
 ): string {
   try {
     const u = new URL(origin);
+    const host = u.host.replace(/^www\./, ""); // slug.example.com, not slug.www.example.com
     const t = tavolo ? `?tavolo=${encodeURIComponent(tavolo)}` : "";
-    return `${u.protocol}//${slug}.${u.host}${t}`;
+    return `${u.protocol}//${slug}.${host}${t}`;
   } catch {
     return buildTenantUrl(origin, slug, tavolo);
   }
