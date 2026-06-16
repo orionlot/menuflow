@@ -52,6 +52,11 @@ export default async function DashboardHome() {
             tone={scontrini > 0 ? "warn" : undefined}
           />
         </div>
+        {ordersToday === 0 ? (
+          <p className="mt-3 text-sm text-neutral-500">
+            Nessun ordine oggi, per ora. I dati si aggiornano man mano che arrivano.
+          </p>
+        ) : null}
       </section>
 
       <section className="rounded-xl border border-neutral-200 bg-white p-5">
@@ -153,7 +158,11 @@ function Stat({
       <div className="text-xs text-neutral-500">{label}</div>
       <div
         className={`text-lg font-semibold ${
-          tone === "ok" ? "text-green-600" : tone === "bad" ? "text-red-600" : ""
+          tone === "ok"
+            ? "text-green-600"
+            : tone === "bad"
+              ? "text-red-600"
+              : "text-neutral-900"
         }`}
       >
         {value}
