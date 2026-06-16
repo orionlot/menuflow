@@ -1,6 +1,6 @@
 import { requireOwner } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { MenuItem } from "@/types/db";
+import type { MenuItem, PublicIngredient } from "@/types/db";
 import MenuManager from "./MenuManager";
 import { isFeatureOn } from "@/lib/config/features";
 import {
@@ -25,6 +25,20 @@ export default async function MenuPage() {
     .order("categoria", { ascending: true })
     .order("ordine", { ascending: true });
 
+  // The per-product ingredient list reuses the shared ingredient table.
+  const ingredientiOn = isFeatureOn(restaurant, "ingredienti");
+  const { data: ingRows } = ingredientiOn
+    ? await supabase
+        .from("ingredients")
+        .select("id, nome, categoria, prezzo, scorta, unita, ordine")
+        .eq("restaurant_id", restaurant.id)
+        .order("ordine", { ascending: true })
+    : { data: [] };
+  const ingredientiList = ((ingRows as PublicIngredient[]) ?? []).map((i) => ({
+    ...i,
+    prezzo: Number(i.prezzo),
+  }));
+
   return (
     <MenuManager
       restaurant={{
@@ -35,6 +49,9 @@ export default async function MenuPage() {
       initialItems={(data as MenuItem[]) ?? []}
       initialAggiunte={restaurant.aggiunte ?? []}
       scorteOn={isFeatureOn(restaurant, "scorte")}
+      descrizioneOn={isFeatureOn(restaurant, "descrizione")}
+      ingredientiOn={ingredientiOn}
+      ingredientiList={ingredientiList}
       actions={{
         createItem,
         updateItem,

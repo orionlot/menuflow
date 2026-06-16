@@ -41,9 +41,10 @@ export default async function TenantMenuPage({ params }: Params) {
 
   const items = await getMenuItems(tenant.id);
   const popolari = await getPopularItemIds(tenant.id);
-  const ingredienti = tenant.funzioni_attive?.componibili
-    ? await getPublicIngredients(tenant.id)
-    : [];
+  const ingredienti =
+    tenant.funzioni_attive?.componibili || tenant.funzioni_attive?.ingredienti
+      ? await getPublicIngredients(tenant.id)
+      : [];
   return (
     <MenuClient
       tenant={tenant}

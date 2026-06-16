@@ -16,7 +16,9 @@ export type FeatureId =
   | "feedback"
   | "riepilogo"
   | "scorte"
-  | "componibili";
+  | "componibili"
+  | "descrizione"
+  | "ingredienti";
 
 export interface FeatureDef {
   id: FeatureId;
@@ -94,6 +96,21 @@ export const FEATURES: FeatureDef[] = [
     descrizione:
       "Categorie componibili dagli ingredienti, con scorta per ingrediente.",
     pianoMinimo: "plus",
+    defaultOn: false,
+  },
+  {
+    id: "descrizione",
+    nome: "Descrizione breve",
+    descrizione: "Campo descrizione sul prodotto, mostrato sotto il nome nel menu.",
+    pianoMinimo: "base",
+    defaultOn: true,
+  },
+  {
+    id: "ingredienti",
+    nome: "Ingredienti del prodotto",
+    descrizione:
+      "Spunta gli ingredienti del piatto: compaiono in elenco, separati da virgola.",
+    pianoMinimo: "base",
     defaultOn: false,
   },
 ];

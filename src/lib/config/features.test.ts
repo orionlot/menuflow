@@ -56,7 +56,9 @@ describe("funzioniAttive", () => {
     expect(Object.keys(m).sort()).toEqual(
       [
         "componibili",
+        "descrizione",
         "feedback",
+        "ingredienti",
         "orari",
         "piatto_consigliato",
         "profilo_allergie",

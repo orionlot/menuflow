@@ -20,7 +20,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { CategoryAddon, ItemOption, MenuItem } from "@/types/db";
+import type { CategoryAddon, ItemOption, MenuItem, PublicIngredient } from "@/types/db";
 import type { ItemPatch } from "@/lib/menu";
 import { ALLERGENI } from "@/lib/config/allergeni";
 import { formatEUR } from "@/lib/config/plans";
@@ -64,12 +64,18 @@ export default function MenuManager({
   initialItems,
   initialAggiunte,
   scorteOn,
+  descrizioneOn = true,
+  ingredientiOn = false,
+  ingredientiList = [],
   actions,
 }: {
   restaurant: MiniRestaurant;
   initialItems: MenuItem[];
   initialAggiunte: CategoryAddon[];
   scorteOn: boolean;
+  descrizioneOn?: boolean;
+  ingredientiOn?: boolean;
+  ingredientiList?: PublicIngredient[];
   actions: MenuActions;
 }) {
   const router = useRouter();
@@ -109,7 +115,13 @@ export default function MenuManager({
   }, [items]);
 
   const categoryNames = useMemo(
-    () => [...grouped.keys()].sort((a, b) => a.localeCompare(b)),
+    () =>
+      [...grouped.keys()].sort((a, b) => {
+        // "Senza categoria" is an exception: always pinned to the top.
+        if (a === "Senza categoria") return -1;
+        if (b === "Senza categoria") return 1;
+        return a.localeCompare(b);
+      }),
     [grouped],
   );
 
@@ -438,6 +450,9 @@ export default function MenuManager({
           key={editingItem.id}
           item={editingItem}
           h={handlers}
+          descrizioneOn={descrizioneOn}
+          ingredientiOn={ingredientiOn}
+          ingredientiList={ingredientiList}
           onClose={() => setEditingId(null)}
         />
       )}
@@ -567,10 +582,16 @@ function SortableItem({
 function QuickEditDrawer({
   item,
   h,
+  descrizioneOn,
+  ingredientiOn,
+  ingredientiList,
   onClose,
 }: {
   item: MenuItem;
   h: ItemHandlers;
+  descrizioneOn: boolean;
+  ingredientiOn: boolean;
+  ingredientiList: PublicIngredient[];
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState({
@@ -698,21 +719,73 @@ function QuickEditDrawer({
             )}
           </div>
 
-          {/* Description */}
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium text-neutral-500">Descrizione</span>
-            <textarea
-              value={draft.descrizione}
-              rows={2}
-              onChange={(e) => setDraft((d) => ({ ...d, descrizione: e.target.value }))}
-              onBlur={(e) =>
-                e.target.value !== (item.descrizione ?? "") &&
-                h.save(item.id, { descrizione: e.target.value })
-              }
-              placeholder="Aggiungi una descrizione"
-              className="w-full resize-none rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
-            />
-          </label>
+          {/* Description (toggleable feature) */}
+          {descrizioneOn && (
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-neutral-500">
+                Descrizione breve
+              </span>
+              <textarea
+                value={draft.descrizione}
+                rows={2}
+                onChange={(e) => setDraft((d) => ({ ...d, descrizione: e.target.value }))}
+                onBlur={(e) =>
+                  e.target.value !== (item.descrizione ?? "") &&
+                  h.save(item.id, { descrizione: e.target.value })
+                }
+                placeholder="Aggiungi una descrizione"
+                className="w-full resize-none rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+              />
+            </label>
+          )}
+
+          {/* Ingredients (toggleable): tick from the ingredient list → comma preview */}
+          {ingredientiOn &&
+            (ingredientiList.length > 0 ? (
+              <div>
+                <span className="mb-1.5 block text-xs font-medium text-neutral-500">
+                  Ingredienti {item.ingredienti?.length ? `(${item.ingredienti.length})` : ""}
+                </span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {ingredientiList.map((ing) => {
+                    const on = (item.ingredienti ?? []).includes(ing.id);
+                    return (
+                      <label
+                        key={ing.id}
+                        className="flex items-center gap-2 text-sm text-neutral-700"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={on}
+                          onChange={() => {
+                            const cur = item.ingredienti ?? [];
+                            const next = on
+                              ? cur.filter((x) => x !== ing.id)
+                              : [...cur, ing.id];
+                            h.save(item.id, { ingredienti: next });
+                          }}
+                          className="h-4 w-4 rounded border-neutral-300 accent-[var(--brand)]"
+                        />
+                        {ing.nome}
+                      </label>
+                    );
+                  })}
+                </div>
+                {(item.ingredienti ?? []).length > 0 && (
+                  <p className="mt-2 rounded-md bg-neutral-50 px-2 py-1.5 text-sm text-neutral-600">
+                    {ingredientiList
+                      .filter((ing) => (item.ingredienti ?? []).includes(ing.id))
+                      .map((ing) => ing.nome)
+                      .join(", ")}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-700">
+                Aggiungi prima degli ingredienti in «Ingredienti &amp; inventario» per poterli
+                spuntare qui.
+              </p>
+            ))}
 
           {/* Translations */}
           {h.otherLangs.map((lang) => (

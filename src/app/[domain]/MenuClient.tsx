@@ -184,6 +184,8 @@ export default function MenuClient({
   const scorteOn = Boolean(tenant.funzioni_attive?.scorte);
   const allergyOn = Boolean(tenant.funzioni_attive?.profilo_allergie);
   const componibiliOn = Boolean(tenant.funzioni_attive?.componibili);
+  const descrizioneOn = tenant.funzioni_attive?.descrizione !== false; // default on
+  const ingredientiItemsOn = Boolean(tenant.funzioni_attive?.ingredienti);
   const ingredientiById = useMemo(
     () => new Map(ingredienti.map((i) => [i.id, i])),
     [ingredienti],
@@ -200,6 +202,7 @@ export default function MenuClient({
   const [lang, setLang] = useState<string>(tenant.lingue?.[0] ?? "it");
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [tavolo, setTavolo] = useState("");
+  const [asporto, setAsporto] = useState(false);
   const [note, setNote] = useState("");
   const [coperti, setCoperti] = useState(0);
   const [manciaCents, setManciaCents] = useState(0);
@@ -345,7 +348,7 @@ export default function MenuClient({
     setCart((c) => ({ ...c, [key]: { ...c[key], qta: Math.max(0, Math.min(99, q)) } }));
 
   async function submit() {
-    if (!tavolo.trim()) {
+    if (!asporto && !tavolo.trim()) {
       setError("Inserisci il numero del tavolo per procedere.");
       return;
     }
@@ -367,7 +370,7 @@ export default function MenuClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slug: tenant.slug,
-          tavolo,
+          tavolo: asporto ? "Asporto" : tavolo,
           note,
           coperti: cMode === "persona" ? coperti : undefined,
           mancia: tipEligible ? manciaCents / 100 : undefined,
@@ -446,7 +449,7 @@ export default function MenuClient({
   }
 
   const initial = tenant.nome.trim().charAt(0).toUpperCase();
-  const tavoloMissing = !tavolo.trim();
+  const tavoloMissing = !asporto && !tavolo.trim();
   const closed = Boolean(tenant.funzioni_attive?.orari) && !isOpenNow(tenant.orari);
   const ordersBlocked = backend === "down" || closed;
   const tuttoOn = activeCat === ALL_CAT;
@@ -465,6 +468,12 @@ export default function MenuClient({
       (!dark || !!item.foto_url);
     const photoRadius = Math.max(radius - 4, 4);
     const desc = t(item.descrizione ?? "", item.descrizione_i18n);
+    const ingNames = ingredientiItemsOn
+      ? (item.ingredienti ?? [])
+          .map((id) => ingredientiById.get(id)?.nome)
+          .filter(Boolean)
+          .join(", ")
+      : "";
     const recommended = Boolean(
       tenant.funzioni_attive?.piatto_consigliato && item.consigliato,
     );
@@ -628,9 +637,15 @@ export default function MenuClient({
                 </div>
               )}
 
-              {desc && (
+              {descrizioneOn && desc && (
                 <p className="mt-1.5 text-sm leading-snug" style={{ color: p.textMuted }}>
                   {desc}
+                </p>
+              )}
+
+              {ingNames && (
+                <p className="mt-1.5 text-sm leading-snug" style={{ color: p.textMuted }}>
+                  {ingNames}
                 </p>
               )}
 
@@ -784,7 +799,7 @@ export default function MenuClient({
         {/* Category rail + allergen legend accordion */}
         {categories.length > 0 && (
           <div className="sticky top-0 z-20" style={{ background: p.pageBg }}>
-            <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 py-3">
+            <div className="flex flex-wrap gap-2 px-5 py-3">
               <button
                 onClick={() => setActiveCat(ALL_CAT)}
                 className="shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition"
@@ -1192,16 +1207,44 @@ export default function MenuClient({
                 className="mt-4 rounded-xl border border-dashed p-3"
                 style={{ borderColor: tavoloMissing ? "#ef4444" : p.brand }}
               >
-                <label className="text-xs" style={{ color: p.textMuted }}>
-                  Numero tavolo <span style={{ color: "#ef4444" }}>*</span>
-                </label>
-                <input
-                  value={tavolo}
-                  onChange={(e) => setTavolo(e.target.value)}
-                  placeholder="es. 7 — obbligatorio"
-                  className="mt-1 w-full bg-transparent text-lg font-semibold outline-none"
-                  style={{ color: p.text }}
-                />
+                <div className="mb-2 flex gap-2">
+                  {[
+                    { val: false, label: "Al tavolo" },
+                    { val: true, label: "🛍 Da asporto" },
+                  ].map((opt) => {
+                    const on = asporto === opt.val;
+                    return (
+                      <button
+                        key={opt.label}
+                        type="button"
+                        onClick={() => setAsporto(opt.val)}
+                        aria-pressed={on}
+                        className="flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition"
+                        style={{
+                          background: on ? p.tint : "transparent",
+                          border: `1px solid ${on ? p.brand : p.surfaceBorder}`,
+                          color: on ? p.brand : p.text,
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {!asporto && (
+                  <>
+                    <label className="text-xs" style={{ color: p.textMuted }}>
+                      Numero tavolo <span style={{ color: "#ef4444" }}>*</span>
+                    </label>
+                    <input
+                      value={tavolo}
+                      onChange={(e) => setTavolo(e.target.value)}
+                      placeholder="es. 7 — obbligatorio"
+                      className="mt-1 w-full bg-transparent text-lg font-semibold outline-none"
+                      style={{ color: p.text }}
+                    />
+                  </>
+                )}
                 <input
                   value={note}
                   onChange={(e) => setNote(e.target.value)}

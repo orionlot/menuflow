@@ -83,7 +83,7 @@ export async function getMenuItems(restaurantId: string): Promise<MenuItem[]> {
   const { data } = await admin
     .from("menu_items")
     .select(
-      "id, restaurant_id, categoria, nome, nome_i18n, descrizione, descrizione_i18n, prezzo, foto_url, disponibile, ordine, allergeni, opzioni, consigliato, scorta, created_at",
+      "id, restaurant_id, categoria, nome, nome_i18n, descrizione, descrizione_i18n, prezzo, foto_url, disponibile, ordine, allergeni, opzioni, consigliato, scorta, ingredienti, created_at",
     )
     .eq("restaurant_id", restaurantId)
     .order("categoria", { ascending: true })

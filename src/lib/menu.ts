@@ -73,6 +73,7 @@ export interface ItemPatch {
   opzioni?: ItemOption[];
   consigliato?: boolean;
   scorta?: number | null;
+  ingredienti?: string[]; // ingredient ids (refs public.ingredients), display-only list
 }
 
 export function sanitizeOpzioni(raw: unknown): ItemOption[] {
@@ -126,6 +127,12 @@ export function sanitizeItemPatch(patch: ItemPatch): ItemPatch {
   if ("scorta" in patch)
     out.scorta =
       patch.scorta == null ? null : Math.max(0, Math.floor(Number(patch.scorta) || 0));
+  if (Array.isArray(patch.ingredienti))
+    out.ingredienti = patch.ingredienti
+      .filter((x): x is string => typeof x === "string")
+      .map((x) => x.trim().slice(0, 40))
+      .filter(Boolean)
+      .slice(0, 40);
   return out;
 }
 

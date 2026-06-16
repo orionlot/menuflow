@@ -184,6 +184,7 @@ export interface MenuItem {
   opzioni: ItemOption[];
   consigliato: boolean;
   scorta: number | null;
+  ingredienti: string[]; // ingredient ids for the display-only "Ingredienti" list
   created_at: string;
 }
 
