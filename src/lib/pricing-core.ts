@@ -208,7 +208,7 @@ export function priceLines(
     });
   }
 
-  if (itemsTotaleCents <= 0) throw new Error("Totale non valido.");
+  if (itemsTotaleCents < 0) throw new Error("Totale non valido.");
 
   return { lines, itemsTotaleCents };
 }

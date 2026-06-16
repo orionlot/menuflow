@@ -130,6 +130,13 @@ describe("priceLines", () => {
     expect(() => priceLines([item()], [])).toThrow(/Carrello vuoto/);
   });
 
+  it("accepts a free (€0) item", () => {
+    const r = priceLines([item({ prezzo: 0 })], [{ item_id: "i1", qta: 1 }]);
+    expect(r.itemsTotaleCents).toBe(0);
+    expect(r.lines).toHaveLength(1);
+    expect(r.lines[0]).toMatchObject({ item_id: "i1", nome: "Pizza", qta: 1, prezzo: 0 });
+  });
+
   it("sums multiple lines", () => {
     const r = priceLines(
       [item(), item({ id: "i2", nome: "Birra", prezzo: 5 })],
