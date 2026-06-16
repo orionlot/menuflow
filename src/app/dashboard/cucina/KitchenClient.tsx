@@ -52,11 +52,15 @@ export default function KitchenClient({
   const [audioOn, setAudioOn] = useState(false);
   const [bannerOff, setBannerOff] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  // Ids of just-arrived orders — drives a brief visual pulse on the card accent
+  // to complement the audio chime. Purely presentational; cleared on a timer.
+  const [pulseIds, setPulseIds] = useState<Set<string>>(new Set());
 
   const ac = useRef<AudioContext | null>(null);
   const seen = useRef<Set<string>>(new Set());
   const firstLoad = useRef(true);
   const audioOnRef = useRef(false);
+  const pulseTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // ── Audio (Web Audio API; no asset files) ──────────────────────────
   const enableAudio = useCallback(() => {
@@ -131,6 +135,32 @@ export default function KitchenClient({
         (o) => !o.pronto_at && !seen.current.has(o.id),
       );
       if (!firstLoad.current && fresh.length && audioOnRef.current) chime();
+      // Pulse the accent on genuinely new cards (skip the very first load so the
+      // whole board doesn't blink on mount).
+      if (!firstLoad.current && fresh.length) {
+        const freshIds = fresh.map((o) => o.id);
+        setPulseIds((prev) => {
+          const next = new Set(prev);
+          freshIds.forEach((id) => next.add(id));
+          return next;
+        });
+        freshIds.forEach((id) => {
+          const old = pulseTimers.current.get(id);
+          if (old) clearTimeout(old);
+          pulseTimers.current.set(
+            id,
+            setTimeout(() => {
+              pulseTimers.current.delete(id);
+              setPulseIds((prev) => {
+                if (!prev.has(id)) return prev;
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+              });
+            }, 6000),
+          );
+        });
+      }
       incoming.forEach((o) => seen.current.add(o.id));
       firstLoad.current = false;
       setOrders(incoming);
@@ -143,9 +173,12 @@ export default function KitchenClient({
     load();
     const t = setInterval(load, 8000); // safety-net poll; realtime does the rest
     const c = setInterval(() => setNow(Date.now()), 10000);
+    const timers = pulseTimers.current;
     return () => {
       clearInterval(t);
       clearInterval(c);
+      timers.forEach((id) => clearTimeout(id));
+      timers.clear();
     };
   }, [load]);
 
@@ -254,18 +287,34 @@ export default function KitchenClient({
 
       <main className="px-4 py-5 sm:px-6">
         {orders.length === 0 ? (
-          <div className="flex min-h-[60vh] flex-col items-center justify-center text-center text-neutral-500">
-            <div className="text-6xl">🍽️</div>
-            <p className="mt-4 text-xl">Nessun ordine in cucina</p>
-            <p className="mt-1 text-sm">I nuovi ordini compaiono qui automaticamente.</p>
+          <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center text-neutral-400">
+            <div className="flex flex-col items-center rounded-2xl border border-neutral-800 bg-[#14171c] px-10 py-12 shadow-lg">
+              <div className="grid h-24 w-24 place-items-center rounded-full bg-neutral-800/60 text-6xl shadow-inner">
+                🍽️
+              </div>
+              <p className="mt-5 text-2xl font-semibold text-neutral-200">Nessun ordine in cucina</p>
+              <p className="mt-2 max-w-xs text-sm text-neutral-500">
+                I nuovi ordini compaiono qui automaticamente.
+              </p>
+              <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-green-500/10 px-3 py-1 text-xs font-medium text-green-300 ring-1 ring-inset ring-green-500/30">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
+                In ascolto
+              </span>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* ── Colonna 1: DA PREPARARE ── */}
             <section>
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-neutral-400">
+              <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-neutral-300">
                 Da preparare
-                <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-xs text-neutral-300">
+                <span
+                  className={`min-w-[1.75rem] rounded-xl px-2.5 py-1 text-center text-sm font-extrabold tabular-nums shadow-sm ${
+                    toPrepare.length > 0
+                      ? "bg-amber-400 text-neutral-950 ring-1 ring-amber-300"
+                      : "bg-neutral-800 text-neutral-400"
+                  }`}
+                >
                   {toPrepare.length}
                 </span>
               </h2>
@@ -281,12 +330,22 @@ export default function KitchenClient({
                   {toPrepare.map((o) => {
                     const m = mins(o.created_at);
                     const col = ageColor(m);
+                    const isNew = pulseIds.has(o.id);
                     return (
                       <article
                         key={o.id}
-                        className="flex flex-col overflow-hidden rounded-2xl bg-white text-neutral-900 shadow-lg"
+                        className={`relative flex flex-col overflow-hidden rounded-2xl bg-white text-neutral-900 shadow-lg transition-shadow ${
+                          isNew ? "ring-2 ring-amber-400 ring-offset-2 ring-offset-[#0f1115]" : ""
+                        }`}
                         style={{ borderLeft: `6px solid ${col}` }}
                       >
+                        {isNew && (
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute inset-y-0 left-0 w-[6px] animate-pulse"
+                            style={{ backgroundColor: col }}
+                          />
+                        )}
                         <div className="flex items-center justify-between gap-2 bg-neutral-900 px-4 py-3 text-white">
                           <span className="text-2xl font-extrabold">
                             Tavolo {o.tavolo ?? "—"}
@@ -318,7 +377,7 @@ export default function KitchenClient({
                                   </span>
                                 </div>
                                 {det.length > 0 && (
-                                  <ul className="mt-1 space-y-0.5 pl-[2.2rem] text-base font-medium text-neutral-600">
+                                  <ul className="mt-1 space-y-0.5 pl-[2.2rem] text-lg font-semibold text-neutral-700">
                                     {det.map((d, di) => (
                                       <li key={di}>+ {d}</li>
                                     ))}
@@ -328,14 +387,14 @@ export default function KitchenClient({
                             );
                           })}
                           {o.note && (
-                            <li className="mt-2 rounded-lg bg-amber-100 px-3 py-2 text-base font-medium text-amber-900">
+                            <li className="mt-2 rounded-lg bg-amber-100 px-3 py-2 text-lg font-semibold text-amber-900">
                               📝 {o.note}
                             </li>
                           )}
                         </ul>
                         <button
                           onClick={() => setReady(o)}
-                          className="min-h-[52px] bg-green-600 py-4 text-xl font-bold text-white hover:bg-green-700 active:bg-green-800"
+                          className="min-h-[52px] bg-green-600 py-4 text-xl font-bold text-white shadow-sm transition hover:bg-green-700 hover:brightness-110 hover:shadow-md active:scale-[0.99] active:bg-green-800"
                         >
                           ✓ PRONTO
                         </button>
@@ -386,7 +445,7 @@ export default function KitchenClient({
                               <span className="font-bold">{it.qta}×</span> {it.nome}
                               {it.taglia && <span className="text-neutral-500"> · {it.taglia}</span>}
                               {det.length > 0 && (
-                                <span className="block pl-5 text-sm text-neutral-500">
+                                <span className="block pl-5 text-base font-medium text-neutral-600">
                                   {det.join(", ")}
                                 </span>
                               )}
@@ -397,13 +456,13 @@ export default function KitchenClient({
                       <div className="flex">
                         <button
                           onClick={() => undo(o)}
-                          className="min-h-[48px] w-1/3 border-r border-green-200 bg-white py-3 text-sm font-medium text-neutral-500 hover:bg-neutral-50"
+                          className="min-h-[48px] w-1/3 border-r border-green-200 bg-white py-3 text-sm font-medium text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-700 active:scale-[0.99] active:bg-neutral-100"
                         >
                           ↶ Annulla
                         </button>
                         <button
                           onClick={() => setServed(o)}
-                          className="min-h-[48px] w-2/3 bg-neutral-900 py-3 text-base font-bold text-white hover:bg-neutral-700"
+                          className="min-h-[48px] w-2/3 bg-neutral-900 py-3 text-base font-bold text-white shadow-sm transition hover:bg-neutral-700 hover:brightness-110 hover:shadow-md active:scale-[0.99] active:bg-black"
                         >
                           Ritirato
                         </button>
