@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireOwner } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { buildTenantUrl } from "@/lib/urls";
+import { tenantSubdomainUrl } from "@/lib/urls";
 import { appOrigin } from "@/lib/origin";
 import { PLANS, MULTILINGUA_ADDON, formatEUR } from "@/lib/config/plans";
 import type { Order } from "@/types/db";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardHome() {
   const { restaurant } = await requireOwner();
-  const publicUrl = buildTenantUrl(await appOrigin(), restaurant.slug);
+  const publicUrl = tenantSubdomainUrl(await appOrigin(), restaurant.slug);
   const plan = PLANS[restaurant.piano];
   const monthly =
     plan.priceCents + (restaurant.multilingua ? MULTILINGUA_ADDON.priceCents : 0);

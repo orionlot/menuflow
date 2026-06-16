@@ -1,12 +1,14 @@
 import { requireOwner } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatEUR } from "@/lib/config/plans";
+import { isFeatureOn } from "@/lib/config/features";
 import type { Order } from "@/types/db";
 import AutoPrint from "./AutoPrint";
 
 export const dynamic = "force-dynamic";
 
 const row: React.CSSProperties = { display: "flex", justifyContent: "space-between", gap: 8 };
+const sub: React.CSSProperties = { paddingLeft: 12, fontSize: 11, lineHeight: 1.35 };
 
 export default async function StampaPage({ params }: { params: Promise<{ id: string }> }) {
   const { restaurant } = await requireOwner();
@@ -20,6 +22,35 @@ export default async function StampaPage({ params }: { params: Promise<{ id: str
     .maybeSingle();
   const o = data as Order | null;
   if (!o) return <p style={{ padding: 20 }}>Ordine non trovato.</p>;
+
+  // Resolve each dish's listed ingredients + description for the comanda. These
+  // live on the menu item (not the order snapshot), so look them up by item id.
+  const descrizioneOn = isFeatureOn(restaurant, "descrizione");
+  const ingredientiOn = isFeatureOn(restaurant, "ingredienti");
+  const itemIds = [...new Set((o.items ?? []).map((it) => it.item_id).filter(Boolean))];
+  const menuById = new Map<string, { descrizione: string | null; ingredienti: string[] }>();
+  const ingNameById = new Map<string, string>();
+  if (itemIds.length) {
+    const { data: mi } = await supabase
+      .from("menu_items")
+      .select("id, descrizione, ingredienti")
+      .eq("restaurant_id", restaurant.id)
+      .in("id", itemIds);
+    for (const m of (mi ?? []) as { id: string; descrizione: string | null; ingredienti: string[] }[]) {
+      menuById.set(m.id, { descrizione: m.descrizione, ingredienti: m.ingredienti ?? [] });
+    }
+    if (ingredientiOn) {
+      const ingIds = [...new Set([...menuById.values()].flatMap((m) => m.ingredienti))];
+      if (ingIds.length) {
+        const { data: ings } = await supabase
+          .from("ingredients")
+          .select("id, nome")
+          .eq("restaurant_id", restaurant.id)
+          .in("id", ingIds);
+        for (const g of (ings ?? []) as { id: string; nome: string }[]) ingNameById.set(g.id, g.nome);
+      }
+    }
+  }
 
   const when = new Date(o.created_at).toLocaleString("it-IT");
 
@@ -46,15 +77,32 @@ export default async function StampaPage({ params }: { params: Promise<{ id: str
       </div>
       <div style={{ fontSize: 12 }}>{when}</div>
       <hr />
-      {(o.items ?? []).map((it, i) => (
-        <div key={i} style={row}>
-          <span>
-            {it.qta}× {it.nome}
-            {it.opzioni?.length ? ` (${it.opzioni.map((x) => x.scelta).join(", ")})` : ""}
-          </span>
-          <span>{formatEUR(Math.round(Number(it.prezzo) * 100) * it.qta)}</span>
-        </div>
-      ))}
+      {(o.items ?? []).map((it, i) => {
+        const mi = it.item_id ? menuById.get(it.item_id) : undefined;
+        const ingNames =
+          ingredientiOn && mi?.ingredienti.length
+            ? mi.ingredienti.map((iid) => ingNameById.get(iid)).filter(Boolean)
+            : [];
+        const compo = it.composizione ?? [];
+        return (
+          <div key={i} style={{ marginBottom: 4 }}>
+            <div style={row}>
+              <span>
+                {it.qta}× {it.nome}
+                {it.taglia ? ` · ${it.taglia}` : ""}
+                {it.opzioni?.length ? ` (${it.opzioni.map((x) => x.scelta).join(", ")})` : ""}
+              </span>
+              <span>{formatEUR(Math.round(Number(it.prezzo) * 100) * it.qta)}</span>
+            </div>
+            {compo.length > 0 && (
+              <div style={sub}>{compo.map((c) => `${c.qta}× ${c.nome}`).join(", ")}</div>
+            )}
+            {ingNames.length > 0 && <div style={sub}>Ingredienti: {ingNames.join(", ")}</div>}
+            {descrizioneOn && mi?.descrizione ? <div style={sub}>{mi.descrizione}</div> : null}
+            {it.nota ? <div style={sub}>Nota: {it.nota}</div> : null}
+          </div>
+        );
+      })}
       <hr />
       {o.coperto_tot > 0 && (
         <div style={row}>
