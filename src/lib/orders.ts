@@ -4,6 +4,7 @@ import type { Order, Restaurant } from "@/types/db";
 import { notifyPaidOrder } from "@/lib/telegram";
 import { isFeatureOn } from "@/lib/config/features";
 import { decrementIngredientStock, composableCategories } from "@/lib/ingredients";
+import { decrementMenuItemStock } from "@/lib/menu-stock";
 
 /**
  * Transition an order to `pagato` and fire the Payments bot. Shared by the
@@ -48,8 +49,12 @@ export async function markOrderPaid(
   const restaurant = restaurantRow as Restaurant | null;
 
   if (restaurant) {
-    // Mirror the route's Case A decrement for the online-paid flow: composable
-    // products consume their composition, simple products their ingredient list.
+    // Mirror the route's Case A decrements for the online-paid flow.
+    // Per-product stock (scorte):
+    if (isFeatureOn(restaurant, "scorte"))
+      await decrementMenuItemStock(admin, updated.items);
+    // Ingredient stock: composable products consume their composition, simple
+    // products their ingredient list.
     const componibiliOn = isFeatureOn(restaurant, "componibili");
     const ingredientiOn = isFeatureOn(restaurant, "ingredienti");
     if (componibiliOn || ingredientiOn)

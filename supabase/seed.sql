@@ -159,3 +159,19 @@ update public.menu_items
   set ingredienti =
     '["cccc0001-0000-0000-0000-000000000001","cccc0001-0000-0000-0000-000000000002","cccc0001-0000-0000-0000-000000000003"]'::jsonb
   where restaurant_id = '11111111-1111-1111-1111-111111111111' and nome = 'Margherita';
+
+-- ───────────── Demo: scorte per-prodotto (anche prodotti semplici) ─────────────
+-- "Scorte semplici" (menu_items.scorta): porzioni disponibili per prodotto, con
+-- auto-esaurito a 0. È un add-on Plus; pizzeria-mario è sul piano base, quindi
+-- come per i componibili lo abilitiamo via override admin + interruttore del
+-- ristoratore. Diamo una scorta demo a un paio di prodotti semplici per renderla
+-- provabile (gli altri restano illimitati / scorta null).
+update public.restaurants
+  set funzionalita = funzionalita || '{"scorte": true}'::jsonb,
+      funzionalita_admin = funzionalita_admin || '{"scorte": true}'::jsonb
+  where slug = 'pizzeria-mario';
+
+update public.menu_items set scorta = 8
+  where restaurant_id = '11111111-1111-1111-1111-111111111111' and nome = 'Tiramisù della casa';
+update public.menu_items set scorta = 12
+  where restaurant_id = '11111111-1111-1111-1111-111111111111' and nome = 'Diavola';

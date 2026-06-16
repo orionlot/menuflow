@@ -6,6 +6,7 @@ import { notifyNewOrder } from "@/lib/telegram";
 import { isStripeConfigured } from "@/lib/env";
 import { isFeatureOn } from "@/lib/config/features";
 import { decrementIngredientStock, composableCategories } from "@/lib/ingredients";
+import { decrementMenuItemStock } from "@/lib/menu-stock";
 import { hitRateLimit } from "@/lib/ratelimit";
 import { isOpenNow } from "@/lib/orari";
 import { createConnectPaymentIntent } from "@/lib/stripe/connect";
@@ -171,26 +172,9 @@ export async function POST(req: Request) {
 
     // ── Case A: no online payment (payments off OR pay-at-counter) → valid now ──
     if (!useOnline) {
-      // Decrement stock for items that track it.
+      // Decrement per-product stock for items that track it.
       if (isFeatureOn(restaurant, "scorte")) {
-        const ids = lines.map((l) => l.item_id);
-        const { data: stock } = await admin
-          .from("menu_items")
-          .select("id, scorta")
-          .in("id", ids);
-        const byId = new Map(
-          (stock ?? []).map((s) => [s.id as string, s.scorta as number | null]),
-        );
-        await Promise.all(
-          lines
-            .filter((l) => byId.get(l.item_id) != null)
-            .map((l) =>
-              admin
-                .from("menu_items")
-                .update({ scorta: Math.max(0, (byId.get(l.item_id) as number) - l.qta) })
-                .eq("id", l.item_id),
-            ),
-        );
+        await decrementMenuItemStock(admin, lines);
       }
       // Decrement ingredient stock: composable products consume their chosen
       // composition; simple products consume their listed ingredients.
