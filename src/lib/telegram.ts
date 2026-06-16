@@ -46,12 +46,15 @@ async function send(
   }
 }
 
-/** Escape user-supplied text before putting it in an HTML (parse_mode) message. */
+/** Escape user-supplied text for an HTML (parse_mode) message — including the
+ *  quote chars, so it is also safe inside an attribute like `href="…"`. */
 function escapeHtml(s: unknown): string {
   return String(s ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function itemsBlock(order: Pick<Order, "items">): string {
@@ -77,10 +80,18 @@ export async function notifyNewOrder(
   restaurant: Pick<Restaurant, "telegram_chat_ordini" | "telegram_topic_ordini">,
   order: Order,
 ) {
+  const dest =
+    order.tipo === "delivery"
+      ? `🛵 Delivery · ${escapeHtml(order.tavolo ?? "—")}`
+      : order.tipo === "asporto" || order.asporto
+        ? `🛍 Asporto · ${escapeHtml(order.tavolo ?? "—")}`
+        : `Tavolo ${escapeHtml(order.tavolo ?? "—")}`;
   const text = [
     `🧾 <b>NUOVO ORDINE</b>`,
     `━━━━━━━━━━━━━━━━━━`,
-    `Tavolo ${escapeHtml(order.tavolo ?? "—")}  ·  <b>${formatEUR(Math.round(order.totale * 100))}</b>`,
+    `${dest}  ·  <b>${formatEUR(Math.round(order.totale * 100))}</b>`,
+    order.indirizzo ? `📍 ${escapeHtml(order.indirizzo)}` : "",
+    order.posizione ? `🗺 <a href="${escapeHtml(order.posizione)}">Posizione su Maps</a>` : "",
     itemsBlock(order),
     order.note ? `\n📝 ${escapeHtml(order.note)}` : "",
   ]

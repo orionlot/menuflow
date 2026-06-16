@@ -328,6 +328,8 @@ export interface Order {
   tipo: OrderTipo;
   /** Delivery address (only for `tipo === "delivery"`). */
   indirizzo: string | null;
+  /** Optional Google-Maps location link for a delivery (http/https only). */
+  posizione: string | null;
   created_at: string;
 }
 

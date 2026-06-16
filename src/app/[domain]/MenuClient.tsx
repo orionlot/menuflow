@@ -16,6 +16,7 @@ import { brandPalette } from "@/lib/brand";
 import { resolveLayout, FONT_VARS } from "@/lib/config/layout";
 import { isServiceOpen, orariLabel, activeChiusura } from "@/lib/orari";
 import { effectiveOptions, effectiveNota } from "@/lib/menu";
+import { isMapsUrl } from "@/lib/urls";
 import HelpButton from "./HelpButton";
 import { ALLERGENI, ALLERGENI_BY_ID } from "@/lib/config/allergeni";
 
@@ -248,6 +249,8 @@ export default function MenuClient({
   const [asporto, setAsporto] = useState(false);
   const [delivery, setDelivery] = useState(false);
   const [indirizzo, setIndirizzo] = useState("");
+  const [posizione, setPosizione] = useState("");
+  const [posState, setPosState] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [pagaInCassa, setPagaInCassa] = useState(false);
   const [note, setNote] = useState("");
   const [coperti, setCoperti] = useState(0);
@@ -487,6 +490,25 @@ export default function MenuClient({
   const setQty = (key: string, q: number) =>
     setCart((c) => ({ ...c, [key]: { ...c[key], qta: Math.max(0, Math.min(99, q)) } }));
 
+  // Capture the device's current position and turn it into a Google Maps link
+  // the restaurateur can open. Works best on mobile (GPS); needs user consent.
+  function sendPosition() {
+    if (!("geolocation" in navigator)) {
+      setPosState("error");
+      return;
+    }
+    setPosState("loading");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setPosizione(`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`);
+        setPosState("ok");
+      },
+      () => setPosState("error"),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  }
+
   async function submit() {
     if (!asporto && !tavolo.trim()) {
       setError("Inserisci il numero del tavolo per procedere.");
@@ -518,6 +540,7 @@ export default function MenuClient({
           asporto,
           tipo: delivery ? "delivery" : asporto ? "asporto" : "tavolo",
           indirizzo: delivery ? indirizzo : undefined,
+          posizione: delivery && isMapsUrl(posizione) ? posizione : undefined,
           paga_in_cassa: payAtCounter,
           note,
           coperti: !asporto && cMode === "persona" ? coperti : undefined,
@@ -1524,7 +1547,11 @@ export default function MenuClient({
                               setDelivery(opt.dest === "delivery");
                               setTavolo("");
                               if (opt.dest === "tavolo") setPagaInCassa(false);
-                              if (opt.dest !== "delivery") setIndirizzo("");
+                              if (opt.dest !== "delivery") {
+                                setIndirizzo("");
+                                setPosizione("");
+                                setPosState("idle");
+                              }
                             }}
                             aria-pressed={on}
                             className="flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition"
@@ -1552,13 +1579,69 @@ export default function MenuClient({
                   style={{ color: p.text }}
                 />
                 {delivery && (
-                  <input
-                    value={indirizzo}
-                    onChange={(e) => setIndirizzo(e.target.value)}
-                    placeholder="Indirizzo di consegna — obbligatorio"
-                    className="mt-2 w-full bg-transparent text-sm outline-none"
-                    style={{ color: p.text }}
-                  />
+                  <>
+                    <input
+                      value={indirizzo}
+                      onChange={(e) => setIndirizzo(e.target.value)}
+                      placeholder="Indirizzo di consegna — obbligatorio"
+                      className="mt-2 w-full bg-transparent text-sm outline-none"
+                      style={{ color: p.text }}
+                    />
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={sendPosition}
+                        disabled={posState === "loading"}
+                        className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:opacity-60"
+                        style={{
+                          background: posState === "ok" ? p.tint : "transparent",
+                          border: `1px solid ${posState === "ok" ? p.brand : p.surfaceBorder}`,
+                          color: posState === "ok" ? p.brand : p.text,
+                        }}
+                      >
+                        📍{" "}
+                        {posState === "loading"
+                          ? "Acquisizione…"
+                          : posState === "ok"
+                            ? "Posizione acquisita ✓"
+                            : "Invia posizione attuale"}
+                      </button>
+                      {posState === "ok" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPosizione("");
+                            setPosState("idle");
+                          }}
+                          className="text-xs underline"
+                          style={{ color: p.textMuted }}
+                        >
+                          rimuovi
+                        </button>
+                      )}
+                    </div>
+                    {posState === "error" && (
+                      <p className="mt-1 text-xs" style={{ color: "#ef4444" }}>
+                        Posizione non disponibile. Puoi incollare un link Google Maps qui sotto.
+                      </p>
+                    )}
+                    <input
+                      value={posizione}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setPosizione(v);
+                        setPosState(v ? (isMapsUrl(v) ? "ok" : "idle") : "idle");
+                      }}
+                      placeholder="Link posizione Google Maps (facoltativo)"
+                      className="mt-2 w-full bg-transparent text-sm outline-none"
+                      style={{ color: p.text }}
+                    />
+                    {posizione && !isMapsUrl(posizione) && (
+                      <p className="mt-1 text-xs" style={{ color: p.textMuted }}>
+                        Inserisci un link Google Maps valido (oppure usa il pulsante qui sopra).
+                      </p>
+                    )}
+                  </>
                 )}
                 {asporto && tenant.pagamenti_attivi && (
                   <div className="mt-3">

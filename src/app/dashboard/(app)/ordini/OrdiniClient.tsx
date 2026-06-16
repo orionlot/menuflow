@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Order, ServiceRequest } from "@/types/db";
 import { formatEUR } from "@/lib/config/plans";
+import { isMapsUrl } from "@/lib/urls";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { markOrdersRead } from "@/app/dashboard/actions";
 import ManualOrderModal from "./ManualOrderModal";
@@ -504,6 +505,16 @@ function DetailPane({
             {o.voto ? <span className="font-semibold text-amber-600">★ {o.voto}/5</span> : null}
           </div>
           {o.indirizzo && <p className="mt-1 text-sm text-neutral-600">📍 {o.indirizzo}</p>}
+          {o.posizione && isMapsUrl(o.posizione) && (
+            <a
+              href={o.posizione}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 inline-block text-sm font-medium text-brand hover:underline"
+            >
+              🗺 Apri posizione in Maps
+            </a>
+          )}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           {stampaOn && (

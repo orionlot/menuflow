@@ -20,6 +20,24 @@ export function buildTenantUrl(
   return `${origin.replace(/\/+$/, "")}${tenantPath(slug, tavolo)}`;
 }
 
+/**
+ * True if `url` is an https Google-Maps location link — used to validate the
+ * customer-supplied delivery position on BOTH the client and the server (since
+ * it's surfaced as a link the restaurateur clicks, an arbitrary host would be a
+ * phishing vector). Only google.<tld> hosts and Maps' own share host
+ * (maps.app.goo.gl); the generic goo.gl shortener is intentionally excluded.
+ */
+export function isMapsUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "https:") return false;
+    const h = u.hostname.toLowerCase();
+    return /^([a-z0-9-]+\.)*google\.[a-z]{2,3}(\.[a-z]{2})?$/.test(h) || h === "maps.app.goo.gl";
+  } catch {
+    return false;
+  }
+}
+
 /** Subdomain form (needs a custom domain + wildcard DNS in production). */
 export function tenantSubdomainUrl(
   origin: string,

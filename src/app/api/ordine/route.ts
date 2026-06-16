@@ -8,6 +8,7 @@ import { isStripeConfigured } from "@/lib/env";
 import { isFeatureOn } from "@/lib/config/features";
 import { decrementIngredientStock, composableCategories } from "@/lib/ingredients";
 import { decrementMenuItemStock } from "@/lib/menu-stock";
+import { isMapsUrl } from "@/lib/urls";
 import { hitRateLimit } from "@/lib/ratelimit";
 import { isServiceOpen } from "@/lib/orari";
 import { createConnectPaymentIntent } from "@/lib/stripe/connect";
@@ -19,6 +20,15 @@ function clean(s: unknown, max = 280): string | null {
   if (typeof s !== "string") return null;
   const v = s.trim().slice(0, max);
   return v.length ? v : null;
+}
+
+/** Validate the customer-supplied delivery position (optional). Returns a
+ *  normalized Google-Maps URL or null. Shares `isMapsUrl` with the client. */
+function cleanMapsUrl(s: unknown, max = 500): string | null {
+  if (typeof s !== "string") return null;
+  const v = s.trim().slice(0, max);
+  if (!v || !isMapsUrl(v)) return null;
+  return new URL(v).toString();
 }
 
 /**
@@ -78,6 +88,7 @@ export async function POST(req: Request) {
     asporto?: boolean;
     tipo?: string;
     indirizzo?: string;
+    posizione?: string;
     paga_in_cassa?: boolean;
     note?: string;
     coperti?: number;
@@ -157,6 +168,7 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+    const posizione = delivery ? cleanMapsUrl(body.posizione, 500) : null;
 
     // SECURITY: recompute total from DB prices; never trust the client.
     const componibiliOn = isFeatureOn(restaurant, "componibili");
@@ -235,6 +247,7 @@ export async function POST(req: Request) {
         asporto,
         tipo,
         indirizzo,
+        posizione,
         items: lines,
         totale,
         mancia: manciaCents / 100,
