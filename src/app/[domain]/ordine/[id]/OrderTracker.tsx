@@ -37,12 +37,14 @@ export default function OrderTracker({
   colorePrimario,
   coloreSecondario,
   tema,
+  reviewUrl,
 }: {
   initial: TrackedOrder;
   nome: string;
   colorePrimario: string;
   coloreSecondario?: string | null;
   tema: "light" | "dark";
+  reviewUrl?: string | null;
 }) {
   const p = brandPalette(colorePrimario, tema, coloreSecondario);
   const [o, setO] = useState<TrackedOrder>(initial);
@@ -190,6 +192,18 @@ export default function OrderTracker({
               ))}
             </ul>
           </div>
+        )}
+
+        {reviewUrl && (
+          <a
+            href={reviewUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-6 block rounded-2xl border p-4 text-center text-sm font-semibold"
+            style={{ background: p.surface, borderColor: p.surfaceBorder, color: p.text }}
+          >
+            ⭐ Ti è piaciuto? Lascia una recensione
+          </a>
         )}
 
         <div className="mt-6 text-center">

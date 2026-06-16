@@ -88,6 +88,7 @@ export default async function OrdineTrackingPage({ params }: Params) {
       colorePrimario={tenant.colore_primario}
       coloreSecondario={tenant.colore_secondario}
       tema={tenant.tema}
+      reviewUrl={tenant.funzioni_attive?.recensioni ? tenant.google_review_url : null}
     />
   );
 }

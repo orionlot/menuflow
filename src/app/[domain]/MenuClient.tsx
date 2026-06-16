@@ -272,11 +272,32 @@ export default function MenuClient({
   const [query, setQuery] = useState("");
   const [voted, setVoted] = useState<number | null>(null);
 
-  // Prefill table number from QR (?tavolo=) without forcing the page dynamic.
+  // Prefill the table number: QR (?tavolo=) wins; otherwise reuse the number
+  // remembered from the previous order (mf_tavolo cookie, same tenant, ≤4h) so a
+  // second order from the same table doesn't have to re-enter it.
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("tavolo");
-    if (t) setTavolo(t);
-  }, []);
+    if (t) {
+      setTavolo(t);
+      return;
+    }
+    try {
+      const m = document.cookie.split("; ").find((c) => c.startsWith("mf_tavolo="));
+      if (!m) return;
+      const data = JSON.parse(decodeURIComponent(m.slice("mf_tavolo=".length)));
+      if (
+        data &&
+        data.slug === tenant.slug &&
+        typeof data.tavolo === "string" &&
+        typeof data.at === "number" &&
+        Date.now() - data.at < 4 * 60 * 60 * 1000
+      ) {
+        setTavolo(data.tavolo);
+      }
+    } catch {
+      /* ignore malformed cookie */
+    }
+  }, [tenant.slug]);
 
   useEffect(() => {
     let alive = true;
@@ -1867,15 +1888,13 @@ export default function MenuClient({
               </div>
             </div>
           )}
-          {tenant.funzioni_attive?.recensioni && tenant.google_review_url && (
+          {trackingOn && done.orderId && (
             <a
-              href={tenant.google_review_url}
-              target="_blank"
-              rel="noreferrer"
+              href={`/ordine/${done.orderId}`}
               className="mt-4 block w-full rounded-xl py-3 text-center font-semibold"
-              style={{ background: p.tint, color: p.text }}
+              style={{ background: p.brand, color: p.onBrand }}
             >
-              ⭐ Ti è piaciuto? Lascia una recensione
+              🔔 Segui il tuo ordine
             </a>
           )}
           <button
@@ -1884,8 +1903,12 @@ export default function MenuClient({
               setStatus(null);
               setVoted(null);
             }}
-            className="mt-4 w-full rounded-xl py-3.5 font-semibold"
-            style={{ background: p.brand, color: p.onBrand }}
+            className="mt-3 w-full rounded-xl py-3.5 font-semibold"
+            style={
+              trackingOn && done.orderId
+                ? { border: `1px solid ${p.surfaceBorder}`, color: p.text }
+                : { background: p.brand, color: p.onBrand }
+            }
           >
             Nuovo ordine
           </button>

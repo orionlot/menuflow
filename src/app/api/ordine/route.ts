@@ -71,6 +71,25 @@ async function recordOrderCookie(slug: string, orderId: string) {
   }
 }
 
+/**
+ * Remember the table number (4h) so a second order from the same table doesn't
+ * have to re-enter it. Only for table orders — the menu pre-fills from this
+ * cookie when there's no ?tavolo= in the URL. Not httpOnly (read client-side).
+ */
+async function rememberTavolo(slug: string, tavolo: string) {
+  try {
+    const store = await cookies();
+    store.set("mf_tavolo", JSON.stringify({ slug, tavolo, at: Date.now() }), {
+      maxAge: 4 * 60 * 60,
+      path: "/",
+      sameSite: "lax",
+      httpOnly: false,
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
 export async function POST(req: Request) {
   if (!(await hitRateLimit(`ordine:${req.headers.get("x-forwarded-for") ?? "anon"}`, 60, 60_000))) {
     return NextResponse.json({ ok: false, error: "Troppe richieste." }, { status: 429 });
@@ -267,6 +286,7 @@ export async function POST(req: Request) {
 
     // Remember it for the customer's "Segui il tuo ordine" list (2h cookie).
     await recordOrderCookie(slug, order.id);
+    if (tipo === "tavolo") await rememberTavolo(slug, tavolo);
 
     // ── Case A: no online payment (payments off OR pay-at-counter) → valid now ──
     if (!useOnline) {
