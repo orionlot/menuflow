@@ -2,6 +2,7 @@ import { requireOwner } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatEUR } from "@/lib/config/plans";
 import { isFeatureOn } from "@/lib/config/features";
+import { allergeneLabel } from "@/lib/config/allergeni";
 import type { Order } from "@/types/db";
 import AutoPrint from "./AutoPrint";
 
@@ -76,6 +77,11 @@ export default async function StampaPage({ params }: { params: Promise<{ id: str
         <b>{o.tavolo ?? "—"}</b>
       </div>
       <div style={{ fontSize: 12 }}>{when}</div>
+      {o.allergeni && o.allergeni.length > 0 && (
+        <div style={{ marginTop: 6, border: "2px solid #000", padding: "4px 6px", fontWeight: 700, fontSize: 13 }}>
+          ⚠️ ALLERGIE: {o.allergeni.map((a) => allergeneLabel(a)).join(", ")}
+        </div>
+      )}
       <hr />
       {(o.items ?? []).map((it, i) => {
         const mi = it.item_id ? menuById.get(it.item_id) : undefined;

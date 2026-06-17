@@ -15,6 +15,7 @@ import {
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { setOrderStage, setOrderPriorita, type KitchenStage } from "@/app/dashboard/actions";
 import { formatEUR } from "@/lib/config/plans";
+import { allergeneLabel } from "@/lib/config/allergeni";
 import type { Reparto, Priorita } from "@/types/db";
 
 interface KItem {
@@ -52,6 +53,7 @@ interface KOrder {
   tempo_stimato: number | null;
   priorita: Priorita | null;
   stato: string;
+  allergeni?: string[] | null;
 }
 
 const STAGES: { id: KitchenStage; label: string; head: string; tint: string }[] = [
@@ -699,6 +701,15 @@ function Card({
           <span className="text-neutral-300">{clock(o.created_at)}</span>
         </span>
       </div>
+
+      {o.allergeni && o.allergeni.length > 0 && (
+        <div className="mx-3 mt-2 rounded-lg border-2 border-red-500 bg-red-600 px-2.5 py-1.5 text-white">
+          <div className="text-[11px] font-extrabold uppercase tracking-wide">⚠️ Allergie al tavolo</div>
+          <div className="text-sm font-bold leading-tight">
+            {o.allergeni.map((a) => allergeneLabel(a)).join(", ")}
+          </div>
+        </div>
+      )}
 
       {reps.length > 0 && (
         <div className="flex flex-wrap gap-1 px-3 pt-2">

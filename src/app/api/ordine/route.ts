@@ -6,6 +6,7 @@ import { computeCopertoCents, computeManciaCents } from "@/lib/pricing-core";
 import { notifyNewOrder } from "@/lib/telegram";
 import { isStripeConfigured } from "@/lib/env";
 import { isFeatureOn } from "@/lib/config/features";
+import { ALLERGENI_BY_ID } from "@/lib/config/allergeni";
 import { decrementIngredientStock, composableCategories } from "@/lib/ingredients";
 import { decrementMenuItemStock } from "@/lib/menu-stock";
 import { isMapsUrl } from "@/lib/urls";
@@ -112,6 +113,7 @@ export async function POST(req: Request) {
     note?: string;
     coperti?: number;
     mancia?: number;
+    allergeni?: string[];
     items?: {
       item_id: string;
       qta: number;
@@ -266,6 +268,11 @@ export async function POST(req: Request) {
     const totaleCents = itemsTotaleCents + copertoCents + manciaCents;
     const totale = totaleCents / 100;
 
+    // Allergens the customer declared (only when the feature is on); keep known ids.
+    const allergeni = isFeatureOn(restaurant, "allergeni_ordine")
+      ? [...new Set((body.allergeni ?? []).filter((a) => ALLERGENI_BY_ID.has(a)))].slice(0, 14)
+      : [];
+
     const { data: orderRow, error: oErr } = await admin
       .from("orders")
       .insert({
@@ -281,6 +288,7 @@ export async function POST(req: Request) {
         coperti,
         coperto_tot: copertoCents / 100,
         tempo_stimato: tempoStimato,
+        allergeni,
         note,
         stato: useOnline ? "in_attesa_pagamento" : "ricevuto",
       })

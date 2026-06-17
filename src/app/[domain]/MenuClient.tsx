@@ -214,6 +214,7 @@ export default function MenuClient({
   const ingredientiItemsOn = Boolean(tenant.funzioni_attive?.ingredienti);
   const pesoOn = Boolean(tenant.funzioni_attive?.peso);
   const kcalOn = Boolean(tenant.funzioni_attive?.kcal);
+  const allergeniOrdineOn = Boolean(tenant.funzioni_attive?.allergeni_ordine);
   const asportoOn = Boolean(tenant.funzioni_attive?.asporto);
   const etichetteOn = Boolean(tenant.funzioni_attive?.etichette);
   const fasceOrarieOn = Boolean(tenant.funzioni_attive?.fasce_orarie);
@@ -248,6 +249,7 @@ export default function MenuClient({
   const [lang, setLang] = useState<string>(tenant.lingue?.[0] ?? "it");
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [tavolo, setTavolo] = useState("");
+  const [allergeniSel, setAllergeniSel] = useState<string[]>([]);
   const [asporto, setAsporto] = useState(false);
   const [delivery, setDelivery] = useState(false);
   const [indirizzo, setIndirizzo] = useState("");
@@ -591,6 +593,7 @@ export default function MenuClient({
           note,
           coperti: !asporto && cMode === "persona" ? coperti : undefined,
           mancia: tipEligible ? manciaCents / 100 : undefined,
+          allergeni: allergeniOrdineOn && allergeniSel.length ? allergeniSel : undefined,
           items: lines.map((l) => ({
             item_id: l.item_id,
             qta: l.qta,
@@ -620,6 +623,7 @@ export default function MenuClient({
         setStatus("In preparazione");
         setDone({ mode: "placed", orderId: data.orderId });
         setCart({});
+        setAllergeniSel([]);
       }
     } catch {
       setBackend("down");
@@ -1706,6 +1710,38 @@ export default function MenuClient({
                       </p>
                     )}
                   </>
+                )}
+                {allergeniOrdineOn && (
+                  <div className="mt-3">
+                    <span className="text-xs" style={{ color: p.textMuted }}>
+                      🛡 Allergie del tavolo (facoltativo)
+                    </span>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {ALLERGENI.map((a) => {
+                        const on = allergeniSel.includes(a.id);
+                        return (
+                          <button
+                            key={a.id}
+                            type="button"
+                            aria-pressed={on}
+                            onClick={() =>
+                              setAllergeniSel((prev) =>
+                                on ? prev.filter((x) => x !== a.id) : [...prev, a.id],
+                              )
+                            }
+                            className="rounded-full px-2.5 py-1 text-xs font-medium transition"
+                            style={{
+                              background: on ? p.brand : "transparent",
+                              color: on ? p.onBrand : p.text,
+                              border: `1px solid ${on ? p.brand : p.surfaceBorder}`,
+                            }}
+                          >
+                            {a.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
                 {asporto && tenant.pagamenti_attivi && (
                   <div className="mt-3">

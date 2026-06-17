@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Order, ServiceRequest } from "@/types/db";
 import { formatEUR } from "@/lib/config/plans";
+import { allergeneLabel } from "@/lib/config/allergeni";
 import { isMapsUrl } from "@/lib/urls";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { markOrdersRead } from "@/app/dashboard/actions";
@@ -611,6 +612,12 @@ function DetailPane({
           <span>{formatEUR(Math.round(Number(o.totale) * 100))}</span>
         </div>
       </div>
+
+      {o.allergeni && o.allergeni.length > 0 && (
+        <p className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+          ⚠️ Allergie al tavolo: {o.allergeni.map((a) => allergeneLabel(a)).join(", ")}
+        </p>
+      )}
 
       {o.note && (
         <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">📝 {o.note}</p>
