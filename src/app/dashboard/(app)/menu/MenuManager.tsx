@@ -59,6 +59,7 @@ export interface MenuActions {
   updateEtichette?: (etichette: string[]) => Promise<void>;
   updateReparti?: (reparti: Reparto[]) => Promise<void>;
   updateCategoriaTempi?: (value: Record<string, number>) => Promise<void>;
+  updateCapienzaDefault?: (value: number | null) => Promise<void>;
   reorder: (updates: { id: string; ordine: number }[]) => Promise<void>;
 }
 
@@ -97,6 +98,7 @@ export default function MenuManager({
   fasceOrarieOn = false,
   tempoStimatoOn = false,
   categoriaTempi = {},
+  capienzaDefault = null,
   pesoOn = false,
   kcalOn = false,
   ingredientiList = [],
@@ -119,6 +121,7 @@ export default function MenuManager({
   fasceOrarieOn?: boolean;
   tempoStimatoOn?: boolean;
   categoriaTempi?: Record<string, number>;
+  capienzaDefault?: number | null;
   pesoOn?: boolean;
   kcalOn?: boolean;
   ingredientiList?: PublicIngredient[];
@@ -591,7 +594,13 @@ export default function MenuManager({
         <CategoriaTempiEditor
           value={categoriaTempi}
           categories={categoryNames}
+          capienzaDefault={capienzaDefault}
           onSave={(v) => run(() => actions.updateCategoriaTempi!(v))}
+          onSaveCapienza={
+            actions.updateCapienzaDefault
+              ? (n) => run(() => actions.updateCapienzaDefault!(n))
+              : undefined
+          }
         />
       )}
 

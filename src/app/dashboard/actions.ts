@@ -332,6 +332,21 @@ export async function updateEtichette(etichette: unknown) {
 }
 
 /** Restaurateur-configured kitchen departments (Reparti tab + Kitchen Display). */
+/** Default kitchen concurrency (dishes prepared at once) for the customer wait
+ *  estimate, for items without a reparto. RLS via ownerRestaurantId. */
+export async function setCapienzaDefault(value: number | null) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const n = Math.floor(Number(value) || 0);
+  const { error } = await admin
+    .from("restaurants")
+    .update({ capienza_default: n > 0 ? Math.min(50, n) : null })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/menu");
+  revalidatePath("/[domain]", "page");
+}
+
 /** Back-office (dashboard) light/dark theme. RLS via ownerRestaurantId. */
 export async function setDashboardTema(tema: "light" | "dark") {
   const restaurantId = await ownerRestaurantId();

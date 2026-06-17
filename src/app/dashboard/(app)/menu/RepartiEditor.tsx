@@ -66,6 +66,26 @@ export default function RepartiEditor({
                 aria-label="Nome reparto"
                 className="flex-1 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm"
               />
+              <span
+                className="flex shrink-0 items-center gap-1"
+                title="Quanti piatti questa postazione prepara in contemporanea (stima d'attesa cliente)"
+              >
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  inputMode="numeric"
+                  value={r.capienza ?? ""}
+                  placeholder="1"
+                  onChange={(e) => {
+                    const n = parseInt(e.target.value, 10);
+                    patch(i, { capienza: Number.isFinite(n) && n > 0 ? Math.min(50, n) : undefined });
+                  }}
+                  aria-label={`Capienza ${r.nome} (piatti in contemporanea)`}
+                  className="w-14 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"
+                />
+                <span className="text-xs text-neutral-400">in cont.</span>
+              </span>
               <button
                 onClick={() => remove(i)}
                 aria-label={`Rimuovi ${r.nome}`}

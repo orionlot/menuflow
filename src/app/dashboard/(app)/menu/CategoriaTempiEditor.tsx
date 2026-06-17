@@ -7,13 +7,18 @@ import { useState } from "react";
 export default function CategoriaTempiEditor({
   value,
   categories,
+  capienzaDefault,
   onSave,
+  onSaveCapienza,
 }: {
   value: Record<string, number>;
   categories: string[];
+  capienzaDefault?: number | null;
   onSave: (v: Record<string, number>) => void;
+  onSaveCapienza?: (n: number | null) => void;
 }) {
   const [tempi, setTempi] = useState<Record<string, number>>(value);
+  const [capienza, setCapienza] = useState<number | "">(capienzaDefault ?? "");
 
   function setCat(cat: string, raw: string) {
     const n = Math.max(0, Math.min(600, Math.floor(Number(raw) || 0)));
@@ -33,6 +38,32 @@ export default function CategoriaTempiEditor({
         tempo: in quel caso la cucina usa questa media. Se né il piatto né la categoria hanno un
         tempo, la stima viene segnalata come approssimativa.
       </p>
+      {onSaveCapienza && (
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg bg-neutral-50 px-3 py-2">
+          <span className="min-w-0 text-sm">
+            <span className="font-medium">Capienza cucina</span>
+            <span className="block text-xs text-neutral-500">
+              Piatti preparati in contemporanea (es. forni). Riduce l&apos;attesa stimata: oltre questo
+              numero gli ordini fanno coda. Per le singole postazioni usa la capienza nei Reparti.
+            </span>
+          </span>
+          <div className="flex items-center gap-1.5">
+            <input
+              type="number"
+              min="1"
+              max="50"
+              inputMode="numeric"
+              value={capienza}
+              placeholder="1"
+              onChange={(e) => setCapienza(e.target.value === "" ? "" : Math.max(1, parseInt(e.target.value, 10) || 1))}
+              onBlur={() => onSaveCapienza(capienza === "" ? null : Number(capienza))}
+              aria-label="Capienza cucina (piatti in contemporanea)"
+              className="w-16 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+            />
+            <span className="text-xs text-neutral-500">in cont.</span>
+          </div>
+        </div>
+      )}
       {categories.length === 0 ? (
         <p className="text-sm text-neutral-500">Nessuna categoria: aggiungi prima dei piatti.</p>
       ) : (

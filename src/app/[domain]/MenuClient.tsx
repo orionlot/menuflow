@@ -19,6 +19,7 @@ import { effectiveOptions, effectiveNota } from "@/lib/menu";
 import { isMapsUrl } from "@/lib/urls";
 import HelpButton from "./HelpButton";
 import { ALLERGENI, ALLERGENI_BY_ID } from "@/lib/config/allergeni";
+import { addLoad, capienzaFor, effectivePrep, waitMinutes, type RepartoLoad } from "@/lib/attesa";
 
 const MAINTENANCE_MSG =
   "App momentaneamente in manutenzione — Si prega di rivolgersi allo staff per l'ordinazione";
@@ -255,7 +256,7 @@ export default function MenuClient({
   const [tavolo, setTavolo] = useState("");
   const [sala, setSala] = useState("");
   const [allergeniSel, setAllergeniSel] = useState<string[]>([]);
-  const [queueMin, setQueueMin] = useState<number | null>(null);
+  const [queueLoads, setQueueLoads] = useState<Record<string, RepartoLoad>>({});
   const [asporto, setAsporto] = useState(false);
   const [delivery, setDelivery] = useState(false);
   const [indirizzo, setIndirizzo] = useState("");
@@ -317,7 +318,7 @@ export default function MenuClient({
       try {
         const r = await fetch(`/api/attesa?slug=${encodeURIComponent(tenant.slug)}`, { cache: "no-store" });
         const d = await r.json();
-        if (alive && d.ok) setQueueMin(Math.max(0, Math.round(Number(d.minuti) || 0)));
+        if (alive && d.ok) setQueueLoads((d.loads as Record<string, RepartoLoad>) ?? {});
       } catch {
         /* keep last value */
       }
@@ -485,22 +486,29 @@ export default function MenuClient({
       : [activeCat || categories[0]];
   const lines = Object.values(cart).filter((l) => l.qta > 0);
   const count = lines.reduce((s, l) => s + l.qta, 0);
-  // Estimated wait = current kitchen queue (server) + this cart's prep. The cart
-  // contributes the MAX effective prep among its dishes — the same model the
-  // order uses when it later enters the queue (orders.tempo_stimato = MAX), so
-  // the figure stays consistent with what /api/attesa sums.
-  const cartPrepMin = attesaOn
-    ? lines.reduce((mx, l) => {
-        const it = itemById.get(l.item_id);
-        if (!it) return mx;
-        const eff =
-          it.tempo_preparazione != null && it.tempo_preparazione > 0
-            ? it.tempo_preparazione
-            : Number((tenant.categoria_tempi ?? {})[it.categoria]) || 0;
-        return Math.max(mx, eff);
-      }, 0)
-    : 0;
-  const attesaTot = attesaOn ? (queueMin ?? 0) + cartPrepMin : 0;
+  // Estimated wait (minutes): the current kitchen queue PLUS this cart, folded
+  // into the same per-reparto parallel-capacity model the server uses. The
+  // kitchen handles `capienza` dishes per station at once, so adding a dish only
+  // extends the wait once a station's wave is full (e.g. the 4th pizza when the
+  // pizzeria runs 3 ovens).
+  const attesaTot = (() => {
+    if (!attesaOn) return 0;
+    const merged: Record<string, RepartoLoad> = {};
+    for (const [k, v] of Object.entries(queueLoads)) merged[k] = { ...v };
+    for (const l of lines) {
+      const it = itemById.get(l.item_id);
+      if (!it) continue;
+      const reparto = it.reparto || "";
+      addLoad(
+        merged,
+        reparto,
+        l.qta,
+        effectivePrep(it.tempo_preparazione, it.categoria, tenant.categoria_tempi),
+        capienzaFor(reparto, tenant.reparti, tenant.capienza_default),
+      );
+    }
+    return waitMinutes(merged);
+  })();
   // Asporto price: when "Da asporto" is chosen and the item has a takeaway price,
   // the effective unit swaps the base price (keeps display == server charge).
   const asportoActive = asporto && prezzoAsportoOn;

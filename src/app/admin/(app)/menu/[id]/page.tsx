@@ -8,6 +8,9 @@ import {
   adminUpdateItem,
   adminDeleteItem,
   adminUpdateAggiunte,
+  adminUpdateReparti,
+  adminUpdateCategoriaTempi,
+  adminSetCapienzaDefault,
   adminReorderItems,
   adminDuplicateItem,
 } from "@/app/admin/actions";
@@ -56,13 +59,21 @@ export default async function AdminMenuPage({
         }}
         initialItems={(data as MenuItem[]) ?? []}
         initialAggiunte={restaurant.aggiunte ?? []}
+        reparti={restaurant.reparti ?? []}
         scorteOn={isFeatureOn(restaurant, "scorte")}
+        repartoOn={isFeatureOn(restaurant, "reparto")}
+        tempoStimatoOn={isFeatureOn(restaurant, "tempo_stimato")}
+        categoriaTempi={restaurant.categoria_tempi ?? {}}
+        capienzaDefault={restaurant.capienza_default}
         actions={{
           createItem: adminCreateItem.bind(null, restaurant.id),
           updateItem: adminUpdateItem,
           deleteItem: adminDeleteItem,
           duplicateItem: adminDuplicateItem,
           updateAggiunte: adminUpdateAggiunte.bind(null, restaurant.id),
+          updateReparti: adminUpdateReparti.bind(null, restaurant.id),
+          updateCategoriaTempi: adminUpdateCategoriaTempi.bind(null, restaurant.id),
+          updateCapienzaDefault: adminSetCapienzaDefault.bind(null, restaurant.id),
           reorder: adminReorderItems,
         }}
       />

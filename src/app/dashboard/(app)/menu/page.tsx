@@ -13,6 +13,7 @@ import {
   updateEtichette,
   updateReparti,
   updateCategoriaTempi,
+  setCapienzaDefault,
   reorderItems,
   duplicateItem,
   importItems,
@@ -70,6 +71,7 @@ export default async function MenuPage() {
       fasceOrarieOn={isFeatureOn(restaurant, "fasce_orarie")}
       tempoStimatoOn={isFeatureOn(restaurant, "tempo_stimato")}
       categoriaTempi={restaurant.categoria_tempi ?? {}}
+      capienzaDefault={restaurant.capienza_default}
       pesoOn={isFeatureOn(restaurant, "peso")}
       kcalOn={isFeatureOn(restaurant, "kcal")}
       ingredientiList={ingredientiList}
@@ -85,6 +87,7 @@ export default async function MenuPage() {
         updateEtichette,
         updateReparti,
         updateCategoriaTempi,
+        updateCapienzaDefault: setCapienzaDefault,
         reorder: reorderItems,
       }}
     />

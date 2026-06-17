@@ -7,8 +7,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sanitizeBranding } from "@/lib/branding";
 import { sanitizeFunzionalita } from "@/lib/config/features";
-import { sanitizeItemPatch, sanitizeAggiunte, type ItemPatch } from "@/lib/menu";
-import type { BrandingPatch, CategoryAddon, PlanId } from "@/types/db";
+import {
+  sanitizeItemPatch,
+  sanitizeAggiunte,
+  sanitizeReparti,
+  sanitizeCategoriaTempi,
+  type ItemPatch,
+} from "@/lib/menu";
+import type { BrandingPatch, CategoryAddon, PlanId, Reparto } from "@/types/db";
 
 const PLAN_IDS: PlanId[] = ["base", "plus", "pro"];
 
@@ -83,6 +89,43 @@ export async function adminUpdateAggiunte(
   const { error } = await admin
     .from("restaurants")
     .update({ aggiunte: sanitizeAggiunte(aggiunte) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin");
+  revalidatePath("/[domain]", "page");
+}
+
+export async function adminUpdateReparti(restaurantId: string, reparti: Reparto[]) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ reparti: sanitizeReparti(reparti) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin");
+  revalidatePath("/[domain]", "page");
+}
+
+export async function adminUpdateCategoriaTempi(restaurantId: string, value: Record<string, number>) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ categoria_tempi: sanitizeCategoriaTempi(value) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin");
+  revalidatePath("/[domain]", "page");
+}
+
+export async function adminSetCapienzaDefault(restaurantId: string, value: number | null) {
+  await requireAdmin();
+  const admin = createAdminClient();
+  const n = Math.floor(Number(value) || 0);
+  const { error } = await admin
+    .from("restaurants")
+    .update({ capienza_default: n > 0 ? Math.min(50, n) : null })
     .eq("id", restaurantId);
   if (error) throw new Error(error.message);
   revalidatePath("/admin");

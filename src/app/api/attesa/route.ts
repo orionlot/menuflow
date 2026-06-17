@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isFeatureOn } from "@/lib/config/features";
 import { hitRateLimit } from "@/lib/ratelimit";
-import type { Restaurant } from "@/types/db";
+import { addLoad, capienzaFor, effectivePrep, waitMinutes, type RepartoLoad } from "@/lib/attesa";
+import type { Order, Restaurant } from "@/types/db";
 
 export const dynamic = "force-dynamic";
 
@@ -31,17 +32,57 @@ export async function GET(req: Request) {
   if (!restaurant || !restaurant.attivo || !isFeatureOn(restaurant, "attesa_stimata")) {
     return NextResponse.json({ ok: true, minuti: 0 });
   }
-  const { data } = await admin
+  // Pending dishes (da preparare + in preparazione).
+  const { data: pend } = await admin
     .from("orders")
-    .select("tempo_stimato")
+    .select("items")
     .eq("restaurant_id", restaurant.id)
     .in("stato", ["ricevuto", "pagato"])
     .is("annullato_at", null)
     .is("pronto_at", null)
     .is("servito_at", null);
-  const minuti = (data ?? []).reduce(
-    (s, o) => s + (Number((o as { tempo_stimato: number | null }).tempo_stimato) || 0),
-    0,
-  );
-  return NextResponse.json({ ok: true, minuti });
+  const orders = (pend as Pick<Order, "items">[]) ?? [];
+
+  const itemIds = [
+    ...new Set(orders.flatMap((o) => (o.items ?? []).map((it) => it.item_id).filter(Boolean))),
+  ];
+  const metaById = new Map<string, { reparto: string; prep: number }>();
+  if (itemIds.length) {
+    const { data: mi } = await admin
+      .from("menu_items")
+      .select("id, reparto, tempo_preparazione, categoria")
+      .eq("restaurant_id", restaurant.id)
+      .in("id", itemIds);
+    for (const m of (mi ?? []) as {
+      id: string;
+      reparto: string | null;
+      tempo_preparazione: number | null;
+      categoria: string | null;
+    }[]) {
+      metaById.set(m.id, {
+        reparto: m.reparto || "",
+        prep: effectivePrep(m.tempo_preparazione, m.categoria, restaurant.categoria_tempi),
+      });
+    }
+  }
+
+  // Build the per-station load from pending dishes.
+  const loads: Record<string, RepartoLoad> = {};
+  for (const o of orders) {
+    for (const it of o.items ?? []) {
+      const meta = it.item_id ? metaById.get(it.item_id) : undefined;
+      if (!meta) continue;
+      addLoad(
+        loads,
+        meta.reparto,
+        it.qta,
+        meta.prep,
+        capienzaFor(meta.reparto, restaurant.reparti, restaurant.capienza_default),
+      );
+    }
+  }
+
+  // Return both the total and the per-station load so the menu can fold in the
+  // customer's own cart and recompute consistently.
+  return NextResponse.json({ ok: true, minuti: waitMinutes(loads), loads });
 }

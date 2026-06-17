@@ -266,7 +266,7 @@ export function sanitizeReparti(raw: unknown): Reparto[] {
   const usedIds = new Set<string>();
   const out: Reparto[] = [];
   for (const x of raw) {
-    const r = (x ?? {}) as { id?: unknown; nome?: unknown; colore?: unknown };
+    const r = (x ?? {}) as { id?: unknown; nome?: unknown; colore?: unknown; capienza?: unknown };
     const nome = String(r.nome ?? "").trim().slice(0, 40);
     if (!nome) continue;
     // Prefer an existing id (keeps dish references stable); else slugify the name.
@@ -290,7 +290,9 @@ export function sanitizeReparti(raw: unknown): Reparto[] {
     usedIds.add(id);
     const coloreRaw = String(r.colore ?? "").trim();
     const colore = /^#[0-9a-fA-F]{6}$/.test(coloreRaw) ? coloreRaw : "#64748b";
-    out.push({ id, nome, colore });
+    const capienzaN = Math.floor(Number(r.capienza) || 0);
+    const capienza = capienzaN > 0 ? Math.min(50, capienzaN) : undefined;
+    out.push(capienza ? { id, nome, colore, capienza } : { id, nome, colore });
     if (out.length >= 20) break;
   }
   return out;

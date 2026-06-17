@@ -66,6 +66,9 @@ export interface Reparto {
   id: string;
   nome: string;
   colore?: string;
+  /** How many dishes this station prepares at once (parallel capacity) for the
+   *  wait estimate. Unset ⇒ falls back to restaurants.capienza_default. */
+  capienza?: number;
 }
 
 /** A table on the floor plan. x/y are 0–100 % of the canvas. */
@@ -134,6 +137,9 @@ export interface Restaurant {
   sale: Sala[];
   /** Per-category average prep minutes, e.g. { "Antipasti": 10 } — fallback for the KDS estimate. */
   categoria_tempi: Record<string, number>;
+  /** Default kitchen concurrency (dishes prepared at once) for the wait estimate
+   *  when an item has no reparto / reparti aren't used. null ⇒ 1 (serial). */
+  capienza_default: number | null;
   /** Back-office theme, independent of the public `tema`. null = light. */
   dashboard_tema: "light" | "dark" | null;
   attivo: boolean;
@@ -176,6 +182,8 @@ export type PublicRestaurant = Pick<
   | "etichette"
   | "sale"
   | "categoria_tempi"
+  | "capienza_default"
+  | "reparti"
   | "attivo"
 > & {
   /** Effective on/off per feature (plan ∪ admin entitlement, then owner switch). */
