@@ -3,6 +3,8 @@ import { requireOwner } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { tenantSubdomainUrl } from "@/lib/urls";
 import { appOrigin } from "@/lib/origin";
+import { isFeatureOn } from "@/lib/config/features";
+import { contoGroupKey } from "@/lib/conto";
 import { PLANS, MULTILINGUA_ADDON, formatEUR } from "@/lib/config/plans";
 import type { Order } from "@/types/db";
 
@@ -36,6 +38,24 @@ export default async function DashboardHome() {
     (o) => o.stato === "pagato" && !o.scontrino_registrato,
   ).length;
 
+  // Open contos = distinct dine-in tables with unsettled orders (any day).
+  const contiOn = isFeatureOn(restaurant, "conti");
+  let contiAperti = 0;
+  if (contiOn) {
+    const { data: openRows } = await supabase
+      .from("orders")
+      .select("tavolo, sala")
+      .eq("restaurant_id", restaurant.id)
+      .is("conto_chiuso_at", null)
+      .is("annullato_at", null)
+      .eq("asporto", false)
+      .not("tavolo", "is", null)
+      .in("stato", ["ricevuto", "pagato"]);
+    contiAperti = new Set(
+      ((openRows as Pick<Order, "tavolo" | "sala">[]) ?? []).map((o) => contoGroupKey(o.sala, o.tavolo)),
+    ).size;
+  }
+
   return (
     <div className="space-y-6">
       {/* KPI di oggi */}
@@ -43,9 +63,12 @@ export default async function DashboardHome() {
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-500">
           Oggi
         </h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className={`grid grid-cols-2 gap-3 ${contiOn ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
           <KpiLink href="/dashboard/statistiche" label="Incasso" value={formatEUR(incassoCents)} />
           <KpiLink href="/dashboard/ordini" label="Ordini" value={String(ordersToday)} />
+          {contiOn && (
+            <KpiLink href="/dashboard/conti" label="Conti aperti" value={String(contiAperti)} />
+          )}
           <KpiLink
             href="/dashboard/reconciliation"
             label="Scontrini da battere"

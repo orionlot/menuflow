@@ -28,7 +28,8 @@ export type FeatureId =
   | "richiesta_servizio"
   | "delivery"
   | "ordine_manuale"
-  | "sala";
+  | "sala"
+  | "conti";
 
 export interface FeatureDef {
   id: FeatureId;
@@ -196,6 +197,14 @@ export const FEATURES: FeatureDef[] = [
     descrizione: "Disegna la sala e avvia un ordine toccando un tavolo.",
     pianoMinimo: "plus",
     defaultOn: false,
+  },
+  {
+    id: "conti",
+    nome: "Estingui conto",
+    descrizione:
+      "Raggruppa gli ordini per tavolo e chiudi il conto, con stampa e divisione alla romana.",
+    pianoMinimo: "base",
+    defaultOn: true,
   },
 ];
 

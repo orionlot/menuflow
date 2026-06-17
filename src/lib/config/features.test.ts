@@ -57,6 +57,7 @@ describe("funzioniAttive", () => {
       [
         "asporto",
         "componibili",
+        "conti",
         "delivery",
         "descrizione",
         "etichette",

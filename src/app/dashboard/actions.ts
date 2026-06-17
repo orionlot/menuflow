@@ -26,6 +26,7 @@ import {
   type ItemPatch,
 } from "@/lib/menu";
 import { parseCsv, rowsToItemPatches } from "@/lib/csv";
+import { MAX_CONTO_ORDERS } from "@/lib/conto";
 import type {
   BrandingPatch,
   CategoryAddon,
@@ -548,6 +549,45 @@ export async function annullaOrdine(orderId: string, annulla = true) {
     .eq("id", orderId);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/ordini");
+}
+
+/**
+ * Settle a table's bill ("Estingui conto"): stamp `conto_chiuso_at` on the
+ * given orders so they leave the open-conti board. This is a management action,
+ * NOT a cancellation — `stato`/`annullato_at` are untouched, so the orders stay
+ * counted in incasso/statistiche; and NOT a kitchen action — `servito_at` is
+ * left alone (an order can be paid for while still cooking).
+ *
+ * The caller passes the explicit ids the conto card displayed; the guards
+ * re-assert "still an open dine-in sale" so a stale id (already settled,
+ * cancelled, or now an asporto/delivery) is silently skipped, and a brand-new
+ * order that arrived after the card rendered (and isn't in `ids`) is never
+ * closed by surprise. RLS scopes the update to the owner's restaurant.
+ */
+export async function estinguiConto(orderIds: string[]) {
+  const ids = (orderIds ?? []).filter((id) => typeof id === "string").slice(0, MAX_CONTO_ORDERS);
+  if (!ids.length) return;
+  // Server actions are independently invocable, so assert auth + entitlement here
+  // too (the page guard alone wouldn't stop a direct call) — mirrors createManualOrder.
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { data: rRow } = await admin.from("restaurants").select("*").eq("id", restaurantId).maybeSingle();
+  const restaurant = rRow as Restaurant | null;
+  if (!restaurant || !isFeatureOn(restaurant, "conti")) throw new Error("Funzione non disponibile.");
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("orders")
+    .update({ conto_chiuso_at: new Date().toISOString() })
+    .eq("restaurant_id", restaurantId) // defense-in-depth alongside the RLS update policy
+    .in("id", ids)
+    .is("conto_chiuso_at", null)
+    .is("annullato_at", null)
+    .eq("asporto", false)
+    .not("tavolo", "is", null)
+    .in("stato", ["ricevuto", "pagato"]);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/conti");
 }
 
 /** Mark a service request (call-waiter / ask-bill) as handled. RLS-scoped. */

@@ -29,7 +29,12 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-neutral-50 text-neutral-900 lg:flex-row" style={brandVars}>
-      <DashboardSidebar nome={restaurant.nome} esci={esci} salaOn={isFeatureOn(restaurant, "sala")} />
+      <DashboardSidebar
+        nome={restaurant.nome}
+        esci={esci}
+        salaOn={isFeatureOn(restaurant, "sala")}
+        contiOn={isFeatureOn(restaurant, "conti")}
+      />
       <main className="min-w-0 flex-1">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">{children}</div>
       </main>

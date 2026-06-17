@@ -9,6 +9,7 @@ type Item = { href: string; label: string; icon: IconName; exact?: boolean };
 const PRIMARY: Item[] = [
   { href: "/dashboard", label: "Dashboard", icon: "grid", exact: true },
   { href: "/dashboard/ordini", label: "Ordini", icon: "receipt" },
+  { href: "/dashboard/conti", label: "Conti", icon: "wallet" },
   { href: "/dashboard/cucina", label: "Cucina", icon: "chef" },
   { href: "/dashboard/sala", label: "Sala", icon: "tables" },
   { href: "/dashboard/menu", label: "Menu", icon: "book" },
@@ -27,13 +28,19 @@ export default function DashboardSidebar({
   nome,
   esci,
   salaOn = false,
+  contiOn = false,
 }: {
   nome: string;
   esci: ReactNode;
   salaOn?: boolean;
+  contiOn?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const primary = salaOn ? PRIMARY : PRIMARY.filter((i) => i.href !== "/dashboard/sala");
+  const primary = PRIMARY.filter(
+    (i) =>
+      (salaOn || i.href !== "/dashboard/sala") &&
+      (contiOn || i.href !== "/dashboard/conti"),
+  );
   return (
     <>
       {/* Mobile top bar */}
@@ -123,7 +130,7 @@ function Nav({
 
 type IconName =
   | "grid" | "receipt" | "chef" | "book" | "box" | "users" | "chart" | "qr"
-  | "palette" | "scale" | "gear" | "menu" | "logo" | "tables";
+  | "palette" | "scale" | "gear" | "menu" | "logo" | "tables" | "wallet";
 
 function Icon({ name }: { name: IconName }) {
   const p: Record<IconName, ReactNode> = {
@@ -141,6 +148,7 @@ function Icon({ name }: { name: IconName }) {
     menu: <><path d="M4 6h16M4 12h16M4 18h16" /></>,
     logo: <><circle cx="12" cy="12" r="9" /><path d="M12 3v18M3 12h18" /></>,
     tables: <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><circle cx="17" cy="17" r="3" /></>,
+    wallet: <><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18" /><circle cx="16.5" cy="14" r="1" /></>,
   };
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

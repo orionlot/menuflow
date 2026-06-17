@@ -322,6 +322,9 @@ export interface Order {
   priorita: Priorita | null;
   /** Set when the order is cancelled (leaves the kitchen + sales, stays in history). */
   annullato_at: string | null;
+  /** Set when the table's bill is settled ("Estingui conto"). Management-only;
+   * does NOT cancel the order, so it stays counted in incasso/statistiche. */
+  conto_chiuso_at: string | null;
   /** Optional room / zone label (e.g. "Interno", "Dehors"). */
   sala: string | null;
   /** Destination type: a table order, takeaway, or home delivery. */
