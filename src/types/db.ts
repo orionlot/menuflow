@@ -356,6 +356,9 @@ export interface Order {
   posizione: string | null;
   /** Allergens the customer declared at checkout (allergen ids); cook-visible on the KDS. */
   allergeni: string[];
+  /** Set when the comanda has been auto-printed (claimed by the first surface
+   * that saw the order). Dedups auto-print across KDS + Ordini + multiple tabs. */
+  comanda_stampata_at: string | null;
   created_at: string;
 }
 

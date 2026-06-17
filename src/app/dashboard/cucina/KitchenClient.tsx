@@ -13,9 +13,10 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { setOrderStage, setOrderPriorita, type KitchenStage } from "@/app/dashboard/actions";
+import { setOrderStage, setOrderPriorita, claimComandaStampa, type KitchenStage } from "@/app/dashboard/actions";
 import { formatEUR } from "@/lib/config/plans";
 import { allergeneLabel } from "@/lib/config/allergeni";
+import { printComandaSilently } from "@/lib/print-comanda";
 import type { Reparto, Priorita } from "@/types/db";
 
 interface KItem {
@@ -103,12 +104,14 @@ export default function KitchenClient({
   repartoOn = false,
   reparti = [],
   tempoStimatoOn = true,
+  autoStampaOn = false,
 }: {
   restaurantName: string;
   restaurantId: string;
   repartoOn?: boolean;
   reparti?: Reparto[];
   tempoStimatoOn?: boolean;
+  autoStampaOn?: boolean;
 }) {
   const [orders, setOrders] = useState<KOrder[]>([]);
   const [audioOn, setAudioOn] = useState(false);
@@ -123,6 +126,9 @@ export default function KitchenClient({
   const seen = useRef<Set<string>>(new Set());
   const firstLoad = useRef(true);
   const audioOnRef = useRef(false);
+  const autoStampaOnRef = useRef(autoStampaOn);
+  autoStampaOnRef.current = autoStampaOn;
+  const printed = useRef<Set<string>>(new Set());
   const pulseTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const repartoById = useMemo(() => {
@@ -200,7 +206,24 @@ export default function KitchenClient({
       if (!data.ok) return;
       const incoming: KOrder[] = data.orders;
       const fresh = incoming.filter((o) => !o.preparazione_at && !o.pronto_at && !o.servito_at && !seen.current.has(o.id));
+      // Auto-print keys off "any order id we haven't seen on this board yet" —
+      // NOT the unstamped `fresh` set above — so a brand-new order that another
+      // device already advanced to "in preparazione" before this board observed
+      // it still gets its comanda printed (the kitchen feed only ever carries
+      // printable orders: stato in ricevuto/pagato, not cancelled).
+      const freshForPrint = incoming.filter((o) => !seen.current.has(o.id));
       if (!firstLoad.current && fresh.length && audioOnRef.current) chime();
+      if (!firstLoad.current && freshForPrint.length && autoStampaOnRef.current) {
+        freshForPrint.forEach((o) => {
+          if (printed.current.has(o.id)) return; // local guard for the realtime+poll race
+          printed.current.add(o.id);
+          // claimComandaStampa makes the print once-only across the KDS, the
+          // Ordini page, and any extra tab/device pointed at the same printer.
+          void claimComandaStampa(o.id).then((won) => {
+            if (won) printComandaSilently(o.id);
+          });
+        });
+      }
       if (!firstLoad.current && fresh.length) {
         const freshIds = fresh.map((o) => o.id);
         setPulseIds((prev) => {
@@ -414,6 +437,14 @@ export default function KitchenClient({
             >
               🔔 Attiva audio
             </button>
+          )}
+          {autoStampaOn && (
+            <span
+              className="rounded-full bg-green-500/15 px-3 py-1 font-medium text-green-300 ring-1 ring-inset ring-green-500/30"
+              title="Ogni nuovo ordine viene stampato automaticamente. Per la stampa senza finestra usa Chrome con --kiosk-printing."
+            >
+              🖨 Auto-stampa attiva
+            </span>
           )}
         </div>
       </header>

@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import type { Order, ServiceRequest } from "@/types/db";
 import { formatEUR } from "@/lib/config/plans";
 import { allergeneLabel } from "@/lib/config/allergeni";
+import { printComandaSilently } from "@/lib/print-comanda";
 import { isMapsUrl } from "@/lib/urls";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { markOrdersRead } from "@/app/dashboard/actions";
+import { markOrdersRead, claimComandaStampa } from "@/app/dashboard/actions";
 import ManualOrderModal from "./ManualOrderModal";
 
 export type PickerItem = { id: string; nome: string; prezzo: number; categoria: string; disponibile: boolean };
@@ -116,6 +117,7 @@ export default function OrdiniClient({
   deliveryOn,
   ordineManualeOn,
   richiestaServizioOn,
+  autoStampaOn = false,
   copertoModalita,
   actions,
 }: {
@@ -130,6 +132,7 @@ export default function OrdiniClient({
   deliveryOn: boolean;
   ordineManualeOn: boolean;
   richiestaServizioOn: boolean;
+  autoStampaOn?: boolean;
   copertoModalita: string;
   actions: OrdiniActions;
 }) {
@@ -147,6 +150,14 @@ export default function OrdiniClient({
   const knownIds = useRef<Set<string>>(new Set(initialOrders.map((o) => o.id)));
   const audioRef = useRef<AudioContext | null>(null);
   const soundOnRef = useRef(false);
+  const autoStampaOnRef = useRef(autoStampaOn);
+  autoStampaOnRef.current = autoStampaOn;
+  const printed = useRef<Set<string>>(new Set());
+  // Ids that were already printable when the page (re)mounted, plus any printable
+  // id processed since — so the day's backlog is never auto-printed, while an
+  // order first seen as `in_attesa_pagamento` still prints once it flips to
+  // `pagato`. claimComandaStampa is the cross-surface "print exactly once" guard.
+  const printSeen = useRef<Set<string>>(new Set());
   useEffect(() => {
     soundOnRef.current = soundOn;
   }, [soundOn]);
@@ -154,6 +165,12 @@ export default function OrdiniClient({
   useEffect(() => {
     setOrders(initialOrders);
     knownIds.current = new Set(initialOrders.map((o) => o.id));
+    // Keep the auto-print guards aligned with the day's feed. Seed printSeen with
+    // the backlog's already-printable orders so they aren't reprinted on (re)mount.
+    printed.current = new Set();
+    printSeen.current = new Set(
+      initialOrders.filter((o) => (o.stato === "ricevuto" || o.stato === "pagato") && !o.annullato_at).map((o) => o.id),
+    );
   }, [initialOrders, day]);
   useEffect(() => setRequests(initialRequests), [initialRequests]);
 
@@ -171,6 +188,21 @@ export default function OrdiniClient({
         next.forEach((o) => knownIds.current.add(o.id));
         setOrders(next);
         if (newUnread && soundOnRef.current) playBeep(audioRef);
+        // Auto-print each genuine kitchen ticket exactly once. A ticket is
+        // printable when it's a cash order (ricevuto) or a confirmed online
+        // payment (pagato) — never unpaid/failed/cancelled (rule 4: payment truth
+        // comes from the webhook). printSeen carries the mounted backlog forward
+        // so only orders that become printable AFTER mount are printed.
+        for (const o of next) {
+          const printable = (o.stato === "ricevuto" || o.stato === "pagato") && !o.annullato_at;
+          if (!printable || printSeen.current.has(o.id)) continue;
+          printSeen.current.add(o.id);
+          if (!autoStampaOnRef.current || printed.current.has(o.id)) continue;
+          printed.current.add(o.id);
+          void claimComandaStampa(o.id).then((won) => {
+            if (won) printComandaSilently(o.id);
+          });
+        }
       } catch {
         /* keep last list */
       }
@@ -331,6 +363,14 @@ export default function OrdiniClient({
           >
             🔔 Attiva avvisi sonori
           </button>
+        )}
+        {autoStampaOn && (
+          <span
+            className="inline-flex items-center gap-1.5 rounded-lg bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 ring-1 ring-green-200"
+            title="Ogni nuovo ordine viene stampato automaticamente. Per la stampa senza finestra usa Chrome con --kiosk-printing."
+          >
+            🖨 Auto-stampa attiva
+          </span>
         )}
         {unread.length > 0 && (
           <>

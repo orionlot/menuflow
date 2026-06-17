@@ -35,7 +35,8 @@ export type FeatureId =
   | "peso"
   | "kcal"
   | "allergeni_ordine"
-  | "sala_ordine";
+  | "sala_ordine"
+  | "stampa_automatica";
 
 export interface FeatureDef {
   id: FeatureId;
@@ -255,6 +256,14 @@ export const FEATURES: FeatureDef[] = [
     nome: "Scelta della sala dal cliente",
     descrizione: "Oltre al tavolo, il cliente sceglie la sala in cui si trova; compare anche in cucina.",
     pianoMinimo: "plus",
+    defaultOn: false,
+  },
+  {
+    id: "stampa_automatica",
+    nome: "Stampa automatica comande",
+    descrizione:
+      "Stampa la comanda da sola appena arriva un ordine, in Cucina e in Ordini. Per la stampa senza finestra di dialogo apri la pagina in Chrome con --kiosk-printing.",
+    pianoMinimo: "base",
     defaultOn: false,
   },
 ];

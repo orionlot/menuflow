@@ -57,6 +57,7 @@ export default async function StampaPage({ params }: { params: Promise<{ id: str
 
   return (
     <main
+      data-comanda
       style={{
         width: "80mm",
         margin: "0 auto",

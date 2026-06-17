@@ -81,6 +81,7 @@ describe("funzioniAttive", () => {
         "sala_ordine",
         "scorte",
         "stampa",
+        "stampa_automatica",
         "tempo_stimato",
         "tracking_ordine",
       ].sort(),

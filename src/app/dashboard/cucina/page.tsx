@@ -15,6 +15,7 @@ export default async function CucinaPage() {
       repartoOn={isFeatureOn(restaurant, "reparto")}
       reparti={restaurant.reparti ?? []}
       tempoStimatoOn={isFeatureOn(restaurant, "tempo_stimato")}
+      autoStampaOn={isFeatureOn(restaurant, "stampa_automatica")}
     />
   );
 }

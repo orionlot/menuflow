@@ -697,6 +697,28 @@ export async function annullaOrdine(orderId: string, annulla = true) {
 }
 
 /**
+ * Atomically claim the auto-print of an order's comanda. The first surface to
+ * call this (KDS, Ordini, or any extra tab/device) wins the conditional update
+ * and gets `true`; every later caller sees the stamp already set and gets
+ * `false`, so the comanda auto-prints exactly once even when several surfaces
+ * are open at the same printer. RLS scopes the update to the owner's restaurant.
+ * Returns `false` (never throws) on any error so a transient failure can't wedge
+ * the caller's print loop.
+ */
+export async function claimComandaStampa(orderId: string): Promise<boolean> {
+  if (typeof orderId !== "string" || !orderId) return false;
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("orders")
+    .update({ comanda_stampata_at: new Date().toISOString() })
+    .eq("id", orderId)
+    .is("comanda_stampata_at", null)
+    .select("id");
+  if (error) return false;
+  return (data?.length ?? 0) === 1;
+}
+
+/**
  * Settle a table's bill ("Estingui conto"): stamp `conto_chiuso_at` on the
  * given orders so they leave the open-conti board. This is a management action,
  * NOT a cancellation — `stato`/`annullato_at` are untouched, so the orders stay
