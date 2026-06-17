@@ -29,7 +29,13 @@ export type FeatureId =
   | "delivery"
   | "ordine_manuale"
   | "sala"
-  | "conti";
+  | "conti"
+  | "tempo_stimato"
+  | "attesa_stimata"
+  | "peso"
+  | "kcal"
+  | "allergeni_ordine"
+  | "sala_ordine";
 
 export interface FeatureDef {
   id: FeatureId;
@@ -205,6 +211,51 @@ export const FEATURES: FeatureDef[] = [
       "Raggruppa gli ordini per tavolo e chiudi il conto, con stampa e divisione alla romana.",
     pianoMinimo: "base",
     defaultOn: true,
+  },
+  {
+    id: "tempo_stimato",
+    nome: "Tempi di preparazione",
+    descrizione:
+      "Countdown in cucina, smaltimento coda e avvisi quando la stima scade. Usa il tempo del piatto o, in mancanza, la media della categoria.",
+    pianoMinimo: "base",
+    defaultOn: true,
+  },
+  {
+    id: "attesa_stimata",
+    nome: "Attesa stimata al cliente",
+    descrizione:
+      "Mostra al cliente il tempo stimato per il servizio sul menu e nel carrello (richiede i Tempi di preparazione).",
+    pianoMinimo: "base",
+    defaultOn: false,
+  },
+  {
+    id: "peso",
+    nome: "Peso di piatti e ingredienti",
+    descrizione: "Mostra sul menu il peso (g) dei piatti e, dove presente, dei singoli ingredienti.",
+    pianoMinimo: "base",
+    defaultOn: false,
+  },
+  {
+    id: "kcal",
+    nome: "Calorie (kcal)",
+    descrizione: "Mostra sul menu le calorie dei piatti e, dove presente, dei singoli ingredienti.",
+    pianoMinimo: "base",
+    defaultOn: false,
+  },
+  {
+    id: "allergeni_ordine",
+    nome: "Allergeni in ordine",
+    descrizione:
+      "Il cliente può segnalare gli allergeni del tavolo alla conferma; l'ordine viene evidenziato in cucina.",
+    pianoMinimo: "base",
+    defaultOn: false,
+  },
+  {
+    id: "sala_ordine",
+    nome: "Scelta della sala dal cliente",
+    descrizione: "Oltre al tavolo, il cliente sceglie la sala in cui si trova; compare anche in cucina.",
+    pianoMinimo: "plus",
+    defaultOn: false,
   },
 ];
 

@@ -55,7 +55,9 @@ describe("funzioniAttive", () => {
     const m = funzioniAttive({ piano: "base" });
     expect(Object.keys(m).sort()).toEqual(
       [
+        "allergeni_ordine",
         "asporto",
+        "attesa_stimata",
         "componibili",
         "conti",
         "delivery",
@@ -64,8 +66,10 @@ describe("funzioniAttive", () => {
         "fasce_orarie",
         "feedback",
         "ingredienti",
+        "kcal",
         "orari",
         "ordine_manuale",
+        "peso",
         "piatto_consigliato",
         "prezzo_asporto",
         "profilo_allergie",
@@ -74,8 +78,10 @@ describe("funzioniAttive", () => {
         "richiesta_servizio",
         "riepilogo",
         "sala",
+        "sala_ordine",
         "scorte",
         "stampa",
+        "tempo_stimato",
         "tracking_ordine",
       ].sort(),
     );

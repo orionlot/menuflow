@@ -132,6 +132,10 @@ export interface Restaurant {
   etichette: string[];
   /** Floor-plan rooms + positioned tables (Sala builder). */
   sale: Sala[];
+  /** Per-category average prep minutes, e.g. { "Antipasti": 10 } — fallback for the KDS estimate. */
+  categoria_tempi: Record<string, number>;
+  /** Back-office theme, independent of the public `tema`. null = light. */
+  dashboard_tema: "light" | "dark" | null;
   attivo: boolean;
   owner_id: string | null;
   created_at: string;
@@ -205,6 +209,8 @@ export interface Ingredient {
   prezzo: number; // EUR; 0 = "incluso"
   scorta: number | null; // null = illimitato, 0 = esaurito
   unita: string | null; // display only ("porzione", "g"…)
+  peso: number | null; // grams per portion/unit (drives auto-summed dish weight)
+  kcal: number | null; // kcal per portion/unit (drives auto-summed dish calories)
   ordine: number;
 }
 /** Browser-safe ingredient (no restaurant_id). */
@@ -269,6 +275,10 @@ export interface MenuItem {
   nota: ItemNota;
   /** Prep time in minutes (drives the KDS countdown). */
   tempo_preparazione: number | null;
+  /** Optional manual total weight (g) — overrides the auto-sum of ingredient weights. */
+  peso: number | null;
+  /** Optional manual total kcal — overrides the auto-sum of ingredient calories. */
+  kcal: number | null;
   /** Kitchen department id (refs Restaurant.reparti); "" = unassigned. */
   reparto: string;
   /** Separate takeaway/delivery price (used when the order is asporto). */
@@ -334,6 +344,8 @@ export interface Order {
   indirizzo: string | null;
   /** Optional Google-Maps location link for a delivery (http/https only). */
   posizione: string | null;
+  /** Allergens the customer declared at checkout (allergen ids); cook-visible on the KDS. */
+  allergeni: string[];
   created_at: string;
 }
 
