@@ -174,6 +174,8 @@ export type PublicRestaurant = Pick<
   | "annuncio"
   | "note_config"
   | "etichette"
+  | "sale"
+  | "categoria_tempi"
   | "attivo"
 > & {
   /** Effective on/off per feature (plan ∪ admin entitlement, then owner switch). */

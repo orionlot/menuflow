@@ -215,6 +215,9 @@ export default function MenuClient({
   const pesoOn = Boolean(tenant.funzioni_attive?.peso);
   const kcalOn = Boolean(tenant.funzioni_attive?.kcal);
   const allergeniOrdineOn = Boolean(tenant.funzioni_attive?.allergeni_ordine);
+  const salaOrdineOn = Boolean(tenant.funzioni_attive?.sala_ordine);
+  const attesaOn = Boolean(tenant.funzioni_attive?.attesa_stimata);
+  const saleList = tenant.sale ?? [];
   const asportoOn = Boolean(tenant.funzioni_attive?.asporto);
   const etichetteOn = Boolean(tenant.funzioni_attive?.etichette);
   const fasceOrarieOn = Boolean(tenant.funzioni_attive?.fasce_orarie);
@@ -249,7 +252,9 @@ export default function MenuClient({
   const [lang, setLang] = useState<string>(tenant.lingue?.[0] ?? "it");
   const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [tavolo, setTavolo] = useState("");
+  const [sala, setSala] = useState("");
   const [allergeniSel, setAllergeniSel] = useState<string[]>([]);
+  const [queueMin, setQueueMin] = useState<number | null>(null);
   const [asporto, setAsporto] = useState(false);
   const [delivery, setDelivery] = useState(false);
   const [indirizzo, setIndirizzo] = useState("");
@@ -302,6 +307,27 @@ export default function MenuClient({
       /* ignore malformed cookie */
     }
   }, [tenant.slug]);
+
+  // Poll the live kitchen-queue wait estimate (only when the feature is on).
+  useEffect(() => {
+    if (!attesaOn) return;
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetch(`/api/attesa?slug=${encodeURIComponent(tenant.slug)}`, { cache: "no-store" });
+        const d = await r.json();
+        if (alive && d.ok) setQueueMin(Math.max(0, Math.round(Number(d.minuti) || 0)));
+      } catch {
+        /* keep last value */
+      }
+    };
+    load();
+    const t = setInterval(load, 30000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [attesaOn, tenant.slug]);
 
   useEffect(() => {
     let alive = true;
@@ -458,6 +484,20 @@ export default function MenuClient({
       : [activeCat || categories[0]];
   const lines = Object.values(cart).filter((l) => l.qta > 0);
   const count = lines.reduce((s, l) => s + l.qta, 0);
+  // Estimated wait = current kitchen queue (server) + this cart's dishes' prep
+  // (each item's prep, or its category average as fallback).
+  const cartPrepMin = attesaOn
+    ? lines.reduce((s, l) => {
+        const it = itemById.get(l.item_id);
+        if (!it) return s;
+        const eff =
+          it.tempo_preparazione != null && it.tempo_preparazione > 0
+            ? it.tempo_preparazione
+            : Number((tenant.categoria_tempi ?? {})[it.categoria]) || 0;
+        return s + eff;
+      }, 0)
+    : 0;
+  const attesaTot = attesaOn ? (queueMin ?? 0) + cartPrepMin : 0;
   // Asporto price: when "Da asporto" is chosen and the item has a takeaway price,
   // the effective unit swaps the base price (keeps display == server charge).
   const asportoActive = asporto && prezzoAsportoOn;
@@ -585,6 +625,7 @@ export default function MenuClient({
         body: JSON.stringify({
           slug: tenant.slug,
           tavolo,
+          sala: salaOrdineOn && !asporto && sala ? sala : undefined,
           asporto,
           tipo: delivery ? "delivery" : asporto ? "asporto" : "tavolo",
           indirizzo: delivery ? indirizzo : undefined,
@@ -624,6 +665,7 @@ export default function MenuClient({
         setDone({ mode: "placed", orderId: data.orderId });
         setCart({});
         setAllergeniSel([]);
+        setSala("");
       }
     } catch {
       setBackend("down");
@@ -1085,6 +1127,22 @@ export default function MenuClient({
               >
                 ×
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Estimated time to be served (kitchen queue + this cart), if enabled */}
+        {attesaOn && attesaTot > 0 && (
+          <div className="px-5 pt-3">
+            <div
+              className="rounded-2xl px-4 py-2.5 text-sm"
+              style={{ background: p.tint, border: `1px solid ${p.surfaceBorder}`, color: p.text }}
+            >
+              <span className="font-semibold">🕐 Tempo stimato per il servizio ~{attesaTot} min</span>
+              <span className="mt-0.5 block text-xs leading-snug" style={{ color: p.textMuted }}>
+                Stima indicativa, calcolata sulla coda in cucina e sul tuo ordine. I tempi effettivi
+                possono variare in base all&apos;affluenza e ad altri fattori.
+              </span>
             </div>
           </div>
         )}
@@ -1633,6 +1691,34 @@ export default function MenuClient({
                           </button>
                         );
                       })}
+                  </div>
+                )}
+                {salaOrdineOn && !asporto && saleList.length > 0 && (
+                  <div className="mb-2">
+                    <label className="text-xs" style={{ color: p.textMuted }}>
+                      Sala
+                    </label>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {saleList.map((s) => {
+                        const on = sala === s.nome;
+                        return (
+                          <button
+                            key={s.id}
+                            type="button"
+                            aria-pressed={on}
+                            onClick={() => setSala(on ? "" : s.nome)}
+                            className="rounded-full px-3 py-1 text-sm font-medium transition"
+                            style={{
+                              background: on ? p.brand : "transparent",
+                              color: on ? p.onBrand : p.text,
+                              border: `1px solid ${on ? p.brand : p.surfaceBorder}`,
+                            }}
+                          >
+                            {s.nome}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
                 <label className="text-xs" style={{ color: p.textMuted }}>

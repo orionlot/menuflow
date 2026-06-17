@@ -42,6 +42,7 @@ function itemDetails(it: KItem): string[] {
 interface KOrder {
   id: string;
   tavolo: string | null;
+  sala?: string | null;
   asporto?: boolean;
   items: KItem[];
   totale: number;
@@ -647,7 +648,9 @@ function Card({
     countdown = { text: `${late ? "+" : ""}${mm}:${String(ss).padStart(2, "0")}`, late };
   }
 
-  const dest = o.asporto ? `🛍 ${o.tavolo ?? "—"}` : `Tav. ${o.tavolo ?? "—"}`;
+  const dest = o.asporto
+    ? `🛍 ${o.tavolo ?? "—"}`
+    : `Tav. ${o.tavolo ?? "—"}${o.sala ? ` · ${o.sala}` : ""}`;
   const served = stage === "serviti";
   // No prep estimate available for a pending order → the queue ETA is approximate.
   const noEstimate =

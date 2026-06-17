@@ -105,6 +105,7 @@ export async function POST(req: Request) {
   let body: {
     slug?: string;
     tavolo?: string;
+    sala?: string;
     asporto?: boolean;
     tipo?: string;
     indirizzo?: string;
@@ -273,11 +274,20 @@ export async function POST(req: Request) {
       ? [...new Set((body.allergeni ?? []).filter((a) => ALLERGENI_BY_ID.has(a)))].slice(0, 14)
       : [];
 
+    // Sala chosen by the customer (only when the feature is on + it's a real room).
+    const sala =
+      !asporto && isFeatureOn(restaurant, "sala_ordine") && body.sala
+        ? (restaurant.sale ?? []).some((s) => s.nome === body.sala)
+          ? body.sala
+          : null
+        : null;
+
     const { data: orderRow, error: oErr } = await admin
       .from("orders")
       .insert({
         restaurant_id: restaurant.id,
         tavolo,
+        sala,
         asporto,
         tipo,
         indirizzo,
