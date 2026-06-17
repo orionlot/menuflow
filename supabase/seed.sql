@@ -10,43 +10,43 @@ insert into public.restaurants
   (id, slug, nome, sottotitolo, colore_primario, tema, piano, multilingua, lingue,
    pagamenti_attivi, telegram_chat_ordini, attivo)
 values
-  ('11111111-1111-1111-1111-111111111111', 'pizzeria-mario', 'Pizzeria da Mario',
+  ('700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'pizzeria-mario', 'Pizzeria da Mario',
    'Forno a legna dal 1987', '#c8453b', 'light', 'base', false, '{it}', false,
    null, true)
 on conflict (id) do nothing;
 
 insert into public.menu_items (restaurant_id, categoria, nome, descrizione, prezzo, disponibile, ordine) values
-  ('11111111-1111-1111-1111-111111111111', 'Antipasti', 'Bruschette al pomodoro', 'Pane casereccio, pomodoro fresco, basilico', 5.50, true, 1),
-  ('11111111-1111-1111-1111-111111111111', 'Antipasti', 'Tagliere misto', 'Salumi e formaggi del territorio', 12.00, true, 2),
-  ('11111111-1111-1111-1111-111111111111', 'Pizze', 'Margherita', 'Pomodoro, mozzarella, basilico', 7.00, true, 1),
-  ('11111111-1111-1111-1111-111111111111', 'Pizze', 'Diavola', 'Pomodoro, mozzarella, salame piccante', 9.00, true, 2),
-  ('11111111-1111-1111-1111-111111111111', 'Pizze', 'Quattro Formaggi', 'Mozzarella, gorgonzola, fontina, parmigiano', 10.00, true, 3),
-  ('11111111-1111-1111-1111-111111111111', 'Bevande', 'Acqua naturale 0,5L', null, 1.50, true, 1),
-  ('11111111-1111-1111-1111-111111111111', 'Bevande', 'Coca-Cola', null, 3.00, true, 2),
-  ('11111111-1111-1111-1111-111111111111', 'Bevande', 'Birra artigianale', 'Bionda alla spina', 5.00, false, 3),
-  ('11111111-1111-1111-1111-111111111111', 'Dolci', 'Tiramisù della casa', null, 5.00, true, 1);
+  ('700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Antipasti', 'Bruschette al pomodoro', 'Pane casereccio, pomodoro fresco, basilico', 5.50, true, 1),
+  ('700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Antipasti', 'Tagliere misto', 'Salumi e formaggi del territorio', 12.00, true, 2),
+  ('700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Pizze', 'Margherita', 'Pomodoro, mozzarella, basilico', 7.00, true, 1),
+  ('700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Pizze', 'Diavola', 'Pomodoro, mozzarella, salame piccante', 9.00, true, 2),
+  ('700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Pizze', 'Quattro Formaggi', 'Mozzarella, gorgonzola, fontina, parmigiano', 10.00, true, 3),
+  ('700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Bevande', 'Acqua naturale 0,5L', null, 1.50, true, 1),
+  ('700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Bevande', 'Coca-Cola', null, 3.00, true, 2),
+  ('700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Bevande', 'Birra artigianale', 'Bionda alla spina', 5.00, false, 3),
+  ('700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Dolci', 'Tiramisù della casa', null, 5.00, true, 1);
 
 -- ── Restaurant 2: Bar Luna — plus plan, payments ON, multilingua (it/en) ──
 insert into public.restaurants
   (id, slug, nome, sottotitolo, colore_primario, tema, piano, multilingua, lingue,
    pagamenti_attivi, telegram_chat_ordini, telegram_chat_pagamenti, attivo)
 values
-  ('22222222-2222-2222-2222-222222222222', 'bar-luna', 'Bar Luna',
+  ('804614bd-48e1-4f50-a431-bcedc5589042', 'bar-luna', 'Bar Luna',
    'Cocktail & Vini', '#caa45d', 'dark', 'plus', true, '{it,en}', true,
    null, null, true)
 on conflict (id) do nothing;
 
 insert into public.menu_items (restaurant_id, categoria, nome, nome_i18n, descrizione, descrizione_i18n, prezzo, disponibile, ordine) values
-  ('22222222-2222-2222-2222-222222222222', 'Caffetteria', 'Espresso', '{"en":"Espresso"}', 'Miscela arabica', '{"en":"Arabica blend"}', 1.20, true, 1),
-  ('22222222-2222-2222-2222-222222222222', 'Caffetteria', 'Cappuccino', '{"en":"Cappuccino"}', 'Latte montato a vapore', '{"en":"Steamed milk"}', 1.80, true, 2),
-  ('22222222-2222-2222-2222-222222222222', 'Aperitivi', 'Spritz', '{"en":"Spritz"}', 'Aperol, prosecco, soda', '{"en":"Aperol, prosecco, soda"}', 6.00, true, 1),
-  ('22222222-2222-2222-2222-222222222222', 'Aperitivi', 'Negroni', '{"en":"Negroni"}', 'Gin, vermouth, bitter', '{"en":"Gin, vermouth, bitter"}', 8.00, true, 2),
-  ('22222222-2222-2222-2222-222222222222', 'Panini', 'Toast prosciutto e formaggio', '{"en":"Ham & cheese toastie"}', null, null, 4.50, true, 1),
-  ('22222222-2222-2222-2222-222222222222', 'Panini', 'Club sandwich', '{"en":"Club sandwich"}', 'Pollo, bacon, insalata', '{"en":"Chicken, bacon, lettuce"}', 7.50, false, 2);
+  ('804614bd-48e1-4f50-a431-bcedc5589042', 'Caffetteria', 'Espresso', '{"en":"Espresso"}', 'Miscela arabica', '{"en":"Arabica blend"}', 1.20, true, 1),
+  ('804614bd-48e1-4f50-a431-bcedc5589042', 'Caffetteria', 'Cappuccino', '{"en":"Cappuccino"}', 'Latte montato a vapore', '{"en":"Steamed milk"}', 1.80, true, 2),
+  ('804614bd-48e1-4f50-a431-bcedc5589042', 'Aperitivi', 'Spritz', '{"en":"Spritz"}', 'Aperol, prosecco, soda', '{"en":"Aperol, prosecco, soda"}', 6.00, true, 1),
+  ('804614bd-48e1-4f50-a431-bcedc5589042', 'Aperitivi', 'Negroni', '{"en":"Negroni"}', 'Gin, vermouth, bitter', '{"en":"Gin, vermouth, bitter"}', 8.00, true, 2),
+  ('804614bd-48e1-4f50-a431-bcedc5589042', 'Panini', 'Toast prosciutto e formaggio', '{"en":"Ham & cheese toastie"}', null, null, 4.50, true, 1),
+  ('804614bd-48e1-4f50-a431-bcedc5589042', 'Panini', 'Club sandwich', '{"en":"Club sandwich"}', 'Pollo, bacon, insalata', '{"en":"Chicken, bacon, lettuce"}', 7.50, false, 2);
 
 -- Demo custom domain (admin display; not locally reachable without DNS/hosts).
 insert into public.custom_domains (domain, restaurant_id)
-values ('menu.barluna.it', '22222222-2222-2222-2222-222222222222')
+values ('menu.barluna.it', '804614bd-48e1-4f50-a431-bcedc5589042')
 on conflict (domain) do nothing;
 
 -- ───────────── Demo: foto (Unsplash) + allergeni + opzioni + coperto/mancia ─────────────
@@ -93,39 +93,39 @@ update public.restaurants
   where slug = 'pizzeria-mario';
 
 insert into public.ingredients (id, restaurant_id, nome, prezzo, scorta, unita, ordine) values
-  ('aaaa0001-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Riso sushi',        0,   null, 'porzione', 1),
-  ('aaaa0001-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'Riso venere',       0.5, null, 'porzione', 2),
-  ('aaaa0001-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'Tonno',             2,   3,    'porzione', 3),
-  ('aaaa0001-0000-0000-0000-000000000004', '11111111-1111-1111-1111-111111111111', 'Salmone',           1.5, 6,    'porzione', 4),
-  ('aaaa0001-0000-0000-0000-000000000005', '11111111-1111-1111-1111-111111111111', 'Tofu',              1,   null, 'porzione', 5),
-  ('aaaa0001-0000-0000-0000-000000000006', '11111111-1111-1111-1111-111111111111', 'Avocado',           1,   8,    'porzione', 6),
-  ('aaaa0001-0000-0000-0000-000000000007', '11111111-1111-1111-1111-111111111111', 'Edamame',           0,   null, 'porzione', 7),
-  ('aaaa0001-0000-0000-0000-000000000008', '11111111-1111-1111-1111-111111111111', 'Mango',             0.5, 5,    'porzione', 8),
-  ('aaaa0001-0000-0000-0000-000000000009', '11111111-1111-1111-1111-111111111111', 'Salsa di soia',     0,   null, 'porzione', 9),
-  ('aaaa0001-0000-0000-0000-000000000010', '11111111-1111-1111-1111-111111111111', 'Maionese piccante', 0,   null, 'porzione', 10)
+  ('8abd81c1-e90d-413b-ac75-8e0acd84d425', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Riso sushi',        0,   null, 'porzione', 1),
+  ('ddc5c518-cc01-42ca-928e-d2d38aa0f329', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Riso venere',       0.5, null, 'porzione', 2),
+  ('f03ace0b-9d49-456a-980a-d890221775e8', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Tonno',             2,   3,    'porzione', 3),
+  ('af8bdd67-c550-4083-9364-708cacf7feaa', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Salmone',           1.5, 6,    'porzione', 4),
+  ('47723a14-65fc-4bf3-a226-46935bd0f137', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Tofu',              1,   null, 'porzione', 5),
+  ('b65acabd-c5dc-4dc0-8236-0c485a4b127c', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Avocado',           1,   8,    'porzione', 6),
+  ('f9233f98-9912-42a3-a683-81610f5a0752', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Edamame',           0,   null, 'porzione', 7),
+  ('d35c4588-d332-4016-8afa-f02036b3ae18', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Mango',             0.5, 5,    'porzione', 8),
+  ('016c7b50-3f26-4d30-a08e-beda5027e64a', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Salsa di soia',     0,   null, 'porzione', 9),
+  ('f368ea8b-89b8-404c-a63a-015e8d60ecc9', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Maionese piccante', 0,   null, 'porzione', 10)
 on conflict (id) do nothing;
 
 insert into public.menu_items (id, restaurant_id, categoria, nome, descrizione, prezzo, disponibile, ordine, foto_url) values
-  ('bbbb0001-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Poke', 'Poke Bowl',
+  ('6cf7e0c3-23db-4c6f-a5c6-48f4013dfe8a', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Poke', 'Poke Bowl',
    'Crea la tua poke: scegli base, proteine, topping e salse', 9.50, true, 1,
    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80&auto=format&fit=crop')
 on conflict (id) do nothing;
 
 update public.restaurants set composizione = '[
   {"id":"g-base","nome":"Base","categorie":["Poke"],"min":1,"max":1,"ingredienti":[
-    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000001"},
-    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000002"}]},
+    {"ingredient_id":"8abd81c1-e90d-413b-ac75-8e0acd84d425"},
+    {"ingredient_id":"ddc5c518-cc01-42ca-928e-d2d38aa0f329"}]},
   {"id":"g-prot","nome":"Proteine","categorie":["Poke"],"min":1,"max":2,"ingredienti":[
-    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000003"},
-    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000004"},
-    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000005"}]},
+    {"ingredient_id":"f03ace0b-9d49-456a-980a-d890221775e8"},
+    {"ingredient_id":"af8bdd67-c550-4083-9364-708cacf7feaa"},
+    {"ingredient_id":"47723a14-65fc-4bf3-a226-46935bd0f137"}]},
   {"id":"g-top","nome":"Topping","categorie":["Poke"],"min":0,"max":3,"ingredienti":[
-    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000006"},
-    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000007"},
-    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000008"}]},
+    {"ingredient_id":"b65acabd-c5dc-4dc0-8236-0c485a4b127c"},
+    {"ingredient_id":"f9233f98-9912-42a3-a683-81610f5a0752"},
+    {"ingredient_id":"d35c4588-d332-4016-8afa-f02036b3ae18"}]},
   {"id":"g-salse","nome":"Salse","categorie":["Poke"],"min":0,"max":2,"ingredienti":[
-    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000009"},
-    {"ingredient_id":"aaaa0001-0000-0000-0000-000000000010"}]}
+    {"ingredient_id":"016c7b50-3f26-4d30-a08e-beda5027e64a"},
+    {"ingredient_id":"f368ea8b-89b8-404c-a63a-015e8d60ecc9"}]}
 ]'::jsonb
 where slug = 'pizzeria-mario';
 
@@ -150,15 +150,15 @@ update public.restaurants
   where slug = 'pizzeria-mario';
 
 insert into public.ingredients (id, restaurant_id, nome, prezzo, scorta, unita, ordine) values
-  ('cccc0001-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Pomodoro',   0, 40,   null, 21),
-  ('cccc0001-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'Mozzarella', 0, 30,   null, 22),
-  ('cccc0001-0000-0000-0000-000000000003', '11111111-1111-1111-1111-111111111111', 'Basilico',   0, null, null, 23)
+  ('51fed758-8178-45d5-9c1c-15a9f35aacc1', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Pomodoro',   0, 40,   null, 21),
+  ('552164b0-6a9a-4774-8df2-0cdcca13f8b3', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Mozzarella', 0, 30,   null, 22),
+  ('adafc57b-d4da-4b8d-b582-d0f0b6649e81', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Basilico',   0, null, null, 23)
 on conflict (id) do nothing;
 
 update public.menu_items
   set ingredienti =
-    '["cccc0001-0000-0000-0000-000000000001","cccc0001-0000-0000-0000-000000000002","cccc0001-0000-0000-0000-000000000003"]'::jsonb
-  where restaurant_id = '11111111-1111-1111-1111-111111111111' and nome = 'Margherita';
+    '["51fed758-8178-45d5-9c1c-15a9f35aacc1","552164b0-6a9a-4774-8df2-0cdcca13f8b3","adafc57b-d4da-4b8d-b582-d0f0b6649e81"]'::jsonb
+  where restaurant_id = '700df593-7de9-4ec8-8e5d-4164e6fdc68c' and nome = 'Margherita';
 
 -- ───────────── Demo: scorte per-prodotto (anche prodotti semplici) ─────────────
 -- "Scorte semplici" (menu_items.scorta): porzioni disponibili per prodotto, con
@@ -172,6 +172,6 @@ update public.restaurants
   where slug = 'pizzeria-mario';
 
 update public.menu_items set scorta = 8
-  where restaurant_id = '11111111-1111-1111-1111-111111111111' and nome = 'Tiramisù della casa';
+  where restaurant_id = '700df593-7de9-4ec8-8e5d-4164e6fdc68c' and nome = 'Tiramisù della casa';
 update public.menu_items set scorta = 12
-  where restaurant_id = '11111111-1111-1111-1111-111111111111' and nome = 'Diavola';
+  where restaurant_id = '700df593-7de9-4ec8-8e5d-4164e6fdc68c' and nome = 'Diavola';
