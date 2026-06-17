@@ -109,6 +109,100 @@ export async function duplicateItem(itemId: string) {
 }
 
 /** Bulk-import menu items from a CSV string (owner). RLS scopes the inserts. */
+/**
+ * Full menu import from a JSON export (importMenuJson). Restores every fillable
+ * per-item field (via sanitizeItemPatch) AND merges the referenced restaurant
+ * config (extra/varianti per categoria, reparti, etichette, note, tempi) so
+ * item references (reparto/etichette ids) resolve. Items are APPENDED (re-import
+ * adds copies — clear the menu first to replace). RLS via ownerRestaurantId.
+ */
+export async function importMenuJson(
+  text: string,
+): Promise<{ added: number; skipped: number; configApplied: boolean }> {
+  const restaurantId = await ownerRestaurantId();
+  let data: unknown;
+  try {
+    data = JSON.parse(String(text ?? ""));
+  } catch {
+    throw new Error("File JSON non valido.");
+  }
+  if (!data || typeof data !== "object") throw new Error("File JSON non valido.");
+  const root = data as { config?: unknown; items?: unknown };
+  const admin = createAdminClient();
+
+  // 1) Merge config first so item refs (reparti/etichette ids) resolve.
+  let configApplied = false;
+  const cfg = (root.config ?? {}) as Record<string, unknown>;
+  if (cfg && typeof cfg === "object") {
+    const { data: rRow } = await admin
+      .from("restaurants")
+      .select(
+        "aggiunte, composizione, composizione_taglie, reparti, etichette, note_config, categoria_tempi, capienza_default",
+      )
+      .eq("id", restaurantId)
+      .maybeSingle();
+    const cur = (rRow ?? {}) as Partial<Restaurant>;
+    const patch: Record<string, unknown> = {};
+    if (Array.isArray(cfg.reparti))
+      patch.reparti = sanitizeReparti([...(cur.reparti ?? []), ...cfg.reparti]);
+    if (Array.isArray(cfg.etichette))
+      patch.etichette = sanitizeEtichette([...(cur.etichette ?? []), ...cfg.etichette]);
+    if (Array.isArray(cfg.aggiunte))
+      patch.aggiunte = sanitizeAggiunte([...(cur.aggiunte ?? []), ...cfg.aggiunte]);
+    if (Array.isArray(cfg.composizione))
+      patch.composizione = sanitizeComposizione([...(cur.composizione ?? []), ...cfg.composizione], {
+        requireCategorie: true,
+      });
+    if (Array.isArray(cfg.composizione_taglie))
+      patch.composizione_taglie = sanitizeTaglie(
+        [...(cur.composizione_taglie ?? []), ...cfg.composizione_taglie],
+        { requireCategorie: true },
+      );
+    if (Array.isArray(cfg.note_config))
+      patch.note_config = sanitizeNoteConfig([...(cur.note_config ?? []), ...cfg.note_config]);
+    if (cfg.categoria_tempi && typeof cfg.categoria_tempi === "object")
+      patch.categoria_tempi = sanitizeCategoriaTempi({ ...(cur.categoria_tempi ?? {}), ...cfg.categoria_tempi });
+    if ("capienza_default" in cfg) {
+      const n = Math.floor(Number(cfg.capienza_default) || 0);
+      patch.capienza_default = n > 0 ? Math.min(50, n) : null;
+    }
+    if (Object.keys(patch).length) {
+      const { error } = await admin.from("restaurants").update(patch).eq("id", restaurantId);
+      if (error) throw new Error(error.message);
+      configApplied = true;
+    }
+  }
+
+  // 2) Insert items with the full per-item field set (sanitized).
+  const rawItems = Array.isArray(root.items) ? root.items : [];
+  let skipped = 0;
+  const rows: Record<string, unknown>[] = [];
+  for (const it of rawItems.slice(0, 1000)) {
+    if (!it || typeof it !== "object") {
+      skipped++;
+      continue;
+    }
+    const p = sanitizeItemPatch(it as ItemPatch);
+    if (!p.nome || !p.nome.trim()) {
+      skipped++;
+      continue;
+    }
+    rows.push({
+      restaurant_id: restaurantId,
+      ...p,
+      categoria: p.categoria || "Senza categoria",
+      prezzo: p.prezzo ?? 0,
+    });
+  }
+  if (rows.length) {
+    const { error } = await admin.from("menu_items").insert(rows);
+    if (error) throw new Error(error.message);
+  }
+  revalidatePath("/dashboard/menu");
+  revalidatePath("/[domain]", "page");
+  return { added: rows.length, skipped, configApplied };
+}
+
 export async function importItems(
   csvText: string,
 ): Promise<{ added: number; skipped: number }> {

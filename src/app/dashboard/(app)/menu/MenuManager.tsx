@@ -54,6 +54,7 @@ export interface MenuActions {
   duplicateItem: (id: string) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
   importItems?: (csv: string) => Promise<{ added: number; skipped: number }>;
+  importMenuJson?: (text: string) => Promise<{ added: number; skipped: number; configApplied: boolean }>;
   updateAggiunte: (aggiunte: CategoryAddon[]) => Promise<void>;
   updateNoteConfig?: (noteConfig: NoteConfig[]) => Promise<void>;
   updateEtichette?: (etichette: string[]) => Promise<void>;
@@ -287,6 +288,24 @@ export default function MenuManager({
     };
     reader.readAsText(file);
   }
+  function importMenu(file: File) {
+    const fn = actions.importMenuJson;
+    if (!fn) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      run(async () => {
+        const res = await fn(text);
+        setError(
+          `Menu importato: ${res.added} piatti aggiunti${res.skipped ? `, ${res.skipped} ignorati` : ""}${
+            res.configApplied ? " · varianti, extra, etichette, reparti e tempi aggiornati" : ""
+          }.`,
+        );
+        router.refresh();
+      });
+    };
+    reader.readAsText(file);
+  }
   function toggleAllergen(item: MenuItem, id: string) {
     const set = new Set(item.allergeni ?? []);
     if (set.has(id)) set.delete(id);
@@ -387,6 +406,33 @@ export default function MenuManager({
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f) importCsv(f);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </>
+          )}
+          {actions.importMenuJson && (
+            <>
+              <button
+                onClick={() => window.open("/api/dashboard/menu-export", "_blank")}
+                className="rounded-lg border border-neutral-300 px-3 py-2 text-sm hover:bg-neutral-50"
+                title="Scarica l'intero menu (tutti i campi: varianti, extra, etichette, reparti, tempi) in JSON"
+              >
+                Esporta menu
+              </button>
+              <label
+                className="cursor-pointer rounded-lg border border-neutral-300 px-3 py-2 text-sm hover:bg-neutral-50"
+                title="Importa un menu completo da file JSON (aggiunge i piatti e aggiorna la configurazione)"
+              >
+                Importa menu
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) importMenu(f);
                     e.target.value = "";
                   }}
                 />
