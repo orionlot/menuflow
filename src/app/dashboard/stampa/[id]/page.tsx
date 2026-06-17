@@ -56,10 +56,21 @@ export default async function StampaPage({ params }: { params: Promise<{ id: str
   const when = new Date(o.created_at).toLocaleString("it-IT");
 
   return (
-    <main
-      data-comanda
-      style={{
-        width: "80mm",
+    <>
+      {/* The app's root layout sets html.h-full + a flex body for full-screen app
+          pages; in paged (print) media that root box can collapse and clip the
+          comanda. Reset it to normal block flow for print only — scoped to this
+          document, so it never affects other pages. */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html:
+            "@media print{html,body{height:auto!important;min-height:0!important;display:block!important;margin:0!important;background:#fff!important}}",
+        }}
+      />
+      <main
+        data-comanda
+        style={{
+          width: "80mm",
         margin: "0 auto",
         padding: "10px 12px",
         fontFamily: "ui-monospace, Menlo, monospace",
@@ -131,6 +142,7 @@ export default async function StampaPage({ params }: { params: Promise<{ id: str
       <div style={{ marginTop: 10, textAlign: "center", fontSize: 11 }}>
         Promemoria gestionale — non è uno scontrino fiscale.
       </div>
-    </main>
+      </main>
+    </>
   );
 }
