@@ -3,7 +3,8 @@ import { RevenueByDayChart, OrdersByHourChart } from "./Charts";
 import { requireOwner } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatEUR } from "@/lib/config/plans";
-import { computeStats } from "@/lib/stats";
+import { computeStats, kitchenTimings } from "@/lib/stats";
+import { isFeatureOn } from "@/lib/config/features";
 import type { Order } from "@/types/db";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +56,8 @@ export default async function StatistichePage({
 
   const s = computeStats(orders, catMap);
   const prev = computeStats(prevOrders, catMap);
+  const kt = kitchenTimings(orders);
+  const tempoStimatoOn = isFeatureOn(restaurant, "tempo_stimato");
   const maxProdQty = Math.max(1, ...s.topProducts.map((p) => p.qty));
   const maxCatRev = Math.max(1, ...s.byCategory.map((c) => c.revenueCents));
   const brandColor = restaurant.colore_primario || "#525252";
@@ -188,6 +191,18 @@ export default async function StatistichePage({
             </Card>
           </div>
 
+          {/* Tempi medi in cucina (time-in-state reporting) */}
+          {tempoStimatoOn && kt.served > 0 && (
+            <Card title="Tempi medi in cucina">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <KitchenStat label="In coda" value={`${kt.avgQueueMin}′`} hint="ordine → presa in carico" />
+                <KitchenStat label="In preparazione" value={`${kt.avgPrepMin}′`} hint="preparazione → pronto" />
+                <KitchenStat label="Pronto → servito" value={`${kt.avgReadyMin}′`} hint="attesa prima di servire" />
+                <KitchenStat label="Ordini serviti" value={String(kt.served)} hint="nel periodo" />
+              </div>
+            </Card>
+          )}
+
           {/* Andamento giornaliero */}
           <Card title="Incasso per giorno">
             <RevenueByDayChart data={s.byDay} color={brandColor} />
@@ -254,6 +269,16 @@ function Kpi({
           <span className="font-normal text-neutral-400">vs prec.</span>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function KitchenStat({ label, value, hint }: { label: string; value: string; hint: string }) {
+  return (
+    <div>
+      <div className="text-xs font-medium uppercase tracking-wide text-neutral-500">{label}</div>
+      <div className="mt-1 text-xl font-bold tabular-nums text-neutral-900">{value}</div>
+      <div className="mt-0.5 text-[11px] text-neutral-400">{hint}</div>
     </div>
   );
 }

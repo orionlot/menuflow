@@ -14,6 +14,7 @@ export default async function CucinaPage() {
       restaurantId={restaurant.id}
       repartoOn={isFeatureOn(restaurant, "reparto")}
       reparti={restaurant.reparti ?? []}
+      tempoStimatoOn={isFeatureOn(restaurant, "tempo_stimato")}
     />
   );
 }

@@ -27,6 +27,41 @@ function cents(n: number): number {
   return Math.round(Number(n) * 100);
 }
 
+export interface KitchenTimings {
+  served: number; // orders that reached "servito" in the period
+  avgQueueMin: number; // created → in preparazione (wait before a cook starts)
+  avgPrepMin: number; // in preparazione → pronto (actual cooking)
+  avgReadyMin: number; // pronto → servito (sat ready before serving)
+}
+
+/** Average time orders spent in each kitchen state, from the lifecycle stamps.
+ *  Each average is over the orders that have the relevant pair of timestamps. */
+export function kitchenTimings(orders: Order[]): KitchenTimings {
+  const valid = orders.filter((o) => SALES_STATES.has(o.stato) && !o.annullato_at);
+  const min = (a: string, b: string) => (new Date(b).getTime() - new Date(a).getTime()) / 60000;
+  const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((s, x) => s + x, 0) / xs.length) : 0);
+  const queue: number[] = [];
+  const prep: number[] = [];
+  const ready: number[] = [];
+  let served = 0;
+  for (const o of valid) {
+    if (o.servito_at) served += 1;
+    if (o.preparazione_at) {
+      const q = min(o.created_at, o.preparazione_at);
+      if (q >= 0) queue.push(q);
+    }
+    if (o.preparazione_at && o.pronto_at) {
+      const p = min(o.preparazione_at, o.pronto_at);
+      if (p > 0) prep.push(p);
+    }
+    if (o.pronto_at && o.servito_at) {
+      const r = min(o.pronto_at, o.servito_at);
+      if (r > 0) ready.push(r);
+    }
+  }
+  return { served, avgQueueMin: avg(queue), avgPrepMin: avg(prep), avgReadyMin: avg(ready) };
+}
+
 export function computeStats(
   orders: Order[],
   catByItemId: Map<string, string>,

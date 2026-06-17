@@ -133,6 +133,21 @@ export function sanitizeI18n(raw: unknown): Record<string, string> {
   return out;
 }
 
+/** Per-category average prep minutes: { "Antipasti": 10 }. Keeps non-empty
+ *  category names mapped to 1–600 min; caps at 60 categories. */
+export function sanitizeCategoriaTempi(raw: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (raw && typeof raw === "object") {
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (Object.keys(out).length >= 60) break;
+      const cat = String(k).trim().slice(0, 60);
+      const min = Math.max(0, Math.min(600, Math.floor(Number(v) || 0)));
+      if (cat && min > 0) out[cat] = min;
+    }
+  }
+  return out;
+}
+
 export function sanitizeItemPatch(patch: ItemPatch): ItemPatch {
   const out: ItemPatch = {};
   if (typeof patch.nome === "string") out.nome = patch.nome.trim().slice(0, 120);

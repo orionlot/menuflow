@@ -30,12 +30,13 @@ import CategoryAddonsEditor from "./CategoryAddonsEditor";
 import NotesEditor from "./NotesEditor";
 import EtichetteEditor from "./EtichetteEditor";
 import RepartiEditor from "./RepartiEditor";
+import CategoriaTempiEditor from "./CategoriaTempiEditor";
 import ComposizioneEditor from "./ComposizioneEditor";
 import TaglieEditor from "./TaglieEditor";
 
 type MiniRestaurant = { id: string; multilingua: boolean; lingue: string[] };
 type SaveState = "saving" | "saved" | "error";
-type TabId = "piatti" | "categorie" | "varianti" | "extra" | "etichette" | "reparti";
+type TabId = "piatti" | "categorie" | "varianti" | "extra" | "etichette" | "reparti" | "tempi";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "piatti", label: "Piatti" },
@@ -44,6 +45,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "extra", label: "Extra" },
   { id: "etichette", label: "Etichette" },
   { id: "reparti", label: "Reparti" },
+  { id: "tempi", label: "Tempi" },
 ];
 
 export interface MenuActions {
@@ -56,6 +58,7 @@ export interface MenuActions {
   updateNoteConfig?: (noteConfig: NoteConfig[]) => Promise<void>;
   updateEtichette?: (etichette: string[]) => Promise<void>;
   updateReparti?: (reparti: Reparto[]) => Promise<void>;
+  updateCategoriaTempi?: (value: Record<string, number>) => Promise<void>;
   reorder: (updates: { id: string; ordine: number }[]) => Promise<void>;
 }
 
@@ -92,6 +95,8 @@ export default function MenuManager({
   prezzoAsportoOn = false,
   etichetteOn = false,
   fasceOrarieOn = false,
+  tempoStimatoOn = false,
+  categoriaTempi = {},
   ingredientiList = [],
   popularIds = [],
   actions,
@@ -110,6 +115,8 @@ export default function MenuManager({
   prezzoAsportoOn?: boolean;
   etichetteOn?: boolean;
   fasceOrarieOn?: boolean;
+  tempoStimatoOn?: boolean;
+  categoriaTempi?: Record<string, number>;
   ingredientiList?: PublicIngredient[];
   popularIds?: string[];
   actions: MenuActions;
@@ -396,7 +403,10 @@ export default function MenuManager({
       {/* Tab bar */}
       <div className="mb-5 flex flex-wrap gap-1 border-b border-neutral-200">
         {TABS.filter(
-          (t) => (t.id !== "etichette" || etichetteOn) && (t.id !== "reparti" || repartoOn),
+          (t) =>
+            (t.id !== "etichette" || etichetteOn) &&
+            (t.id !== "reparti" || repartoOn) &&
+            (t.id !== "tempi" || tempoStimatoOn),
         ).map((t) => (
           <button
             key={t.id}
@@ -569,6 +579,15 @@ export default function MenuManager({
         <RepartiEditor
           value={reparti}
           onSave={(r) => run(() => actions.updateReparti!(r))}
+        />
+      )}
+
+      {/* ── Tempi (per-category prep time) ───────────────────── */}
+      {tab === "tempi" && tempoStimatoOn && actions.updateCategoriaTempi && (
+        <CategoriaTempiEditor
+          value={categoriaTempi}
+          categories={categoryNames}
+          onSave={(v) => run(() => actions.updateCategoriaTempi!(v))}
         />
       )}
 

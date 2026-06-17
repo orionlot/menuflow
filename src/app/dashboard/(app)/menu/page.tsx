@@ -12,6 +12,7 @@ import {
   updateNoteConfig,
   updateEtichette,
   updateReparti,
+  updateCategoriaTempi,
   reorderItems,
   duplicateItem,
   importItems,
@@ -67,6 +68,8 @@ export default async function MenuPage() {
       prezzoAsportoOn={isFeatureOn(restaurant, "prezzo_asporto")}
       etichetteOn={isFeatureOn(restaurant, "etichette")}
       fasceOrarieOn={isFeatureOn(restaurant, "fasce_orarie")}
+      tempoStimatoOn={isFeatureOn(restaurant, "tempo_stimato")}
+      categoriaTempi={restaurant.categoria_tempi ?? {}}
       ingredientiList={ingredientiList}
       popularIds={popularIds}
       actions={{
@@ -79,6 +82,7 @@ export default async function MenuPage() {
         updateNoteConfig,
         updateEtichette,
         updateReparti,
+        updateCategoriaTempi,
         reorder: reorderItems,
       }}
     />

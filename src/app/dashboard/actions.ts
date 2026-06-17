@@ -24,6 +24,7 @@ import {
   sanitizeReparti,
   sanitizeSale,
   sanitizeI18n,
+  sanitizeCategoriaTempi,
   type ItemPatch,
 } from "@/lib/menu";
 import { parseCsv, rowsToItemPatches } from "@/lib/csv";
@@ -325,6 +326,20 @@ export async function updateEtichette(etichette: unknown) {
 }
 
 /** Restaurateur-configured kitchen departments (Reparti tab + Kitchen Display). */
+/** Per-category average prep time (minutes). Fallback for the KDS estimate
+ *  when a dish has no tempo_preparazione of its own. RLS via ownerRestaurantId. */
+export async function updateCategoriaTempi(value: unknown) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ categoria_tempi: sanitizeCategoriaTempi(value) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/menu");
+  revalidatePath("/dashboard/cucina");
+}
+
 export async function updateReparti(reparti: unknown) {
   const restaurantId = await ownerRestaurantId();
   const admin = createAdminClient();

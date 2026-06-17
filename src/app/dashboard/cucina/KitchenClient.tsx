@@ -14,6 +14,7 @@ import {
 } from "@dnd-kit/core";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { setOrderStage, setOrderPriorita, type KitchenStage } from "@/app/dashboard/actions";
+import { formatEUR } from "@/lib/config/plans";
 import type { Reparto, Priorita } from "@/types/db";
 
 interface KItem {
@@ -98,11 +99,13 @@ export default function KitchenClient({
   restaurantId,
   repartoOn = false,
   reparti = [],
+  tempoStimatoOn = true,
 }: {
   restaurantName: string;
   restaurantId: string;
   repartoOn?: boolean;
   reparti?: Reparto[];
+  tempoStimatoOn?: boolean;
 }) {
   const [orders, setOrders] = useState<KOrder[]>([]);
   const [audioOn, setAudioOn] = useState(false);
@@ -322,9 +325,11 @@ export default function KitchenClient({
   // ── Metrics ─────────────────────────────────────────────────────────
   const metrics = useMemo(() => {
     const inPrep = byColumn.in_preparazione;
-    const late = inPrep.filter(
-      (o) => o.tempo_stimato && o.preparazione_at && now > new Date(o.preparazione_at).getTime() + o.tempo_stimato * 60000,
-    );
+    const late = tempoStimatoOn
+      ? inPrep.filter(
+          (o) => o.tempo_stimato && o.preparazione_at && now > new Date(o.preparazione_at).getTime() + o.tempo_stimato * 60000,
+        )
+      : [];
     const overruns = late.map(
       (o) => (now - (new Date(o.preparazione_at!).getTime() + o.tempo_stimato! * 60000)) / 60000,
     );
@@ -344,7 +349,27 @@ export default function KitchenClient({
       inRitardo: late.length,
       ritardoMedio: avg(overruns),
     };
-  }, [byColumn, orders, now]);
+  }, [byColumn, orders, now, tempoStimatoOn]);
+
+  // Per-column totals: order value (always) + queue-clear estimate = sum of the
+  // pending orders' tempo_stimato; `missing` flags orders without any estimate.
+  const colAgg = useMemo(() => {
+    const blank = () => ({ valueCents: 0, etaMin: 0, missing: 0 });
+    const agg: Record<KitchenStage, { valueCents: number; etaMin: number; missing: number }> = {
+      da_preparare: blank(),
+      in_preparazione: blank(),
+      pronti: blank(),
+      serviti: blank(),
+    };
+    for (const k of Object.keys(agg) as KitchenStage[]) {
+      for (const o of byColumn[k]) {
+        agg[k].valueCents += Math.round(Number(o.totale) * 100);
+        if (o.tempo_stimato && o.tempo_stimato > 0) agg[k].etaMin += o.tempo_stimato;
+        else agg[k].missing += 1;
+      }
+    }
+    return agg;
+  }, [byColumn]);
 
   const totalActive = metrics.coda + metrics.inPrep + metrics.pronti;
   const clock = (iso: string) =>
@@ -455,7 +480,17 @@ export default function KitchenClient({
           <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
               {STAGES.map((s) => (
-                <Column key={s.id} stage={s.id} label={s.label} head={s.head} tint={s.tint} count={byColumn[s.id].length}>
+                <Column
+                  key={s.id}
+                  stage={s.id}
+                  label={s.label}
+                  head={s.head}
+                  tint={s.tint}
+                  count={byColumn[s.id].length}
+                  valueCents={colAgg[s.id].valueCents}
+                  etaMin={tempoStimatoOn && (s.id === "da_preparare" || s.id === "in_preparazione") ? colAgg[s.id].etaMin : null}
+                  approx={tempoStimatoOn && (s.id === "da_preparare" || s.id === "in_preparazione") && colAgg[s.id].missing > 0}
+                >
                   {byColumn[s.id].map((o) => (
                     <Card
                       key={o.id}
@@ -465,6 +500,7 @@ export default function KitchenClient({
                       isNew={pulseIds.has(o.id)}
                       repartoOn={repartoOn}
                       repartoById={repartoById}
+                      tempoStimatoOn={tempoStimatoOn}
                       clock={clock}
                       onMove={moveTo}
                       onCyclePriorita={cyclePriorita}
@@ -515,6 +551,9 @@ function Column({
   head,
   tint,
   count,
+  valueCents,
+  etaMin,
+  approx,
   children,
 }: {
   stage: KitchenStage;
@@ -522,6 +561,9 @@ function Column({
   head: string;
   tint: string;
   count: number;
+  valueCents: number;
+  etaMin: number | null;
+  approx: boolean;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
@@ -532,12 +574,27 @@ function Column({
         isOver ? "border-white/40 bg-white/5" : "border-neutral-800/60"
       }`}
     >
-      <h2 className={`mb-2 flex items-center gap-2 px-1 text-xs font-bold uppercase tracking-widest ${head}`}>
+      <h2 className={`mb-1 flex items-center gap-2 px-1 text-xs font-bold uppercase tracking-widest ${head}`}>
         {label}
         <span className={`min-w-[1.6rem] rounded-lg px-2 py-0.5 text-center text-sm font-extrabold tabular-nums ${tint}`}>
           {count}
         </span>
       </h2>
+      {count > 0 && (
+        <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-0.5 px-1 text-[11px] text-neutral-400">
+          <span className="font-semibold text-neutral-300 tabular-nums">{formatEUR(valueCents)}</span>
+          {etaMin != null && etaMin > 0 && (
+            <span className="tabular-nums" title="Tempo stimato per smaltire la coda">
+              · ~{etaMin}′ coda
+            </span>
+          )}
+          {approx && (
+            <span className="text-amber-400/90" title="Alcuni piatti non hanno un tempo di preparazione: la stima è approssimativa">
+              · stima approssimativa
+            </span>
+          )}
+        </div>
+      )}
       <div className="flex flex-col gap-3">{children}</div>
     </section>
   );
@@ -550,6 +607,7 @@ function Card({
   isNew,
   repartoOn,
   repartoById,
+  tempoStimatoOn,
   clock,
   onMove,
   onCyclePriorita,
@@ -561,6 +619,7 @@ function Card({
   isNew: boolean;
   repartoOn: boolean;
   repartoById: Map<string, Reparto>;
+  tempoStimatoOn: boolean;
   clock: (iso: string) => string;
   onMove: (o: KOrder, stage: KitchenStage) => void;
   onCyclePriorita: (o: KOrder) => void;
@@ -574,9 +633,10 @@ function Card({
   const m = Math.max(0, Math.floor((now - new Date(o.created_at).getTime()) / 60000));
   const ageColor = m >= LATE_MIN ? "#dc2626" : m >= WARN_MIN ? "#d97706" : "#16a34a";
 
-  // Countdown (in preparazione, with an estimate).
+  // Countdown (in preparazione, with an estimate). Hidden when the prep-time
+  // feature is off.
   let countdown: { text: string; late: boolean } | null = null;
-  if (stage === "in_preparazione" && o.preparazione_at && o.tempo_stimato) {
+  if (tempoStimatoOn && stage === "in_preparazione" && o.preparazione_at && o.tempo_stimato) {
     const remaining = new Date(o.preparazione_at).getTime() + o.tempo_stimato * 60000 - now;
     const late = remaining < 0;
     const abs = Math.abs(remaining);
@@ -587,6 +647,9 @@ function Card({
 
   const dest = o.asporto ? `🛍 ${o.tavolo ?? "—"}` : `Tav. ${o.tavolo ?? "—"}`;
   const served = stage === "serviti";
+  // No prep estimate available for a pending order → the queue ETA is approximate.
+  const noEstimate =
+    tempoStimatoOn && (stage === "da_preparare" || stage === "in_preparazione") && !o.tempo_stimato;
 
   // Distinct departments present in this order (for the reparto chips).
   const reps = repartoOn
@@ -632,6 +695,7 @@ function Card({
           ) : (
             <span className="block text-sm font-bold">{stage === "pronti" ? "PRONTO 🔔" : served ? "✓" : ""}</span>
           )}
+          {noEstimate && <span className="block text-[10px] font-medium text-amber-200/90" title="Tempo di preparazione non impostato">stima n/d</span>}
           <span className="text-neutral-300">{clock(o.created_at)}</span>
         </span>
       </div>

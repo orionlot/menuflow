@@ -205,20 +205,28 @@ export async function POST(req: Request) {
       componibiliOn,
     );
 
-    // Estimated prep time = longest prep time among the ordered dishes. Anchors
-    // the kitchen countdown once a cook starts preparation. Best-effort: a query
-    // failure just leaves it null (the countdown then simply doesn't show).
+    // Estimated prep time = longest EFFECTIVE prep among the ordered dishes,
+    // where effective = the item's own tempo_preparazione, or (fallback) the
+    // restaurant's average for that item's category. Anchors the kitchen
+    // countdown once a cook starts preparation. Best-effort: a query failure
+    // just leaves it null (the countdown then simply doesn't show).
     let tempoStimato: number | null = null;
     const orderedIds = [...new Set(lines.map((l) => l.item_id).filter(Boolean))] as string[];
     if (orderedIds.length) {
       const { data: prepRows } = await admin
         .from("menu_items")
-        .select("tempo_preparazione")
+        .select("tempo_preparazione, categoria")
         .eq("restaurant_id", restaurant.id)
         .in("id", orderedIds);
+      const catTimes = (restaurant.categoria_tempi ?? {}) as Record<string, number>;
       const times = (prepRows ?? [])
-        .map((r) => (r as { tempo_preparazione: number | null }).tempo_preparazione)
-        .filter((t): t is number => typeof t === "number" && t > 0);
+        .map((r) => {
+          const row = r as { tempo_preparazione: number | null; categoria: string | null };
+          return typeof row.tempo_preparazione === "number" && row.tempo_preparazione > 0
+            ? row.tempo_preparazione
+            : Number(catTimes[row.categoria ?? ""]) || 0;
+        })
+        .filter((t) => t > 0);
       if (times.length) tempoStimato = Math.max(...times);
     }
 
