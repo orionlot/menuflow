@@ -1,19 +1,23 @@
 /**
- * Silently print an order's comanda from a dashboard page (no pop-up window).
- * Loads /dashboard/stampa/<id> into a hidden, off-screen iframe; that page's
- * own AutoPrint fires window.print() on the iframe document, so the comanda
- * prints without a separate tab. With Chrome --kiosk-printing it goes straight
- * to the default printer; otherwise the browser shows its print dialog.
+ * Silently print an order's comanda from a dashboard page (no pop-up window,
+ * no separate tab). Client-only; no-op on the server.
  *
- * Client-only. No-op on the server.
+ * Approach: fetch the comanda markup from /dashboard/stampa/<id> (same-origin,
+ * carries the dashboard session cookie), inject ONLY its <main data-comanda>
+ * into the CURRENT document inside a hidden host, then call window.print() on
+ * the top-level window with a print-scoped stylesheet that hides everything
+ * except the comanda. After the dialog resolves the host is removed.
  *
- * Jobs are processed ONE AT A TIME through a module-level queue: when several
- * orders arrive in the same poll/realtime tick we must not open several print
- * dialogs at once (in the non-kiosk path only the first would survive and the
- * rest would be silently dropped). Each job's iframe is removed — and the next
- * job started — only after the print dialog resolves (the iframe's `afterprint`
- * event), so we never yank an open dialog out from under the operator. A
- * backstop timer guards against browsers that never emit `afterprint`.
+ * Why not a hidden iframe: a script print() invoked from inside a sub-frame is
+ * captured by Chromium against the TOP-LEVEL document, and hidden/zero-area
+ * iframes are frequently not rasterised by the print engine — both yield a
+ * BLANK page. Printing the top-level document (with the comanda injected and
+ * everything else hidden for print) is the reliable, verifiable path. With
+ * Chrome --kiosk-printing it prints silently; otherwise the dialog appears,
+ * now showing the comanda.
+ *
+ * Jobs run one at a time through a module-level queue so concurrent orders
+ * never stack multiple print dialogs.
  */
 
 const queue: string[] = [];
@@ -37,69 +41,67 @@ async function drainQueue(): Promise<void> {
   }
 }
 
-function printOne(orderId: string): Promise<void> {
-  return new Promise((resolve) => {
-    const iframe = document.createElement("iframe");
-    iframe.setAttribute("aria-hidden", "true");
-    // Off-screen but REAL-SIZED — do NOT use a 1px/opacity:0 iframe. The comanda
-    // document inherits the app's root layout (html.h-full + a flex body), which
-    // collapses to a 0×0 root box inside a 1px viewport; the content then
-    // overflows a zero-size root and the page prints BLANK. A real size parked
-    // off-screen lays the document out normally, so it prints in full. (Print
-    // pagination handles comande taller than the iframe.)
-    iframe.style.cssText =
-      "position:fixed;left:-10000px;top:0;width:380px;height:1200px;border:0;pointer-events:none;";
-    iframe.src = `/dashboard/stampa/${orderId}`;
+async function printOne(orderId: string): Promise<void> {
+  // Fetch the comanda markup (same-origin → authenticated). A non-comanda
+  // response (e.g. the login page after a session expiry, or a 404) has no
+  // [data-comanda] element, so we simply skip it.
+  let main: Element | null = null;
+  try {
+    const res = await fetch(`/dashboard/stampa/${orderId}`, { cache: "no-store" });
+    if (!res.ok) return;
+    const html = await res.text();
+    const parsed = new DOMParser().parseFromString(html, "text/html");
+    main = parsed.querySelector("[data-comanda]");
+  } catch {
+    return;
+  }
+  if (!main) return;
 
+  const host = document.createElement("div");
+  host.id = "comanda-print-host";
+  host.appendChild(document.importNode(main, true));
+
+  const style = document.createElement("style");
+  style.setAttribute("data-comanda-print", "");
+  style.textContent =
+    // Never visible on screen — it only exists to be printed.
+    "#comanda-print-host{display:none}" +
+    "@media print{" +
+    // Hide the whole app; show only the comanda.
+    "body>*:not(#comanda-print-host){display:none!important}" +
+    "#comanda-print-host{display:block!important}" +
+    // The app root layout uses html.h-full + a flex body; reset it so the print
+    // box is normal block flow (otherwise the printed area can collapse/clip).
+    "html,body{height:auto!important;min-height:0!important;display:block!important;margin:0!important;background:#fff!important}" +
+    "}";
+
+  document.body.appendChild(style);
+  document.body.appendChild(host);
+
+  await new Promise<void>((resolve) => {
     let settled = false;
-    const finish = () => {
+    const cleanup = () => {
       if (settled) return;
       settled = true;
-      if (iframe.parentNode) iframe.remove();
+      window.removeEventListener("afterprint", cleanup);
+      host.remove();
+      style.remove();
       resolve();
     };
-
-    iframe.onload = () => {
-      // If the iframe loaded something other than the comanda — e.g. the login
-      // page after the dashboard session expired — there is nothing to print;
-      // move on immediately instead of waiting out the backstop.
-      try {
-        if (!iframe.contentDocument?.querySelector("[data-comanda]")) {
-          finish();
-          return;
+    window.addEventListener("afterprint", cleanup, { once: true });
+    // Two animation frames guarantee the injected comanda is laid out and
+    // painted before we snapshot it for print.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        try {
+          window.print();
+        } catch {
+          cleanup();
         }
-      } catch {
-        /* same-origin read unexpectedly blocked — assume it's the comanda */
-      }
-      // Drive the print from the PARENT on the iframe's own contentWindow. A
-      // script print() invoked INSIDE a sub-frame is captured by Chromium against
-      // the top-level (dashboard) document and prints blank
-      // (https://issues.chromium.org/issues/40896385); the comanda page's
-      // AutoPrint therefore stays inert when embedded and we call focus()+print()
-      // here so the dialog targets the comanda document. focus() is the documented
-      // prerequisite. Wait for the dialog to resolve (afterprint) before tearing
-      // the iframe down and starting the next job; backstop in case `afterprint`
-      // never fires (some kiosk configs): generous enough not to interrupt a dialog.
-      iframe.contentWindow?.addEventListener("afterprint", finish, { once: true });
-      setTimeout(finish, 20000);
-      // Defer one frame so layout/paint of the freshly-loaded document settles
-      // before the print snapshot, then print the iframe document from the parent.
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          try {
-            iframe.contentWindow?.focus();
-            iframe.contentWindow?.print();
-          } catch {
-            // Same-origin print unexpectedly blocked — let the backstops drain
-            // the queue rather than hang.
-            finish();
-          }
-        }),
-      );
-    };
-
-    // Hard safety net if the iframe never loads at all.
-    setTimeout(finish, 30000);
-    document.body.appendChild(iframe);
+      }),
+    );
+    // Backstop: afterprint may not fire under --kiosk-printing; never wedge the
+    // queue and never leave the host in the DOM.
+    setTimeout(cleanup, 20000);
   });
 }
