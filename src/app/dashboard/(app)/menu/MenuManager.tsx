@@ -607,6 +607,7 @@ export default function MenuManager({
           prezzoAsportoOn={prezzoAsportoOn}
           etichetteOn={etichetteOn}
           fasceOrarieOn={fasceOrarieOn}
+          tempoStimatoOn={tempoStimatoOn}
           pesoOn={pesoOn}
           kcalOn={kcalOn}
           reparti={reparti}
@@ -755,6 +756,7 @@ function QuickEditDrawer({
   prezzoAsportoOn,
   etichetteOn,
   fasceOrarieOn,
+  tempoStimatoOn,
   pesoOn,
   kcalOn,
   reparti,
@@ -771,6 +773,7 @@ function QuickEditDrawer({
   prezzoAsportoOn: boolean;
   etichetteOn: boolean;
   fasceOrarieOn: boolean;
+  tempoStimatoOn: boolean;
   pesoOn: boolean;
   kcalOn: boolean;
   reparti: Reparto[];
@@ -923,23 +926,25 @@ function QuickEditDrawer({
             )}
           </div>
 
-          {/* Tempo di preparazione (always) + Reparto (gated) */}
+          {/* Tempo di preparazione (gated) + peso/kcal/reparto (gated) */}
           <div className="flex flex-wrap gap-2">
-            <label className="w-36" title="Minuti stimati di preparazione (usato dal timer in Cucina)">
-              <span className="mb-1 block text-xs font-medium text-neutral-500">Tempo prep. (min)</span>
-              <input
-                type="number"
-                min="0"
-                placeholder="—"
-                defaultValue={item.tempo_preparazione ?? ""}
-                onBlur={(e) => {
-                  const raw = e.target.value.trim();
-                  const v = raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0);
-                  if (v !== item.tempo_preparazione) h.save(item.id, { tempo_preparazione: v });
-                }}
-                className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
-              />
-            </label>
+            {tempoStimatoOn && (
+              <label className="w-36" title="Minuti stimati di preparazione (usato dal timer in Cucina)">
+                <span className="mb-1 block text-xs font-medium text-neutral-500">Tempo prep. (min)</span>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="—"
+                  defaultValue={item.tempo_preparazione ?? ""}
+                  onBlur={(e) => {
+                    const raw = e.target.value.trim();
+                    const v = raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0);
+                    if (v !== item.tempo_preparazione) h.save(item.id, { tempo_preparazione: v });
+                  }}
+                  className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+                />
+              </label>
+            )}
             {pesoOn && (
               <label className="w-28" title="Peso totale del piatto. Se vuoto e ci sono ingredienti con peso, viene sommato in automatico.">
                 <span className="mb-1 block text-xs font-medium text-neutral-500">Peso (g)</span>

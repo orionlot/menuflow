@@ -216,7 +216,8 @@ export default function MenuClient({
   const kcalOn = Boolean(tenant.funzioni_attive?.kcal);
   const allergeniOrdineOn = Boolean(tenant.funzioni_attive?.allergeni_ordine);
   const salaOrdineOn = Boolean(tenant.funzioni_attive?.sala_ordine);
-  const attesaOn = Boolean(tenant.funzioni_attive?.attesa_stimata);
+  const attesaOn =
+    Boolean(tenant.funzioni_attive?.attesa_stimata) && Boolean(tenant.funzioni_attive?.tempo_stimato);
   const saleList = tenant.sale ?? [];
   const asportoOn = Boolean(tenant.funzioni_attive?.asporto);
   const etichetteOn = Boolean(tenant.funzioni_attive?.etichette);
@@ -484,17 +485,19 @@ export default function MenuClient({
       : [activeCat || categories[0]];
   const lines = Object.values(cart).filter((l) => l.qta > 0);
   const count = lines.reduce((s, l) => s + l.qta, 0);
-  // Estimated wait = current kitchen queue (server) + this cart's dishes' prep
-  // (each item's prep, or its category average as fallback).
+  // Estimated wait = current kitchen queue (server) + this cart's prep. The cart
+  // contributes the MAX effective prep among its dishes — the same model the
+  // order uses when it later enters the queue (orders.tempo_stimato = MAX), so
+  // the figure stays consistent with what /api/attesa sums.
   const cartPrepMin = attesaOn
-    ? lines.reduce((s, l) => {
+    ? lines.reduce((mx, l) => {
         const it = itemById.get(l.item_id);
-        if (!it) return s;
+        if (!it) return mx;
         const eff =
           it.tempo_preparazione != null && it.tempo_preparazione > 0
             ? it.tempo_preparazione
             : Number((tenant.categoria_tempi ?? {})[it.categoria]) || 0;
-        return s + eff;
+        return Math.max(mx, eff);
       }, 0)
     : 0;
   const attesaTot = attesaOn ? (queueMin ?? 0) + cartPrepMin : 0;

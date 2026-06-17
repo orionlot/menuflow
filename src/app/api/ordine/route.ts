@@ -215,7 +215,7 @@ export async function POST(req: Request) {
     // just leaves it null (the countdown then simply doesn't show).
     let tempoStimato: number | null = null;
     const orderedIds = [...new Set(lines.map((l) => l.item_id).filter(Boolean))] as string[];
-    if (orderedIds.length) {
+    if (isFeatureOn(restaurant, "tempo_stimato") && orderedIds.length) {
       const { data: prepRows } = await admin
         .from("menu_items")
         .select("tempo_preparazione, categoria")

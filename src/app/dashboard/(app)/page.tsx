@@ -52,16 +52,22 @@ export default async function DashboardHome() {
     if (slot) slot.orders += 1;
   }
 
-  // ── Active tables = distinct occupied (unsettled) dine-in tables, any day ──
-  const { data: openRows } = await supabase
+  // ── Active/occupied dine-in tables ──
+  // With conti on, "occupied" = unsettled bill (conto_chiuso_at null). Without
+  // conti there is no settle flow to clear that flag, so fall back to orders
+  // still in the kitchen today (servito_at null) — a count that resets on service.
+  let activeQuery = supabase
     .from("orders")
     .select("tavolo, sala")
     .eq("restaurant_id", restaurant.id)
-    .is("conto_chiuso_at", null)
     .is("annullato_at", null)
     .eq("asporto", false)
     .not("tavolo", "is", null)
     .in("stato", ["ricevuto", "pagato"]);
+  activeQuery = contiOn
+    ? activeQuery.is("conto_chiuso_at", null)
+    : activeQuery.is("servito_at", null).gte("created_at", since.toISOString());
+  const { data: openRows } = await activeQuery;
   const activeTables = new Set(
     ((openRows as Pick<Order, "tavolo" | "sala">[]) ?? []).map((o) => contoGroupKey(o.sala, o.tavolo)),
   ).size;

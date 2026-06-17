@@ -48,7 +48,7 @@ export function kitchenTimings(orders: Order[]): KitchenTimings {
     if (o.servito_at) served += 1;
     if (o.preparazione_at) {
       const q = min(o.created_at, o.preparazione_at);
-      if (q >= 0) queue.push(q);
+      if (q > 0) queue.push(q);
     }
     if (o.preparazione_at && o.pronto_at) {
       const p = min(o.preparazione_at, o.pronto_at);
