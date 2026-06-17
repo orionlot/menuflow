@@ -200,6 +200,7 @@ export interface Ingredient {
   id: string;
   restaurant_id: string;
   nome: string;
+  nome_i18n: Record<string, string>; // per-locale name, e.g. { "en": "Rice" }
   categoria: string; // optional grouping label (e.g. "Riso", "Pesce")
   prezzo: number; // EUR; 0 = "incluso"
   scorta: number | null; // null = illimitato, 0 = esaurito

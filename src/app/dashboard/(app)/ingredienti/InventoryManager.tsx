@@ -10,6 +10,7 @@ import IngredientsTable from "./IngredientsTable";
 type IngredientInput = {
   id?: string;
   nome?: string;
+  nome_i18n?: Record<string, string>;
   categoria?: string;
   prezzo?: number;
   scorta?: number | null;
@@ -24,12 +25,14 @@ export default function InventoryManager({
   initialComposizione,
   initialTaglie,
   categories,
+  otherLangs = [],
   actions,
 }: {
   initialIngredienti: PublicIngredient[];
   initialComposizione: ComposizioneGruppo[];
   initialTaglie: TagliaComposizione[];
   categories: string[];
+  otherLangs?: string[];
   actions: {
     upsertIngredient: (input: IngredientInput) => Promise<PublicIngredient>;
     deleteIngredient: (id: string) => Promise<void>;
@@ -64,6 +67,7 @@ export default function InventoryManager({
       <div className="space-y-6">
         <IngredientsTable
           value={ingredienti}
+          otherLangs={otherLangs}
           upsert={actions.upsertIngredient}
           remove={actions.deleteIngredient}
           onListChange={setIngredienti}

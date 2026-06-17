@@ -23,6 +23,7 @@ import { DragHandle, MoveButtons, SaveBadge, useSortableRow, type SaveState } fr
 type IngredientInput = {
   id?: string;
   nome?: string;
+  nome_i18n?: Record<string, string>;
   categoria?: string;
   prezzo?: number;
   scorta?: number | null;
@@ -45,11 +46,13 @@ const COLS = "grid-cols-[2.5rem_minmax(130px,1.6fr)_minmax(100px,1fr)_84px_92px_
 /** Inventory table: drag-reorder (manual) + sortable columns, inline edit, status. */
 export default function IngredientsTable({
   value,
+  otherLangs = [],
   upsert,
   remove,
   onListChange,
 }: {
   value: PublicIngredient[];
+  otherLangs?: string[];
   upsert: (input: IngredientInput) => Promise<PublicIngredient>;
   remove: (id: string) => Promise<void>;
   onListChange?: (list: PublicIngredient[]) => void;
@@ -124,6 +127,7 @@ export default function IngredientsTable({
     return {
       id: ing.id,
       nome: ing.nome,
+      nome_i18n: ing.nome_i18n,
       categoria: ing.categoria,
       prezzo: ing.prezzo,
       scorta: ing.scorta,
@@ -273,6 +277,7 @@ export default function IngredientsTable({
                       count={list.length}
                       st={status[ing.id]}
                       manual
+                      otherLangs={otherLangs}
                       onPatch={(p) => patchLocal(ing.id, p)}
                       onSave={() => save(payload(ing))}
                       onSaveWith={(p) => save({ ...payload(ing), ...p })}
@@ -293,6 +298,7 @@ export default function IngredientsTable({
                   count={0}
                   st={status[ing.id]}
                   manual={false}
+                  otherLangs={otherLangs}
                   onPatch={(p) => patchLocal(ing.id, p)}
                   onSave={() => save(payload(ing))}
                   onSaveWith={(p) => save({ ...payload(ing), ...p })}
@@ -322,6 +328,7 @@ function Row({
   count,
   st,
   manual,
+  otherLangs,
   onPatch,
   onSave,
   onSaveWith,
@@ -333,6 +340,7 @@ function Row({
   count: number;
   st?: SaveState;
   manual: boolean;
+  otherLangs: string[];
   onPatch: (p: Partial<PublicIngredient>) => void;
   onSave: () => void;
   onSaveWith: (p: Partial<PublicIngredient>) => void;
@@ -377,6 +385,25 @@ function Row({
           className={`${inputCls} font-medium`}
           aria-label="Nome"
         />
+        {otherLangs.length > 0 && (
+          <div className="mt-1 space-y-1">
+            {otherLangs.map((lang) => (
+              <div key={lang} className="flex items-center gap-1.5">
+                <span className="w-7 shrink-0 text-[10px] font-semibold uppercase text-neutral-400">
+                  {lang}
+                </span>
+                <input
+                  value={ing.nome_i18n?.[lang] ?? ""}
+                  onChange={(e) => onPatch({ nome_i18n: { ...ing.nome_i18n, [lang]: e.target.value } })}
+                  onBlur={onSave}
+                  placeholder={`Nome (${lang.toUpperCase()})`}
+                  className={`${inputCls} py-1 text-xs`}
+                  aria-label={`Nome (${lang})`}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </span>
       <span role="cell">
         <input

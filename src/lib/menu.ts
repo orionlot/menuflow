@@ -117,6 +117,21 @@ export function sanitizeOpzioni(raw: unknown): ItemOption[] {
     .filter((g) => g.nome && g.scelte.length);
 }
 
+/** Keep only lang-code keys with non-empty trimmed string values (e.g. for
+ *  `nome_i18n`). Defensive: server actions never trust the client payload. */
+export function sanitizeI18n(raw: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (raw && typeof raw === "object") {
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (/^[a-z]{2,5}$/.test(k) && typeof v === "string") {
+        const t = v.trim().slice(0, 80);
+        if (t) out[k] = t;
+      }
+    }
+  }
+  return out;
+}
+
 export function sanitizeItemPatch(patch: ItemPatch): ItemPatch {
   const out: ItemPatch = {};
   if (typeof patch.nome === "string") out.nome = patch.nome.trim().slice(0, 120);

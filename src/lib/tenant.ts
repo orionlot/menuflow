@@ -99,7 +99,7 @@ export async function getPublicIngredients(
   const admin = createAdminClient();
   const { data } = await admin
     .from("ingredients")
-    .select("id, nome, categoria, prezzo, scorta, unita, ordine")
+    .select("id, nome, nome_i18n, categoria, prezzo, scorta, unita, ordine")
     .eq("restaurant_id", restaurantId)
     .order("ordine", { ascending: true });
   return ((data as PublicIngredient[]) ?? []).map((i) => ({

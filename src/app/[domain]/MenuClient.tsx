@@ -410,6 +410,8 @@ export default function MenuClient({
 
   const t = (it: string, i18n: Record<string, string> | undefined) =>
     lang !== "it" && i18n?.[lang] ? i18n[lang] : it;
+  // Resolve an ingredient's name in the active language (falls back to base).
+  const ingName = (ing: PublicIngredient) => t(ing.nome, ing.nome_i18n);
 
   const categories = useMemo(() => {
     const seen: string[] = [];
@@ -680,8 +682,9 @@ export default function MenuClient({
     const desc = t(item.descrizione ?? "", item.descrizione_i18n);
     const ingNames = ingredientiItemsOn
       ? (item.ingredienti ?? [])
-          .map((id) => ingredientiById.get(id)?.nome)
-          .filter(Boolean)
+          .map((id) => ingredientiById.get(id))
+          .filter((g): g is PublicIngredient => Boolean(g))
+          .map((g) => ingName(g))
           .join(", ")
       : "";
     const recommended = Boolean(
@@ -1473,6 +1476,7 @@ export default function MenuClient({
           taglie={taglieFor(optItem)}
           nota={effectiveNota(optItem, tenant.note_config)}
           ingredientiById={ingredientiById}
+          ingName={ingName}
           p={p}
           onClose={() => setOptItem(null)}
           onConfirm={(chosen, composizione, taglia, nota) => {
@@ -1952,6 +1956,7 @@ function OptionsModal({
   taglie,
   nota,
   ingredientiById,
+  ingName,
   p,
   onClose,
   onConfirm,
@@ -1962,6 +1967,7 @@ function OptionsModal({
   taglie: TagliaComposizione[];
   nota: { label: string; obbligatoria: boolean } | null;
   ingredientiById: Map<string, PublicIngredient>;
+  ingName: (ing: PublicIngredient) => string;
   p: Pal;
   onClose: () => void;
   onConfirm: (
@@ -2022,7 +2028,7 @@ function OptionsModal({
         const ing = ingredientiById.get(s.ingredient_id);
         const qta = compo[s.ingredient_id] ?? 0;
         return ing && qta > 0
-          ? { ingredient_id: s.ingredient_id, nome: ing.nome, qta, prezzo: s.prezzo ?? ing.prezzo }
+          ? { ingredient_id: s.ingredient_id, nome: ingName(ing), qta, prezzo: s.prezzo ?? ing.prezzo }
           : null;
       })
       .filter((x): x is OrderComposizione => x !== null),
@@ -2153,7 +2159,7 @@ function OptionsModal({
                       >
                         <span className="min-w-0">
                           <span className="block truncate">
-                            {ing.nome}
+                            {ingName(ing)}
                             {ing.unita ? (
                               <span className="font-normal" style={{ color: p.textMuted }}>
                                 {" "}· {ing.unita}
@@ -2180,7 +2186,7 @@ function OptionsModal({
                             <Round
                               bg="transparent"
                               fg={p.brand}
-                              label={`Togli ${ing.nome}`}
+                              label={`Togli ${ingName(ing)}`}
                               onClick={() => setQ(s.ingredient_id, qty - 1)}
                             >
                               −
@@ -2189,7 +2195,7 @@ function OptionsModal({
                             <Round
                               bg={qty >= perMax ? p.surfaceBorder : p.brand}
                               fg={qty >= perMax ? p.textMuted : p.onBrand}
-                              label={`Aggiungi ${ing.nome}`}
+                              label={`Aggiungi ${ingName(ing)}`}
                               onClick={() => qty < perMax && setQ(s.ingredient_id, qty + 1)}
                             >
                               +

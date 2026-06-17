@@ -23,6 +23,7 @@ import {
   sanitizeEtichette,
   sanitizeReparti,
   sanitizeSale,
+  sanitizeI18n,
   type ItemPatch,
 } from "@/lib/menu";
 import { parseCsv, rowsToItemPatches } from "@/lib/csv";
@@ -196,6 +197,7 @@ export async function updateTaglie(taglie: TagliaComposizione[]) {
 export async function upsertIngredient(input: {
   id?: string;
   nome?: string;
+  nome_i18n?: Record<string, string>;
   categoria?: string;
   prezzo?: number;
   scorta?: number | null;
@@ -206,6 +208,7 @@ export async function upsertIngredient(input: {
   const admin = createAdminClient();
   const patch = {
     nome: String(input.nome ?? "").trim().slice(0, 60) || "Ingrediente",
+    nome_i18n: sanitizeI18n(input.nome_i18n),
     categoria: String(input.categoria ?? "").trim().slice(0, 40),
     prezzo: Math.max(0, Math.round((Number(input.prezzo) || 0) * 100) / 100),
     scorta:
@@ -213,7 +216,7 @@ export async function upsertIngredient(input: {
     unita: sanitizeUnita(input.unita),
     ordine: Math.floor(Number(input.ordine) || 0),
   };
-  const cols = "id, nome, categoria, prezzo, scorta, unita, ordine";
+  const cols = "id, nome, nome_i18n, categoria, prezzo, scorta, unita, ordine";
   if (input.id) {
     const { data, error } = await admin
       .from("ingredients")
