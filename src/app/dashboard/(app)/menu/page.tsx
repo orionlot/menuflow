@@ -37,7 +37,7 @@ export default async function MenuPage() {
   const { data: ingRows } = ingredientiOn || componibiliOn
     ? await supabase
         .from("ingredients")
-        .select("id, nome, nome_i18n, categoria, prezzo, scorta, unita, ordine")
+        .select("id, nome, nome_i18n, categoria, prezzo, scorta, unita, peso, kcal, ordine")
         .eq("restaurant_id", restaurant.id)
         .order("ordine", { ascending: true })
     : { data: [] };
@@ -70,6 +70,8 @@ export default async function MenuPage() {
       fasceOrarieOn={isFeatureOn(restaurant, "fasce_orarie")}
       tempoStimatoOn={isFeatureOn(restaurant, "tempo_stimato")}
       categoriaTempi={restaurant.categoria_tempi ?? {}}
+      pesoOn={isFeatureOn(restaurant, "peso")}
+      kcalOn={isFeatureOn(restaurant, "kcal")}
       ingredientiList={ingredientiList}
       popularIds={popularIds}
       actions={{

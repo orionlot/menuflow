@@ -28,6 +28,8 @@ type IngredientInput = {
   prezzo?: number;
   scorta?: number | null;
   unita?: string | null;
+  peso?: number | null;
+  kcal?: number | null;
   ordine?: number;
 };
 
@@ -47,12 +49,16 @@ const COLS = "grid-cols-[2.5rem_minmax(130px,1.6fr)_minmax(100px,1fr)_84px_92px_
 export default function IngredientsTable({
   value,
   otherLangs = [],
+  pesoOn = false,
+  kcalOn = false,
   upsert,
   remove,
   onListChange,
 }: {
   value: PublicIngredient[];
   otherLangs?: string[];
+  pesoOn?: boolean;
+  kcalOn?: boolean;
   upsert: (input: IngredientInput) => Promise<PublicIngredient>;
   remove: (id: string) => Promise<void>;
   onListChange?: (list: PublicIngredient[]) => void;
@@ -132,6 +138,8 @@ export default function IngredientsTable({
       prezzo: ing.prezzo,
       scorta: ing.scorta,
       unita: ing.unita,
+      peso: ing.peso,
+      kcal: ing.kcal,
       ordine: ing.ordine,
     };
   }
@@ -278,6 +286,8 @@ export default function IngredientsTable({
                       st={status[ing.id]}
                       manual
                       otherLangs={otherLangs}
+                      pesoOn={pesoOn}
+                      kcalOn={kcalOn}
                       onPatch={(p) => patchLocal(ing.id, p)}
                       onSave={() => save(payload(ing))}
                       onSaveWith={(p) => save({ ...payload(ing), ...p })}
@@ -299,6 +309,8 @@ export default function IngredientsTable({
                   st={status[ing.id]}
                   manual={false}
                   otherLangs={otherLangs}
+                  pesoOn={pesoOn}
+                  kcalOn={kcalOn}
                   onPatch={(p) => patchLocal(ing.id, p)}
                   onSave={() => save(payload(ing))}
                   onSaveWith={(p) => save({ ...payload(ing), ...p })}
@@ -329,6 +341,8 @@ function Row({
   st,
   manual,
   otherLangs,
+  pesoOn,
+  kcalOn,
   onPatch,
   onSave,
   onSaveWith,
@@ -341,6 +355,8 @@ function Row({
   st?: SaveState;
   manual: boolean;
   otherLangs: string[];
+  pesoOn: boolean;
+  kcalOn: boolean;
   onPatch: (p: Partial<PublicIngredient>) => void;
   onSave: () => void;
   onSaveWith: (p: Partial<PublicIngredient>) => void;
@@ -402,6 +418,42 @@ function Row({
                 />
               </div>
             ))}
+          </div>
+        )}
+        {(pesoOn || kcalOn) && (
+          <div className="mt-1 flex gap-1.5">
+            {pesoOn && (
+              <span className="relative flex-1">
+                <input
+                  type="number"
+                  min="0"
+                  inputMode="numeric"
+                  value={ing.peso ?? ""}
+                  placeholder="Peso"
+                  onChange={(e) => onPatch({ peso: e.target.value === "" ? null : Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                  onBlur={onSave}
+                  className={`${inputCls} py-1 pr-6 text-xs`}
+                  aria-label="Peso (g)"
+                />
+                <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-neutral-400">g</span>
+              </span>
+            )}
+            {kcalOn && (
+              <span className="relative flex-1">
+                <input
+                  type="number"
+                  min="0"
+                  inputMode="numeric"
+                  value={ing.kcal ?? ""}
+                  placeholder="Kcal"
+                  onChange={(e) => onPatch({ kcal: e.target.value === "" ? null : Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                  onBlur={onSave}
+                  className={`${inputCls} py-1 pr-9 text-xs`}
+                  aria-label="Calorie (kcal)"
+                />
+                <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-neutral-400">kcal</span>
+              </span>
+            )}
           </div>
         )}
       </span>

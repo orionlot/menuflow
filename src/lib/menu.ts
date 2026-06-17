@@ -84,6 +84,8 @@ export interface ItemPatch {
   composizione_taglie?: TagliaComposizione[]; // per-item size variants (category-less)
   nota?: ItemNota; // per-product customer-note override
   tempo_preparazione?: number | null;
+  peso?: number | null; // manual total weight (g) — overrides the ingredient auto-sum
+  kcal?: number | null; // manual total calories — overrides the ingredient auto-sum
   reparto?: string;
   prezzo_asporto?: number | null;
   etichette?: string[];
@@ -189,6 +191,10 @@ export function sanitizeItemPatch(patch: ItemPatch): ItemPatch {
       patch.tempo_preparazione == null
         ? null
         : Math.max(0, Math.min(600, Math.floor(Number(patch.tempo_preparazione) || 0)));
+  if ("peso" in patch)
+    out.peso = patch.peso == null ? null : Math.max(0, Math.min(100000, Math.round(Number(patch.peso) || 0)));
+  if ("kcal" in patch)
+    out.kcal = patch.kcal == null ? null : Math.max(0, Math.min(100000, Math.round(Number(patch.kcal) || 0)));
   if (typeof patch.reparto === "string") out.reparto = patch.reparto.trim().slice(0, 40);
   if ("prezzo_asporto" in patch)
     out.prezzo_asporto =

@@ -212,6 +212,8 @@ export default function MenuClient({
   const componibiliOn = Boolean(tenant.funzioni_attive?.componibili);
   const descrizioneOn = tenant.funzioni_attive?.descrizione !== false; // default on
   const ingredientiItemsOn = Boolean(tenant.funzioni_attive?.ingredienti);
+  const pesoOn = Boolean(tenant.funzioni_attive?.peso);
+  const kcalOn = Boolean(tenant.funzioni_attive?.kcal);
   const asportoOn = Boolean(tenant.funzioni_attive?.asporto);
   const etichetteOn = Boolean(tenant.funzioni_attive?.etichette);
   const fasceOrarieOn = Boolean(tenant.funzioni_attive?.fasce_orarie);
@@ -412,6 +414,27 @@ export default function MenuClient({
     lang !== "it" && i18n?.[lang] ? i18n[lang] : it;
   // Resolve an ingredient's name in the active language (falls back to base).
   const ingName = (ing: PublicIngredient) => t(ing.nome, ing.nome_i18n);
+  // Per-dish weight (g) / calories (kcal): the manual value on the item if set,
+  // otherwise summed from the dish's listed ingredients (null when unknown).
+  const dishNutrition = (item: MenuItem): { peso: number | null; kcal: number | null } => {
+    const sumOver = (sel: (i: PublicIngredient) => number | null) => {
+      let total = 0;
+      let any = false;
+      for (const id of item.ingredienti ?? []) {
+        const g = ingredientiById.get(id);
+        const v = g ? sel(g) : null;
+        if (v != null) {
+          total += Number(v);
+          any = true;
+        }
+      }
+      return any ? Math.round(total) : null;
+    };
+    return {
+      peso: item.peso != null ? item.peso : sumOver((i) => i.peso),
+      kcal: item.kcal != null ? item.kcal : sumOver((i) => i.kcal),
+    };
+  };
 
   const categories = useMemo(() => {
     const seen: string[] = [];
@@ -687,6 +710,13 @@ export default function MenuClient({
           .map((g) => ingName(g))
           .join(", ")
       : "";
+    const nutri = pesoOn || kcalOn ? dishNutrition(item) : { peso: null, kcal: null };
+    const nutriLabel = [
+      pesoOn && nutri.peso != null ? `${nutri.peso} g` : null,
+      kcalOn && nutri.kcal != null ? `${nutri.kcal} kcal` : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
     const recommended = Boolean(
       tenant.funzioni_attive?.piatto_consigliato && item.consigliato,
     );
@@ -859,6 +889,13 @@ export default function MenuClient({
               {ingNames && (
                 <p className="mt-1.5 text-sm leading-snug" style={{ color: p.textMuted }}>
                   {ingNames}
+                </p>
+              )}
+
+              {nutriLabel && (
+                <p className="mt-1.5 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums"
+                  style={{ background: p.tint, color: p.text }}>
+                  {nutriLabel}
                 </p>
               )}
 
@@ -1477,6 +1514,8 @@ export default function MenuClient({
           nota={effectiveNota(optItem, tenant.note_config)}
           ingredientiById={ingredientiById}
           ingName={ingName}
+          pesoOn={pesoOn}
+          kcalOn={kcalOn}
           p={p}
           onClose={() => setOptItem(null)}
           onConfirm={(chosen, composizione, taglia, nota) => {
@@ -1957,6 +1996,8 @@ function OptionsModal({
   nota,
   ingredientiById,
   ingName,
+  pesoOn,
+  kcalOn,
   p,
   onClose,
   onConfirm,
@@ -1968,6 +2009,8 @@ function OptionsModal({
   nota: { label: string; obbligatoria: boolean } | null;
   ingredientiById: Map<string, PublicIngredient>;
   ingName: (ing: PublicIngredient) => string;
+  pesoOn: boolean;
+  kcalOn: boolean;
   p: Pal;
   onClose: () => void;
   onConfirm: (
@@ -2171,6 +2214,8 @@ function OptionsModal({
                           </span>
                           <span className="text-xs" style={{ color: p.textMuted }}>
                             {prezzo > 0 ? `+ ${formatEUR(Math.round(prezzo * 100))}` : "incluso"}
+                            {pesoOn && ing.peso != null ? ` · ${ing.peso} g` : ""}
+                            {kcalOn && ing.kcal != null ? ` · ${ing.kcal} kcal` : ""}
                             {!soldOut && ing.scorta != null ? ` · ne restano ${ing.scorta}` : ""}
                           </span>
                         </span>

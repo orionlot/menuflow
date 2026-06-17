@@ -83,7 +83,7 @@ export async function getMenuItems(restaurantId: string): Promise<MenuItem[]> {
   const { data } = await admin
     .from("menu_items")
     .select(
-      "id, restaurant_id, categoria, nome, nome_i18n, descrizione, descrizione_i18n, prezzo, foto_url, disponibile, ordine, allergeni, opzioni, consigliato, scorta, ingredienti, composizione, composizione_taglie, nota, tempo_preparazione, reparto, prezzo_asporto, etichette, solo_pranzo, solo_cena, created_at",
+      "id, restaurant_id, categoria, nome, nome_i18n, descrizione, descrizione_i18n, prezzo, foto_url, disponibile, ordine, allergeni, opzioni, consigliato, scorta, ingredienti, composizione, composizione_taglie, nota, tempo_preparazione, peso, kcal, reparto, prezzo_asporto, etichette, solo_pranzo, solo_cena, created_at",
     )
     .eq("restaurant_id", restaurantId)
     .order("categoria", { ascending: true })
@@ -99,7 +99,7 @@ export async function getPublicIngredients(
   const admin = createAdminClient();
   const { data } = await admin
     .from("ingredients")
-    .select("id, nome, nome_i18n, categoria, prezzo, scorta, unita, ordine")
+    .select("id, nome, nome_i18n, categoria, prezzo, scorta, unita, peso, kcal, ordine")
     .eq("restaurant_id", restaurantId)
     .order("ordine", { ascending: true });
   return ((data as PublicIngredient[]) ?? []).map((i) => ({

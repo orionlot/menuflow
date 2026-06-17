@@ -15,6 +15,8 @@ type IngredientInput = {
   prezzo?: number;
   scorta?: number | null;
   unita?: string | null;
+  peso?: number | null;
+  kcal?: number | null;
   ordine?: number;
 };
 
@@ -26,6 +28,8 @@ export default function InventoryManager({
   initialTaglie,
   categories,
   otherLangs = [],
+  pesoOn = false,
+  kcalOn = false,
   actions,
 }: {
   initialIngredienti: PublicIngredient[];
@@ -33,6 +37,8 @@ export default function InventoryManager({
   initialTaglie: TagliaComposizione[];
   categories: string[];
   otherLangs?: string[];
+  pesoOn?: boolean;
+  kcalOn?: boolean;
   actions: {
     upsertIngredient: (input: IngredientInput) => Promise<PublicIngredient>;
     deleteIngredient: (id: string) => Promise<void>;
@@ -68,6 +74,8 @@ export default function InventoryManager({
         <IngredientsTable
           value={ingredienti}
           otherLangs={otherLangs}
+          pesoOn={pesoOn}
+          kcalOn={kcalOn}
           upsert={actions.upsertIngredient}
           remove={actions.deleteIngredient}
           onListChange={setIngredienti}

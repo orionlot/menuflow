@@ -97,6 +97,8 @@ export default function MenuManager({
   fasceOrarieOn = false,
   tempoStimatoOn = false,
   categoriaTempi = {},
+  pesoOn = false,
+  kcalOn = false,
   ingredientiList = [],
   popularIds = [],
   actions,
@@ -117,6 +119,8 @@ export default function MenuManager({
   fasceOrarieOn?: boolean;
   tempoStimatoOn?: boolean;
   categoriaTempi?: Record<string, number>;
+  pesoOn?: boolean;
+  kcalOn?: boolean;
   ingredientiList?: PublicIngredient[];
   popularIds?: string[];
   actions: MenuActions;
@@ -603,6 +607,8 @@ export default function MenuManager({
           prezzoAsportoOn={prezzoAsportoOn}
           etichetteOn={etichetteOn}
           fasceOrarieOn={fasceOrarieOn}
+          pesoOn={pesoOn}
+          kcalOn={kcalOn}
           reparti={reparti}
           etichetteCatalog={initialEtichette}
           ingredientiList={ingredientiList}
@@ -749,6 +755,8 @@ function QuickEditDrawer({
   prezzoAsportoOn,
   etichetteOn,
   fasceOrarieOn,
+  pesoOn,
+  kcalOn,
   reparti,
   etichetteCatalog,
   ingredientiList,
@@ -763,6 +771,8 @@ function QuickEditDrawer({
   prezzoAsportoOn: boolean;
   etichetteOn: boolean;
   fasceOrarieOn: boolean;
+  pesoOn: boolean;
+  kcalOn: boolean;
   reparti: Reparto[];
   etichetteCatalog: string[];
   ingredientiList: PublicIngredient[];
@@ -930,6 +940,40 @@ function QuickEditDrawer({
                 className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
               />
             </label>
+            {pesoOn && (
+              <label className="w-28" title="Peso totale del piatto. Se vuoto e ci sono ingredienti con peso, viene sommato in automatico.">
+                <span className="mb-1 block text-xs font-medium text-neutral-500">Peso (g)</span>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="auto"
+                  defaultValue={item.peso ?? ""}
+                  onBlur={(e) => {
+                    const raw = e.target.value.trim();
+                    const v = raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0);
+                    if (v !== item.peso) h.save(item.id, { peso: v });
+                  }}
+                  className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+                />
+              </label>
+            )}
+            {kcalOn && (
+              <label className="w-28" title="Calorie totali del piatto. Se vuoto e ci sono ingredienti con kcal, vengono sommate in automatico.">
+                <span className="mb-1 block text-xs font-medium text-neutral-500">Kcal</span>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="auto"
+                  defaultValue={item.kcal ?? ""}
+                  onBlur={(e) => {
+                    const raw = e.target.value.trim();
+                    const v = raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0);
+                    if (v !== item.kcal) h.save(item.id, { kcal: v });
+                  }}
+                  className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+                />
+              </label>
+            )}
             {repartoOn && (
               <label className="min-w-32 flex-1">
                 <span className="mb-1 block text-xs font-medium text-neutral-500">Reparto cucina</span>

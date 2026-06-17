@@ -203,10 +203,14 @@ export async function upsertIngredient(input: {
   prezzo?: number;
   scorta?: number | null;
   unita?: string | null;
+  peso?: number | null;
+  kcal?: number | null;
   ordine?: number;
 }): Promise<PublicIngredient> {
   const restaurantId = await ownerRestaurantId();
   const admin = createAdminClient();
+  const clampNutri = (v: number | null | undefined) =>
+    v == null ? null : Math.max(0, Math.min(100000, Math.round(Number(v) || 0)));
   const patch = {
     nome: String(input.nome ?? "").trim().slice(0, 60) || "Ingrediente",
     nome_i18n: sanitizeI18n(input.nome_i18n),
@@ -215,9 +219,11 @@ export async function upsertIngredient(input: {
     scorta:
       input.scorta == null ? null : Math.max(0, Math.floor(Number(input.scorta) || 0)),
     unita: sanitizeUnita(input.unita),
+    peso: clampNutri(input.peso),
+    kcal: clampNutri(input.kcal),
     ordine: Math.floor(Number(input.ordine) || 0),
   };
-  const cols = "id, nome, nome_i18n, categoria, prezzo, scorta, unita, ordine";
+  const cols = "id, nome, nome_i18n, categoria, prezzo, scorta, unita, peso, kcal, ordine";
   if (input.id) {
     const { data, error } = await admin
       .from("ingredients")
