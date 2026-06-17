@@ -36,7 +36,7 @@ export default async function MenuPage() {
   const { data: ingRows } = ingredientiOn || componibiliOn
     ? await supabase
         .from("ingredients")
-        .select("id, nome, categoria, prezzo, scorta, unita, ordine")
+        .select("id, nome, nome_i18n, categoria, prezzo, scorta, unita, ordine")
         .eq("restaurant_id", restaurant.id)
         .order("ordine", { ascending: true })
     : { data: [] };

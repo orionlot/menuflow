@@ -123,6 +123,7 @@ export function sanitizeI18n(raw: unknown): Record<string, string> {
   const out: Record<string, string> = {};
   if (raw && typeof raw === "object") {
     for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (Object.keys(out).length >= 24) break; // bound key count (sibling sanitizers all cap)
       if (/^[a-z]{2,5}$/.test(k) && typeof v === "string") {
         const t = v.trim().slice(0, 80);
         if (t) out[k] = t;

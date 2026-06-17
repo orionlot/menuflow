@@ -2022,6 +2022,9 @@ function OptionsModal({
 
   const groupTotal = (g: ComposizioneGruppo) =>
     g.ingredienti.reduce((s, x) => s + (compo[x.ingredient_id] ?? 0), 0);
+  // Translated name is for the in-cart PREVIEW only: the order submit sends just
+  // {ingredient_id, qta}, and api/ordine re-derives the persisted snapshot from the
+  // base (Italian) ingredient name — so the kitchen comanda stays Italian.
   const composed: OrderComposizione[] = composizione.flatMap((g) =>
     g.ingredienti
       .map((s) => {
