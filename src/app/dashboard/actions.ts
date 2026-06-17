@@ -332,6 +332,18 @@ export async function updateEtichette(etichette: unknown) {
 }
 
 /** Restaurateur-configured kitchen departments (Reparti tab + Kitchen Display). */
+/** Back-office (dashboard) light/dark theme. RLS via ownerRestaurantId. */
+export async function setDashboardTema(tema: "light" | "dark") {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ dashboard_tema: tema === "dark" ? "dark" : "light" })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard", "layout");
+}
+
 /** Per-category average prep time (minutes). Fallback for the KDS estimate
  *  when a dish has no tempo_preparazione of its own. RLS via ownerRestaurantId. */
 export async function updateCategoriaTempi(value: unknown) {

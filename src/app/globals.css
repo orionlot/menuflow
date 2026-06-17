@@ -47,6 +47,27 @@ body {
   font-family: var(--font-body), system-ui, sans-serif;
 }
 
+/* Dashboard dark mode — scoped to the back-office shell only (`.dash-dark` on the
+   dashboard root). Remaps the neutral palette so existing components invert
+   without per-component `dark:` variants. The public menu is never affected. */
+.dash-dark {
+  color-scheme: dark;
+}
+.dash-dark .bg-white { background-color: #181b21 !important; }
+.dash-dark .bg-neutral-50 { background-color: #0f1115 !important; }
+.dash-dark .bg-neutral-100 { background-color: #20242c !important; }
+.dash-dark .text-neutral-900 { color: #f1eee8 !important; }
+.dash-dark .text-neutral-800 { color: #e7e3db !important; }
+.dash-dark .text-neutral-700 { color: #d5d1c8 !important; }
+.dash-dark .text-neutral-600 { color: #bbb6ad !important; }
+.dash-dark .text-neutral-500 { color: #9d978d !important; }
+.dash-dark .text-neutral-400 { color: #807a71 !important; }
+.dash-dark .border-neutral-100 { border-color: #20242c !important; }
+.dash-dark .border-neutral-200 { border-color: #2a2f38 !important; }
+.dash-dark .border-neutral-300 { border-color: #353c46 !important; }
+.dash-dark .hover\:bg-neutral-50:hover { background-color: #181b21 !important; }
+.dash-dark .hover\:bg-neutral-100:hover { background-color: #20242c !important; }
+
 /* Hide scrollbars on the horizontal category rail while keeping it scrollable. */
 .no-scrollbar {
   scrollbar-width: none;

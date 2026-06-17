@@ -29,11 +29,15 @@ export default function DashboardSidebar({
   esci,
   salaOn = false,
   contiOn = false,
+  dark = false,
+  setTema,
 }: {
   nome: string;
   esci: ReactNode;
   salaOn?: boolean;
   contiOn?: boolean;
+  dark?: boolean;
+  setTema?: (t: "light" | "dark") => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   const primary = PRIMARY.filter(
@@ -41,6 +45,15 @@ export default function DashboardSidebar({
       (salaOn || i.href !== "/dashboard/sala") &&
       (contiOn || i.href !== "/dashboard/conti"),
   );
+  const temaToggle = setTema ? (
+    <button
+      onClick={() => void setTema(dark ? "light" : "dark")}
+      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900"
+    >
+      <span className="text-neutral-400">{dark ? "☀️" : "🌙"}</span>
+      {dark ? "Tema chiaro" : "Tema scuro"}
+    </button>
+  ) : null;
   return (
     <>
       {/* Mobile top bar */}
@@ -60,14 +73,14 @@ export default function DashboardSidebar({
         <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setOpen(false)}>
           <div className="absolute inset-0 bg-black/40" />
           <div className="absolute inset-y-0 left-0 w-64 bg-white p-3" onClick={(e) => e.stopPropagation()}>
-            <Nav nome={nome} esci={esci} primary={primary} onNavigate={() => setOpen(false)} />
+            <Nav nome={nome} esci={esci} primary={primary} temaToggle={temaToggle} onNavigate={() => setOpen(false)} />
           </div>
         </div>
       )}
 
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-neutral-200 bg-white lg:block">
-        <Nav nome={nome} esci={esci} primary={primary} />
+        <Nav nome={nome} esci={esci} primary={primary} temaToggle={temaToggle} />
       </aside>
     </>
   );
@@ -77,11 +90,13 @@ function Nav({
   nome,
   esci,
   primary,
+  temaToggle,
   onNavigate,
 }: {
   nome: string;
   esci: ReactNode;
   primary: Item[];
+  temaToggle?: ReactNode;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
@@ -123,7 +138,10 @@ function Nav({
         <div className="my-2 border-t border-neutral-100" />
         {SETTINGS.map(link)}
       </nav>
-      <div className="mt-3 border-t border-neutral-100 pt-3">{esci}</div>
+      <div className="mt-3 border-t border-neutral-100 pt-3">
+        {temaToggle}
+        {esci}
+      </div>
     </div>
   );
 }
