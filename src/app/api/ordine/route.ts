@@ -194,19 +194,32 @@ export async function POST(req: Request) {
 
     // SECURITY: recompute total from DB prices; never trust the client.
     const componibiliOn = isFeatureOn(restaurant, "componibili");
-    const { lines, itemsTotaleCents } = await priceCartServerSide(
-      admin,
-      restaurant.id,
-      body.items ?? [],
-      restaurant.aggiunte ?? [],
-      {
-        enforceScorte: isFeatureOn(restaurant, "scorte"),
-        asportoPrezzo: asporto && isFeatureOn(restaurant, "prezzo_asporto"),
-      },
-      componibiliOn ? (restaurant.composizione ?? []) : [],
-      componibiliOn ? (restaurant.composizione_taglie ?? []) : [],
-      componibiliOn,
-    );
+    let priced;
+    try {
+      priced = await priceCartServerSide(
+        admin,
+        restaurant.id,
+        body.items ?? [],
+        restaurant.aggiunte ?? [],
+        {
+          enforceScorte: isFeatureOn(restaurant, "scorte"),
+          asportoPrezzo: asporto && isFeatureOn(restaurant, "prezzo_asporto"),
+        },
+        componibiliOn ? (restaurant.composizione ?? []) : [],
+        componibiliOn ? (restaurant.composizione_taglie ?? []) : [],
+        componibiliOn,
+      );
+    } catch (err) {
+      // Pricing throws ACTIONABLE, diner-facing Italian messages (sold-out item,
+      // invalid/missing option or size, empty cart). Surface them verbatim with
+      // 400 so the customer can fix the cart — unlike the generic 500 below, which
+      // is reserved for genuinely unexpected failures.
+      return NextResponse.json(
+        { ok: false, error: err instanceof Error ? err.message : "Carrello non valido." },
+        { status: 400 },
+      );
+    }
+    const { lines, itemsTotaleCents } = priced;
 
     // Estimated prep time = longest EFFECTIVE prep among the ordered dishes,
     // where effective = the item's own tempo_preparazione, or (fallback) the

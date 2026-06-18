@@ -38,10 +38,13 @@ export async function markOrderPaid(
     const expected = Math.round(Number(order.totale) * 100);
     const currencyOk = !opts.currency || opts.currency.toLowerCase() === "eur";
     if (opts.paidAmountCents !== expected || !currencyOk) {
-      console.error(
-        `[markOrderPaid] amount mismatch order=${order.id} captured=${opts.paidAmountCents}${opts.currency ?? ""} expected=${expected}eur — NOT marking paid`,
+      // Exceptional: the captured amount/currency diverges from the recomputed
+      // total. THROW (never mark a wrong-total order paid) so the webhook returns
+      // 500 — the event then stays visible + retryable in Stripe and is NOT
+      // recorded as processed, instead of silently abandoning captured funds.
+      throw new Error(
+        `markOrderPaid: amount mismatch order=${order.id} captured=${opts.paidAmountCents}${opts.currency ?? ""} expected=${expected}eur`,
       );
-      return null;
     }
   }
 

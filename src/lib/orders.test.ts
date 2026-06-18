@@ -78,17 +78,19 @@ describe("markOrderPaid — payment-truth amount check", () => {
     expect(state.updateCalls).toBe(1);
   });
 
-  it("does NOT mark paid when the captured amount is short", async () => {
+  it("THROWS when the captured amount is short (webhook 500s, event stays retryable)", async () => {
     const { admin, state } = stub(order());
-    const res = await markOrderPaid(admin, { paymentIntentId: "pi", paidAmountCents: 1700, currency: "eur" });
-    expect(res).toBeNull();
+    await expect(
+      markOrderPaid(admin, { paymentIntentId: "pi", paidAmountCents: 1700, currency: "eur" }),
+    ).rejects.toThrow(/mismatch/);
     expect(state.updateCalls).toBe(0); // never flipped the row
   });
 
-  it("does NOT mark paid on a wrong currency", async () => {
+  it("THROWS on a wrong currency", async () => {
     const { admin } = stub(order());
-    const res = await markOrderPaid(admin, { paymentIntentId: "pi", paidAmountCents: 1800, currency: "usd" });
-    expect(res).toBeNull();
+    await expect(
+      markOrderPaid(admin, { paymentIntentId: "pi", paidAmountCents: 1800, currency: "usd" }),
+    ).rejects.toThrow(/mismatch/);
   });
 
   it("BYPASS: marks paid when no amount is supplied (dev simulator path)", async () => {

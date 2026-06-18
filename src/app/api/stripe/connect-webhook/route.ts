@@ -73,6 +73,11 @@ export async function POST(req: Request) {
 
   // Record only after successful processing (a failed attempt stays retryable).
   // markOrderPaid is idempotent, so a duplicate that slips the check is harmless.
-  await admin.from("stripe_events").insert({ id: event.id, type: event.type });
+  // Log (don't fail) an insert error — e.g. the stripe_events table missing
+  // (migration 0036 not applied) means idempotency is silently degraded.
+  const { error: ledgerErr } = await admin
+    .from("stripe_events")
+    .insert({ id: event.id, type: event.type });
+  if (ledgerErr) console.error("[connect-webhook] stripe_events insert failed:", ledgerErr.message);
   return NextResponse.json({ received: true });
 }

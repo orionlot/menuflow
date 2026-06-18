@@ -23,16 +23,17 @@ export async function uploadImage(
   if (!(file instanceof File) || file.size === 0) throw new Error("File mancante.");
   if (file.size > 6 * 1024 * 1024) throw new Error("Immagine troppo grande (max 6MB).");
 
-  // Allow-list image types by MIME. Reject SVG (can carry inline script and this
-  // lands in a public bucket) and anything non-raster.
-  const ALLOWED_TYPES = new Map<string, string>([
-    ["image/png", "png"],
-    ["image/jpeg", "jpg"],
-    ["image/webp", "webp"],
-  ]);
+  // Reject SVG (can carry inline script and this lands in a PUBLIC bucket) and
+  // anything that isn't a raster image. Accept the common raster types browsers
+  // and phones produce — incl. iPhone HEIC/HEIF, GIF/AVIF/BMP/TIFF — by MIME, or
+  // by filename extension when the browser sends an empty/odd type.
   const mime = (file.type || "").toLowerCase();
-  if (!ALLOWED_TYPES.has(mime))
-    throw new Error("Formato non supportato: usa PNG, JPG o WEBP.");
+  const ext = (file.name.split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const RASTER_EXT = new Set(["png", "jpg", "jpeg", "webp", "gif", "avif", "heic", "heif", "bmp", "tif", "tiff"]);
+  const isSvg = mime === "image/svg+xml" || ext === "svg";
+  const looksRaster = (mime.startsWith("image/") && !isSvg) || RASTER_EXT.has(ext);
+  if (isSvg || !looksRaster)
+    throw new Error("Formato non supportato: carica un'immagine (PNG, JPG, WEBP, HEIC…). Gli SVG non sono ammessi.");
 
   const admin = createAdminClient();
 
@@ -47,17 +48,19 @@ export async function uploadImage(
     if (!data) throw new Error("Non autorizzato per questo ristorante.");
   }
 
-  // Extension derived from the validated MIME (not the attacker-controlled filename).
-  const ext = ALLOWED_TYPES.get(mime)!;
+  // Stored extension: the validated (non-SVG) filename extension, else a safe
+  // default. Never an svg.
+  const safeExt = RASTER_EXT.has(ext) ? (ext === "jpeg" ? "jpg" : ext) : "jpg";
   const path = `${restaurantId}/${kind}-${Date.now()}-${Math.random()
     .toString(36)
-    .slice(2, 8)}.${ext}`;
+    .slice(2, 8)}.${safeExt}`;
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const { error } = await admin.storage
     .from(STORAGE_BUCKET)
     .upload(path, buffer, {
-      contentType: mime,
+      // Only ever serve a raster content-type, never image/svg+xml.
+      contentType: mime.startsWith("image/") && !isSvg ? mime : "image/jpeg",
       upsert: true,
       // Filenames are immutable (timestamp + random), so cache hard for a year.
       cacheControl: "31536000",

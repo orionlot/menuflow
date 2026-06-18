@@ -85,6 +85,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Elaborazione fallita." }, { status: 500 });
   }
 
-  await admin.from("stripe_events").insert({ id: event.id, type: event.type });
+  const { error: ledgerErr } = await admin
+    .from("stripe_events")
+    .insert({ id: event.id, type: event.type });
+  if (ledgerErr) console.error("[billing-webhook] stripe_events insert failed:", ledgerErr.message);
   return NextResponse.json({ received: true });
 }
