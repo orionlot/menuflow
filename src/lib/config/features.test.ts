@@ -84,6 +84,7 @@ describe("funzioniAttive", () => {
         "stampa_automatica",
         "tempo_stimato",
         "tracking_ordine",
+        "vetrina",
       ].sort(),
     );
     expect(m.piatto_consigliato).toBe(true);

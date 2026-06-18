@@ -92,6 +92,8 @@ export interface ItemPatch {
   etichette?: string[];
   solo_pranzo?: boolean;
   solo_cena?: boolean;
+  in_vetrina?: boolean;
+  vetrina_annuncio?: string | null;
 }
 
 export function sanitizeOpzioni(raw: unknown): ItemOption[] {
@@ -245,6 +247,11 @@ export function sanitizeItemPatch(patch: ItemPatch): ItemPatch {
       .slice(0, 20);
   if (typeof patch.solo_pranzo === "boolean") out.solo_pranzo = patch.solo_pranzo;
   if (typeof patch.solo_cena === "boolean") out.solo_cena = patch.solo_cena;
+  if (typeof patch.in_vetrina === "boolean") out.in_vetrina = patch.in_vetrina;
+  if ("vetrina_annuncio" in patch) {
+    const v = typeof patch.vetrina_annuncio === "string" ? patch.vetrina_annuncio.trim().slice(0, 140) : "";
+    out.vetrina_annuncio = v || null;
+  }
   return out;
 }
 

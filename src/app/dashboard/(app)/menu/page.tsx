@@ -70,6 +70,7 @@ export default async function MenuPage() {
       repartoOn={isFeatureOn(restaurant, "reparto")}
       prezzoAsportoOn={isFeatureOn(restaurant, "prezzo_asporto")}
       etichetteOn={isFeatureOn(restaurant, "etichette")}
+      vetrinaOn={isFeatureOn(restaurant, "vetrina")}
       fasceOrarieOn={isFeatureOn(restaurant, "fasce_orarie")}
       tempoStimatoOn={isFeatureOn(restaurant, "tempo_stimato")}
       categoriaTempi={restaurant.categoria_tempi ?? {}}

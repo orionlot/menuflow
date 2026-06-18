@@ -304,6 +304,10 @@ export interface MenuItem {
   etichette: string[];
   solo_pranzo: boolean;
   solo_cena: boolean;
+  /** Featured in the homepage "vetrina" carousel (gated by the `vetrina` flag). */
+  in_vetrina: boolean;
+  /** Optional per-product announcement shown on its vetrina slide. */
+  vetrina_annuncio: string | null;
   created_at: string;
 }
 

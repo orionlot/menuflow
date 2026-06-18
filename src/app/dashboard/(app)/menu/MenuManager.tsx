@@ -96,6 +96,7 @@ export default function MenuManager({
   repartoOn = false,
   prezzoAsportoOn = false,
   etichetteOn = false,
+  vetrinaOn = false,
   fasceOrarieOn = false,
   tempoStimatoOn = false,
   categoriaTempi = {},
@@ -119,6 +120,7 @@ export default function MenuManager({
   repartoOn?: boolean;
   prezzoAsportoOn?: boolean;
   etichetteOn?: boolean;
+  vetrinaOn?: boolean;
   fasceOrarieOn?: boolean;
   tempoStimatoOn?: boolean;
   categoriaTempi?: Record<string, number>;
@@ -661,6 +663,7 @@ export default function MenuManager({
           repartoOn={repartoOn}
           prezzoAsportoOn={prezzoAsportoOn}
           etichetteOn={etichetteOn}
+          vetrinaOn={vetrinaOn}
           fasceOrarieOn={fasceOrarieOn}
           tempoStimatoOn={tempoStimatoOn}
           pesoOn={pesoOn}
@@ -810,6 +813,7 @@ function QuickEditDrawer({
   repartoOn,
   prezzoAsportoOn,
   etichetteOn,
+  vetrinaOn,
   fasceOrarieOn,
   tempoStimatoOn,
   pesoOn,
@@ -827,6 +831,7 @@ function QuickEditDrawer({
   repartoOn: boolean;
   prezzoAsportoOn: boolean;
   etichetteOn: boolean;
+  vetrinaOn: boolean;
   fasceOrarieOn: boolean;
   tempoStimatoOn: boolean;
   pesoOn: boolean;
@@ -1094,6 +1099,39 @@ function QuickEditDrawer({
                   />
                 </span>
               </div>
+            </div>
+          )}
+
+          {/* Vetrina — feature in the homepage carousel (gated) */}
+          {vetrinaOn && (
+            <div className="rounded-md border border-neutral-200 bg-neutral-50 p-2.5">
+              <label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
+                <input
+                  type="checkbox"
+                  checked={item.in_vetrina}
+                  onChange={(e) => h.save(item.id, { in_vetrina: e.target.checked })}
+                  className="h-4 w-4 rounded border-neutral-300 accent-[var(--brand)]"
+                />
+                ✨ In vetrina (carosello in homepage)
+              </label>
+              {item.in_vetrina && (
+                <label className="mt-2 block">
+                  <span className="mb-1 block text-xs font-medium text-neutral-500">
+                    Annuncio (facoltativo)
+                  </span>
+                  <input
+                    type="text"
+                    maxLength={140}
+                    placeholder="Es. Piatto del giorno · Di stagione · Novità"
+                    defaultValue={item.vetrina_annuncio ?? ""}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      if (v !== (item.vetrina_annuncio ?? "")) h.save(item.id, { vetrina_annuncio: v || null });
+                    }}
+                    className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+                  />
+                </label>
+              )}
             </div>
           )}
 

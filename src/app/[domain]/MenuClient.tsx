@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import type {
   ComposizioneGruppo,
@@ -12,7 +12,7 @@ import type {
   TagliaComposizione,
 } from "@/types/db";
 import { formatEUR } from "@/lib/config/plans";
-import { brandPalette } from "@/lib/brand";
+import { brandPalette, type Palette } from "@/lib/brand";
 import { resolveLayout, FONT_VARS } from "@/lib/config/layout";
 import { isServiceOpen, orariLabel, activeChiusura } from "@/lib/orari";
 import { effectiveOptions, effectiveNota } from "@/lib/menu";
@@ -223,6 +223,7 @@ export default function MenuClient({
   const saleList = tenant.sale ?? [];
   const asportoOn = Boolean(tenant.funzioni_attive?.asporto);
   const etichetteOn = Boolean(tenant.funzioni_attive?.etichette);
+  const vetrinaOn = Boolean(tenant.funzioni_attive?.vetrina);
   const fasceOrarieOn = Boolean(tenant.funzioni_attive?.fasce_orarie);
   const prezzoAsportoOn = Boolean(tenant.funzioni_attive?.prezzo_asporto);
   const deliveryOn = Boolean(tenant.funzioni_attive?.delivery);
@@ -456,6 +457,12 @@ export default function MenuClient({
     for (const i of items) if (!seen.includes(i.categoria)) seen.push(i.categoria);
     return seen;
   }, [items]);
+  // Featured products for the homepage "vetrina" carousel — in menu order,
+  // available only. Sold-out / unavailable items never reach the showcase.
+  const vetrinaItems = useMemo(
+    () => items.filter((i) => i.in_vetrina && i.disponibile && !(scorteOn && i.scorta === 0)),
+    [items, scorteOn],
+  );
   const [activeCat, setActiveCat] = useState<string>(categories[0] ?? "");
 
   const q = query.trim().toLowerCase();
@@ -1106,6 +1113,18 @@ export default function MenuClient({
             )}
           </div>
         </header>
+
+        {/* Vetrina — brand-coloured showcase carousel of featured products */}
+        {vetrinaOn && vetrinaItems.length > 0 && (
+          <VetrinaCarousel
+            slides={vetrinaItems}
+            p={p}
+            dark={dark}
+            t={t}
+            blocked={ordersBlocked}
+            onPick={tapAdd}
+          />
+        )}
 
         {/* Announcement banner (brand-coloured, dismissible in-memory) */}
         {annuncioOn && (
@@ -2081,6 +2100,168 @@ export default function MenuClient({
         </Overlay>
       )}
     </div>
+  );
+}
+
+/**
+ * Homepage showcase carousel. Brand-coloured slides (small image + title +
+ * price + an optional per-product announcement) that auto-advance and snap on
+ * swipe; tapping a slide adds the product (or opens its options) just like the
+ * menu. Pauses while the customer is interacting. Gated by the `vetrina` flag
+ * and only rendered when there is at least one featured, available product.
+ */
+function VetrinaCarousel({
+  slides,
+  p,
+  dark,
+  t,
+  blocked,
+  onPick,
+}: {
+  slides: MenuItem[];
+  p: Palette;
+  dark: boolean;
+  t: (it: string, i18n: Record<string, string> | undefined) => string;
+  blocked: boolean;
+  onPick: (item: MenuItem) => void;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
+  const [active, setActive] = useState(0);
+
+  // Auto-advance ~every 4.5s, looping; skipped while the user is interacting.
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const id = setInterval(() => {
+      const el = trackRef.current;
+      if (!el || pausedRef.current) return;
+      const w = el.clientWidth || 1;
+      const next = (Math.round(el.scrollLeft / w) + 1) % slides.length;
+      el.scrollTo({ left: next * w, behavior: "smooth" });
+    }, 4500);
+    return () => clearInterval(id);
+  }, [slides.length]);
+
+  const onScroll = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    setActive(Math.round(el.scrollLeft / (el.clientWidth || 1)));
+  };
+  const pause = () => {
+    pausedRef.current = true;
+  };
+  const resume = () => {
+    pausedRef.current = false;
+  };
+
+  return (
+    <section className="px-5 pt-3" aria-label="In vetrina">
+      <div className="mb-2 flex items-center gap-1.5">
+        <span aria-hidden style={{ color: p.brand }}>
+          ✨
+        </span>
+        <h2
+          className="font-display text-xs font-bold uppercase tracking-[0.2em]"
+          style={{ color: p.textMuted }}
+        >
+          In vetrina
+        </h2>
+      </div>
+      <div
+        ref={trackRef}
+        onScroll={onScroll}
+        onPointerDown={pause}
+        onPointerUp={resume}
+        onMouseEnter={pause}
+        onMouseLeave={resume}
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {slides.map((item) => {
+          const nome = t(item.nome, item.nome_i18n);
+          const annuncio = item.vetrina_annuncio?.trim();
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                if (!blocked) onPick(item);
+              }}
+              aria-disabled={blocked}
+              className="flex w-full shrink-0 snap-center items-stretch gap-3 overflow-hidden rounded-2xl p-3 text-left transition active:scale-[0.99]"
+              style={{
+                background: `linear-gradient(135deg, ${p.tint}, ${p.surface})`,
+                border: `1px solid ${p.surfaceBorder}`,
+                boxShadow: dark ? "none" : "0 8px 22px rgba(0,0,0,0.07)",
+              }}
+            >
+              {item.foto_url ? (
+                <Image
+                  src={item.foto_url}
+                  alt={nome}
+                  width={88}
+                  height={88}
+                  sizes="88px"
+                  className="h-[88px] w-[88px] shrink-0 rounded-xl object-cover"
+                  style={{ border: `1px solid ${p.surfaceBorder}` }}
+                />
+              ) : (
+                <div
+                  className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-xl font-display text-3xl font-bold"
+                  style={{ background: p.brand, color: p.onBrand }}
+                >
+                  {nome.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="flex min-w-0 flex-1 flex-col justify-center">
+                {annuncio && (
+                  <span
+                    className="mb-1 inline-flex w-fit max-w-full items-center truncate rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                    style={{ background: p.brand, color: p.onBrand }}
+                  >
+                    {annuncio}
+                  </span>
+                )}
+                <span
+                  className="line-clamp-2 font-display text-base font-bold leading-tight"
+                  style={{ color: p.text }}
+                >
+                  {nome}
+                </span>
+                <span className="mt-1.5 flex items-center gap-2">
+                  <span className="font-display text-lg font-bold" style={{ color: p.price }}>
+                    {formatEUR(Math.round(item.prezzo * 100))}
+                  </span>
+                  {!blocked && (
+                    <span
+                      className="ml-auto flex h-7 w-7 items-center justify-center rounded-full text-lg font-bold leading-none"
+                      style={{ background: p.accent, color: p.onAccent }}
+                      aria-hidden
+                    >
+                      +
+                    </span>
+                  )}
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      {slides.length > 1 && (
+        <div className="mt-2 flex justify-center gap-1.5">
+          {slides.map((s, i) => (
+            <span
+              key={s.id}
+              aria-hidden
+              className="h-1.5 rounded-full transition-all duration-300"
+              style={{
+                width: i === active ? 18 : 6,
+                background: i === active ? p.brand : p.surfaceBorder,
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

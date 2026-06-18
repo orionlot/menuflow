@@ -36,7 +36,8 @@ export type FeatureId =
   | "kcal"
   | "allergeni_ordine"
   | "sala_ordine"
-  | "stampa_automatica";
+  | "stampa_automatica"
+  | "vetrina";
 
 export interface FeatureDef {
   id: FeatureId;
@@ -159,6 +160,14 @@ export const FEATURES: FeatureDef[] = [
     nome: "Etichette piatti",
     descrizione:
       "Tag riutilizzabili (Vegetariano, Senza lattosio, Piccante…) mostrati sul menu pubblico.",
+    pianoMinimo: "base",
+    defaultOn: false,
+  },
+  {
+    id: "vetrina",
+    nome: "Vetrina in homepage",
+    descrizione:
+      "Carosello in cima al menu con i prodotti che scegli (del giorno, di stagione…), con annuncio personalizzabile per ciascuno.",
     pianoMinimo: "base",
     defaultOn: false,
   },
