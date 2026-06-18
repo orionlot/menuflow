@@ -219,8 +219,8 @@ export interface Ingredient {
   prezzo: number; // EUR; 0 = "incluso"
   scorta: number | null; // null = illimitato, 0 = esaurito
   unita: string | null; // display only ("porzione", "g"…)
-  peso: number | null; // grams per portion/unit (drives auto-summed dish weight)
-  kcal: number | null; // kcal per portion/unit (drives auto-summed dish calories)
+  peso: number | null; // grams of one standard portion (default recipe amount + composable portion weight)
+  kcal_per_100g: number | null; // calories per 100g (a stable nutritional constant)
   ordine: number;
 }
 /** Browser-safe ingredient (no restaurant_id). */
@@ -258,6 +258,13 @@ export interface OrderComposizione {
   prezzo: number; // unit price applied (override ?? ingredient price)
 }
 
+/** One entry in a dish's recipe: an ingredient and how many grams of it the dish
+ *  uses. `grammi` null ⇒ fall back to the ingredient's default portion (`peso`). */
+export interface RicettaVoce {
+  id: string; // ingredient id (refs public.ingredients)
+  grammi: number | null;
+}
+
 export interface MenuItem {
   id: string;
   restaurant_id: string;
@@ -274,7 +281,7 @@ export interface MenuItem {
   opzioni: ItemOption[];
   consigliato: boolean;
   scorta: number | null;
-  ingredienti: string[]; // ingredient ids for the display-only "Ingredienti" list
+  ingredienti: RicettaVoce[]; // the dish recipe: ingredient ids + grams used (drives weight/kcal)
   /** Per-item composition groups. When non-empty, this product is composable on
    *  its own (overrides the category-level Restaurant.composizione for it). The
    *  groups' `categorie` field is unused at the item level. */

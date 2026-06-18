@@ -70,7 +70,11 @@ export async function decrementIngredientStock(
           r.id as string,
           {
             categoria: r.categoria as string,
-            ingredienti: (r.ingredienti as string[] | null) ?? [],
+            // Recipe is now [{ id, grammi }] (count each ingredient as 1 unit/product
+            // unit for stock); tolerate legacy bare-id strings.
+            ingredienti: ((r.ingredienti as (string | { id: string })[] | null) ?? [])
+              .map((v) => (typeof v === "string" ? v : v?.id))
+              .filter(Boolean),
             // per-item composition groups (empty for non per-item-composable items)
             composable: Array.isArray(r.composizione) && r.composizione.length > 0,
           },

@@ -16,6 +16,7 @@ import { brandPalette } from "@/lib/brand";
 import { resolveLayout, FONT_VARS } from "@/lib/config/layout";
 import { isServiceOpen, orariLabel, activeChiusura } from "@/lib/orari";
 import { effectiveOptions, effectiveNota } from "@/lib/menu";
+import { dishNutrition as computeDishNutrition, composedNutrition, kcalDaGrammi } from "@/lib/nutrition";
 import { isMapsUrl } from "@/lib/urls";
 import HelpButton from "./HelpButton";
 import { ALLERGENI, ALLERGENI_BY_ID } from "@/lib/config/allergeni";
@@ -444,27 +445,11 @@ export default function MenuClient({
     lang !== "it" && i18n?.[lang] ? i18n[lang] : it;
   // Resolve an ingredient's name in the active language (falls back to base).
   const ingName = (ing: PublicIngredient) => t(ing.nome, ing.nome_i18n);
-  // Per-dish weight (g) / calories (kcal): the manual value on the item if set,
-  // otherwise summed from the dish's listed ingredients (null when unknown).
-  const dishNutrition = (item: MenuItem): { peso: number | null; kcal: number | null } => {
-    const sumOver = (sel: (i: PublicIngredient) => number | null) => {
-      let total = 0;
-      let any = false;
-      for (const id of item.ingredienti ?? []) {
-        const g = ingredientiById.get(id);
-        const v = g ? sel(g) : null;
-        if (v != null) {
-          total += Number(v);
-          any = true;
-        }
-      }
-      return any ? Math.round(total) : null;
-    };
-    return {
-      peso: item.peso != null ? item.peso : sumOver((i) => i.peso),
-      kcal: item.kcal != null ? item.kcal : sumOver((i) => i.kcal),
-    };
-  };
+  // Per-dish weight (g) / calories (kcal): the manual override on the item if set
+  // (exact), otherwise computed from the recipe grams × ingredient density (an
+  // estimate). See src/lib/nutrition.ts.
+  const dishNutrition = (item: MenuItem) =>
+    computeDishNutrition(item.ingredienti, (id) => ingredientiById.get(id), item.peso, item.kcal);
 
   const categories = useMemo(() => {
     const seen: string[] = [];
@@ -762,18 +747,20 @@ export default function MenuClient({
     const desc = t(item.descrizione ?? "", item.descrizione_i18n);
     const ingNames = ingredientiItemsOn
       ? (item.ingredienti ?? [])
-          .map((id) => ingredientiById.get(id))
+          .map((v) => ingredientiById.get(v.id))
           .filter((g): g is PublicIngredient => Boolean(g))
           .map((g) => ingName(g))
           .join(", ")
       : "";
-    const nutri = pesoOn || kcalOn ? dishNutrition(item) : { peso: null, kcal: null };
-    const nutriLabel = [
-      pesoOn && nutri.peso != null ? `${nutri.peso} g` : null,
-      kcalOn && nutri.kcal != null ? `${nutri.kcal} kcal` : null,
-    ]
-      .filter(Boolean)
-      .join(" · ");
+    const nutri = pesoOn || kcalOn ? dishNutrition(item) : null;
+    const nutriLabel = nutri
+      ? [
+          pesoOn && nutri.peso != null ? `${nutri.pesoStima ? "~" : ""}${nutri.peso} g` : null,
+          kcalOn && nutri.kcal != null ? `${nutri.kcalStima ? "~" : ""}${nutri.kcal} kcal` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : "";
     const recommended = Boolean(
       tenant.funzioni_attive?.piatto_consigliato && item.consigliato,
     );
@@ -2213,6 +2200,10 @@ function OptionsModal({
       .filter((x): x is OrderComposizione => x !== null),
   );
 
+  // Live weight/calories of the current composition (the dynamic "peso poke" figure).
+  const liveNutri =
+    pesoOn || kcalOn ? composedNutrition(composed, (id) => ingredientiById.get(id)) : null;
+
   const compoMissing = composizione.some((g) => groupTotal(g) < effMin(g));
   const notaMissing = Boolean(nota?.obbligatoria) && !notaText.trim();
   const missing =
@@ -2348,7 +2339,9 @@ function OptionsModal({
                           <span className="text-xs" style={{ color: p.textMuted }}>
                             {prezzo > 0 ? `+ ${formatEUR(Math.round(prezzo * 100))}` : "incluso"}
                             {pesoOn && ing.peso != null ? ` · ${ing.peso} g` : ""}
-                            {kcalOn && ing.kcal != null ? ` · ${ing.kcal} kcal` : ""}
+                            {kcalOn && kcalDaGrammi(ing.peso, ing.kcal_per_100g) != null
+                              ? ` · ${Math.round(kcalDaGrammi(ing.peso, ing.kcal_per_100g)!)} kcal`
+                              : ""}
                             {!soldOut && ing.scorta != null ? ` · ne restano ${ing.scorta}` : ""}
                           </span>
                         </span>
@@ -2411,6 +2404,16 @@ function OptionsModal({
           )}
         </div>
         <div className="border-t px-5 py-4" style={{ borderColor: p.surfaceBorder }}>
+          {liveNutri && ((pesoOn && liveNutri.peso != null) || (kcalOn && liveNutri.kcal != null)) && (
+            <p className="mb-2 text-center text-xs" style={{ color: p.textMuted }}>
+              {[
+                pesoOn && liveNutri.peso != null ? `~${liveNutri.peso} g` : null,
+                kcalOn && liveNutri.kcal != null ? `~${liveNutri.kcal} kcal` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
           <button
             onClick={() =>
               onConfirm(

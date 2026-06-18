@@ -9,7 +9,7 @@ function stubAdmin(
   menuRows: {
     id: string;
     categoria: string;
-    ingredienti: string[] | null;
+    ingredienti: (string | { id?: string | null; grammi?: number | null })[] | null;
     composizione?: unknown[];
   }[],
 ) {
@@ -227,5 +227,46 @@ describe("decrementIngredientStock — ingredienti (simple)", () => {
       [],
     );
     expect(rpcCalls).toHaveLength(0);
+  });
+
+  // The recipe is stored as [{ id, grammi }] objects after migration 0035 — this
+  // is the LIVE production shape; the bare-string cases above only exercise the
+  // legacy-tolerance branch.
+  it("consumes the new {id, grammi} recipe shape, one unit per product unit (grams don't affect stock)", async () => {
+    const { admin, consumed } = stubAdmin([
+      {
+        id: "pizza",
+        categoria: "Pizze",
+        ingredienti: [
+          { id: "pomodoro", grammi: 80 },
+          { id: "mozzarella", grammi: null },
+        ],
+      },
+    ]);
+    await decrementIngredientStock(
+      admin,
+      [line({ item_id: "pizza", qta: 3 })],
+      { ingredienti: true },
+      [],
+    );
+    expect(consumed()).toEqual({ pomodoro: 3, mozzarella: 3 });
+  });
+
+  it("drops a malformed recipe entry with no id (no RPC with an undefined id)", async () => {
+    const { admin, consumed, rpcCalls } = stubAdmin([
+      {
+        id: "pizza",
+        categoria: "Pizze",
+        ingredienti: [{ id: "pomodoro", grammi: 80 }, { grammi: 50 }, { id: null }],
+      },
+    ]);
+    await decrementIngredientStock(
+      admin,
+      [line({ item_id: "pizza", qta: 2 })],
+      { ingredienti: true },
+      [],
+    );
+    expect(consumed()).toEqual({ pomodoro: 2 });
+    expect(rpcCalls.every((c) => typeof c.p_id === "string" && c.p_id)).toBe(true);
   });
 });

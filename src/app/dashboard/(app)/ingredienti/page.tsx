@@ -44,7 +44,7 @@ export default async function IngredientiPage() {
 
   const { data: ingRows } = await supabase
     .from("ingredients")
-    .select("id, nome, nome_i18n, categoria, prezzo, scorta, unita, peso, kcal, ordine")
+    .select("id, nome, nome_i18n, categoria, prezzo, scorta, unita, peso, kcal_per_100g, ordine")
     .eq("restaurant_id", restaurant.id)
     .order("ordine", { ascending: true });
   const ingredienti = ((ingRows as PublicIngredient[]) ?? []).map((i) => ({

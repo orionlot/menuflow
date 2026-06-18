@@ -29,7 +29,7 @@ type IngredientInput = {
   scorta?: number | null;
   unita?: string | null;
   peso?: number | null;
-  kcal?: number | null;
+  kcal_per_100g?: number | null;
   ordine?: number;
 };
 
@@ -139,7 +139,7 @@ export default function IngredientsTable({
       scorta: ing.scorta,
       unita: ing.unita,
       peso: ing.peso,
-      kcal: ing.kcal,
+      kcal_per_100g: ing.kcal_per_100g,
       ordine: ing.ordine,
     };
   }
@@ -422,20 +422,21 @@ function Row({
         )}
         {(pesoOn || kcalOn) && (
           <div className="mt-1 flex gap-1.5">
-            {pesoOn && (
+            {(pesoOn || kcalOn) && (
               <span className="relative flex-1">
                 <input
                   type="number"
                   min="0"
                   inputMode="numeric"
                   value={ing.peso ?? ""}
-                  placeholder="Peso"
+                  placeholder="Porzione"
                   onChange={(e) => onPatch({ peso: e.target.value === "" ? null : Math.max(0, parseInt(e.target.value, 10) || 0) })}
                   onBlur={onSave}
-                  className={`${inputCls} py-1 pr-6 text-xs`}
-                  aria-label="Peso (g)"
+                  className={`${inputCls} py-1 pr-9 text-xs`}
+                  aria-label="Grammi per porzione"
+                  title="Grammi di una porzione standard di questo ingrediente (usata come quantità predefinita nelle ricette)."
                 />
-                <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-neutral-400">g</span>
+                <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-neutral-400">g/porz</span>
               </span>
             )}
             {kcalOn && (
@@ -444,14 +445,15 @@ function Row({
                   type="number"
                   min="0"
                   inputMode="numeric"
-                  value={ing.kcal ?? ""}
-                  placeholder="Kcal"
-                  onChange={(e) => onPatch({ kcal: e.target.value === "" ? null : Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                  value={ing.kcal_per_100g ?? ""}
+                  placeholder="Calorie"
+                  onChange={(e) => onPatch({ kcal_per_100g: e.target.value === "" ? null : Math.max(0, parseInt(e.target.value, 10) || 0) })}
                   onBlur={onSave}
-                  className={`${inputCls} py-1 pr-9 text-xs`}
-                  aria-label="Calorie (kcal)"
+                  className={`${inputCls} py-1 pr-12 text-xs`}
+                  aria-label="Calorie per 100 g (kcal/100g)"
+                  title="Calorie per 100 g: il valore nutrizionale dell'ingrediente. Le kcal del piatto si calcolano dai grammi usati nella ricetta."
                 />
-                <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-neutral-400">kcal</span>
+                <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-neutral-400">kcal/100g</span>
               </span>
             )}
           </div>

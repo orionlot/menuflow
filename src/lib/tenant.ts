@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { funzioniAttive } from "@/lib/config/features";
+import { normalizeRicetta } from "@/lib/menu";
 import type {
   MenuItem,
   PlanId,
@@ -89,7 +90,9 @@ export async function getMenuItems(restaurantId: string): Promise<MenuItem[]> {
     .order("categoria", { ascending: true })
     .order("ordine", { ascending: true })
     .order("created_at", { ascending: true });
-  return (data as MenuItem[]) ?? [];
+  // Normalize the recipe shape at the read boundary so legacy/out-of-band rows
+  // (bare-id strings) never silently lose ingredient names + nutrition.
+  return ((data as MenuItem[]) ?? []).map((it) => ({ ...it, ingredienti: normalizeRicetta(it.ingredienti) }));
 }
 
 /** Public ingredient list (with live stock) for composable categories. */
@@ -99,7 +102,7 @@ export async function getPublicIngredients(
   const admin = createAdminClient();
   const { data } = await admin
     .from("ingredients")
-    .select("id, nome, nome_i18n, categoria, prezzo, scorta, unita, peso, kcal, ordine")
+    .select("id, nome, nome_i18n, categoria, prezzo, scorta, unita, peso, kcal_per_100g, ordine")
     .eq("restaurant_id", restaurantId)
     .order("ordine", { ascending: true });
   return ((data as PublicIngredient[]) ?? []).map((i) => ({

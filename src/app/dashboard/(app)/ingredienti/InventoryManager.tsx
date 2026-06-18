@@ -16,7 +16,7 @@ type IngredientInput = {
   scorta?: number | null;
   unita?: string | null;
   peso?: number | null;
-  kcal?: number | null;
+  kcal_per_100g?: number | null;
   ordine?: number;
 };
 

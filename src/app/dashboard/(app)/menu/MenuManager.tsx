@@ -1141,43 +1141,79 @@ function QuickEditDrawer({
             </label>
           )}
 
-          {/* Ingredients (toggleable): tick from the ingredient list → comma preview */}
+          {/* Ricetta (toggleable): tick ingredients + set grams → drives weight/kcal */}
           {ingredientiOn &&
             (ingredientiList.length > 0 ? (
               <div>
                 <span className="mb-1.5 block text-xs font-medium text-neutral-500">
-                  Ingredienti {item.ingredienti?.length ? `(${item.ingredienti.length})` : ""}
+                  Ricetta {item.ingredienti?.length ? `(${item.ingredienti.length})` : ""}
                 </span>
-                <div className="grid grid-cols-2 gap-1.5">
+                {(pesoOn || kcalOn) && (
+                  <p className="mb-1.5 text-[11px] text-neutral-400">
+                    Indica i grammi usati di ogni ingrediente: peso e calorie del piatto si
+                    calcolano da qui. Vuoto = porzione predefinita dell&apos;ingrediente.
+                  </p>
+                )}
+                <div className="space-y-1">
                   {ingredientiList.map((ing) => {
-                    const on = (item.ingredienti ?? []).includes(ing.id);
+                    const voce = (item.ingredienti ?? []).find((v) => v.id === ing.id);
+                    const on = Boolean(voce);
                     return (
-                      <label
-                        key={ing.id}
-                        className="flex items-center gap-2 text-sm text-neutral-700"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={on}
-                          onChange={() => {
-                            const cur = item.ingredienti ?? [];
-                            const next = on
-                              ? cur.filter((x) => x !== ing.id)
-                              : [...cur, ing.id];
-                            h.save(item.id, { ingredienti: next });
-                          }}
-                          className="h-4 w-4 rounded border-neutral-300 accent-[var(--brand)]"
-                        />
-                        {ing.nome}
-                      </label>
+                      <div key={ing.id} className="flex items-center gap-2">
+                        <label className="flex flex-1 items-center gap-2 text-sm text-neutral-700">
+                          <input
+                            type="checkbox"
+                            checked={on}
+                            onChange={() => {
+                              const cur = item.ingredienti ?? [];
+                              const next = on
+                                ? cur.filter((v) => v.id !== ing.id)
+                                : [...cur, { id: ing.id, grammi: null }];
+                              h.save(item.id, { ingredienti: next });
+                            }}
+                            className="h-4 w-4 rounded border-neutral-300 accent-[var(--brand)]"
+                          />
+                          {ing.nome}
+                        </label>
+                        {on && (pesoOn || kcalOn) && (
+                          <span className="relative w-24 shrink-0">
+                            <input
+                              type="number"
+                              min="0"
+                              inputMode="numeric"
+                              defaultValue={voce?.grammi ?? ""}
+                              placeholder={ing.peso != null ? String(ing.peso) : "g"}
+                              onBlur={(e) => {
+                                const raw = e.target.value.trim();
+                                const grammi = raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0);
+                                if ((voce?.grammi ?? null) === grammi) return;
+                                const next = (item.ingredienti ?? []).map((v) =>
+                                  v.id === ing.id ? { ...v, grammi } : v,
+                                );
+                                h.save(item.id, { ingredienti: next });
+                              }}
+                              className="w-full rounded-md border border-neutral-300 px-2 py-1 pr-6 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500"
+                              aria-label={`Grammi di ${ing.nome}`}
+                            />
+                            <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-neutral-400">
+                              g
+                            </span>
+                          </span>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
                 {(item.ingredienti ?? []).length > 0 && (
                   <p className="mt-2 rounded-md bg-neutral-50 px-2 py-1.5 text-sm text-neutral-600">
-                    {ingredientiList
-                      .filter((ing) => (item.ingredienti ?? []).includes(ing.id))
-                      .map((ing) => ing.nome)
+                    {(item.ingredienti ?? [])
+                      .map((v) => {
+                        const ing = ingredientiList.find((i) => i.id === v.id);
+                        if (!ing) return null;
+                        const g = v.grammi != null ? v.grammi : ing.peso;
+                        return g != null && (pesoOn || kcalOn) ? `${ing.nome} ${g}g` : ing.nome;
+                      })
+                      .filter(Boolean)
                       .join(", ")}
                   </p>
                 )}

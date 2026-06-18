@@ -298,7 +298,7 @@ export async function upsertIngredient(input: {
   scorta?: number | null;
   unita?: string | null;
   peso?: number | null;
-  kcal?: number | null;
+  kcal_per_100g?: number | null;
   ordine?: number;
 }): Promise<PublicIngredient> {
   const restaurantId = await ownerRestaurantId();
@@ -314,10 +314,10 @@ export async function upsertIngredient(input: {
       input.scorta == null ? null : Math.max(0, Math.floor(Number(input.scorta) || 0)),
     unita: sanitizeUnita(input.unita),
     peso: clampNutri(input.peso),
-    kcal: clampNutri(input.kcal),
+    kcal_per_100g: clampNutri(input.kcal_per_100g),
     ordine: Math.floor(Number(input.ordine) || 0),
   };
-  const cols = "id, nome, nome_i18n, categoria, prezzo, scorta, unita, peso, kcal, ordine";
+  const cols = "id, nome, nome_i18n, categoria, prezzo, scorta, unita, peso, kcal_per_100g, ordine";
   if (input.id) {
     const { data, error } = await admin
       .from("ingredients")

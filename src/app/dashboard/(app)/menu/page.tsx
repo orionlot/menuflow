@@ -4,6 +4,7 @@ import type { MenuItem, PublicIngredient } from "@/types/db";
 import MenuManager from "./MenuManager";
 import { isFeatureOn } from "@/lib/config/features";
 import { getPopularItemIds } from "@/lib/tenant";
+import { normalizeRicetta } from "@/lib/menu";
 import {
   createItem,
   updateItem,
@@ -39,7 +40,7 @@ export default async function MenuPage() {
   const { data: ingRows } = ingredientiOn || componibiliOn
     ? await supabase
         .from("ingredients")
-        .select("id, nome, nome_i18n, categoria, prezzo, scorta, unita, peso, kcal, ordine")
+        .select("id, nome, nome_i18n, categoria, prezzo, scorta, unita, peso, kcal_per_100g, ordine")
         .eq("restaurant_id", restaurant.id)
         .order("ordine", { ascending: true })
     : { data: [] };
@@ -57,7 +58,7 @@ export default async function MenuPage() {
         multilingua: restaurant.multilingua,
         lingue: restaurant.lingue,
       }}
-      initialItems={(data as MenuItem[]) ?? []}
+      initialItems={((data as MenuItem[]) ?? []).map((it) => ({ ...it, ingredienti: normalizeRicetta(it.ingredienti) }))}
       initialAggiunte={restaurant.aggiunte ?? []}
       initialNoteConfig={restaurant.note_config ?? []}
       initialEtichette={restaurant.etichette ?? []}

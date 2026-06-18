@@ -37,8 +37,14 @@ export default async function StampaPage({ params }: { params: Promise<{ id: str
       .select("id, descrizione, ingredienti")
       .eq("restaurant_id", restaurant.id)
       .in("id", itemIds);
-    for (const m of (mi ?? []) as { id: string; descrizione: string | null; ingredienti: string[] }[]) {
-      menuById.set(m.id, { descrizione: m.descrizione, ingredienti: m.ingredienti ?? [] });
+    for (const m of (mi ?? []) as {
+      id: string;
+      descrizione: string | null;
+      ingredienti: (string | { id: string })[] | null;
+    }[]) {
+      // The recipe is now [{ id, grammi }]; tolerate legacy bare-id strings too.
+      const ids = (m.ingredienti ?? []).map((v) => (typeof v === "string" ? v : v.id)).filter(Boolean);
+      menuById.set(m.id, { descrizione: m.descrizione, ingredienti: ids });
     }
     if (ingredientiOn) {
       const ingIds = [...new Set([...menuById.values()].flatMap((m) => m.ingredienti))];

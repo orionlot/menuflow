@@ -8,6 +8,7 @@ import type {
   MenuItem,
   NoteConfig,
   Reparto,
+  RicettaVoce,
   Sala,
   SalaTavolo,
   TagliaComposizione,
@@ -79,7 +80,7 @@ export interface ItemPatch {
   opzioni?: ItemOption[];
   consigliato?: boolean;
   scorta?: number | null;
-  ingredienti?: string[]; // ingredient ids (refs public.ingredients), display-only list
+  ingredienti?: RicettaVoce[]; // the dish recipe: ingredient ids + grams used
   composizione?: ComposizioneGruppo[]; // per-item composition groups (category-less)
   composizione_taglie?: TagliaComposizione[]; // per-item size variants (category-less)
   nota?: ItemNota; // per-product customer-note override
@@ -150,6 +151,28 @@ export function sanitizeCategoriaTempi(raw: unknown): Record<string, number> {
   return out;
 }
 
+/** Coerce a menu item's `ingredienti` value READ FROM THE DB into the canonical
+ *  RicettaVoce[] shape. Tolerates legacy bare-id strings (pre-0035 rows, seeds,
+ *  or out-of-band writes) and drops malformed entries. Apply at every read
+ *  boundary that hands menu items to a display surface, so the public menu and
+ *  dashboard never silently lose ingredient names / nutrition on legacy data. */
+export function normalizeRicetta(raw: unknown): RicettaVoce[] {
+  if (!Array.isArray(raw)) return [];
+  const out: RicettaVoce[] = [];
+  for (const v of raw) {
+    if (typeof v === "string") {
+      const id = v.trim();
+      if (id) out.push({ id, grammi: null });
+    } else if (v && typeof v === "object") {
+      const o = v as Partial<RicettaVoce>;
+      const id = typeof o.id === "string" ? o.id.trim() : "";
+      if (id)
+        out.push({ id, grammi: typeof o.grammi === "number" && Number.isFinite(o.grammi) ? o.grammi : null });
+    }
+  }
+  return out;
+}
+
 export function sanitizeItemPatch(patch: ItemPatch): ItemPatch {
   const out: ItemPatch = {};
   if (typeof patch.nome === "string") out.nome = patch.nome.trim().slice(0, 120);
@@ -176,10 +199,23 @@ export function sanitizeItemPatch(patch: ItemPatch): ItemPatch {
     out.scorta =
       patch.scorta == null ? null : Math.max(0, Math.floor(Number(patch.scorta) || 0));
   if (Array.isArray(patch.ingredienti))
-    out.ingredienti = patch.ingredienti
-      .filter((x): x is string => typeof x === "string")
-      .map((x) => x.trim().slice(0, 40))
-      .filter(Boolean)
+    out.ingredienti = (patch.ingredienti as unknown[])
+      .map((v): RicettaVoce | null => {
+        // Accept both the new {id, grammi} shape and a legacy bare id string.
+        if (typeof v === "string") {
+          const id = v.trim().slice(0, 40);
+          return id ? { id, grammi: null } : null;
+        }
+        const o = (v ?? {}) as Partial<RicettaVoce>;
+        const id = String(o.id ?? "").trim().slice(0, 40);
+        if (!id) return null;
+        // Non-numeric/NaN grammi → null (fall back to the ingredient's default
+        // portion), NOT 0 (which would mean "explicitly zero grams").
+        const n = Number(o.grammi);
+        const grammi = o.grammi == null || !Number.isFinite(n) ? null : Math.max(0, Math.min(100000, Math.round(n)));
+        return { id, grammi };
+      })
+      .filter((v): v is RicettaVoce => v !== null)
       .slice(0, 40);
   if (Array.isArray(patch.composizione))
     out.composizione = sanitizeComposizione(patch.composizione, { requireCategorie: false });

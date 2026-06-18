@@ -92,17 +92,18 @@ update public.restaurants
       funzionalita_admin = funzionalita_admin || '{"componibili": true}'::jsonb
   where slug = 'pizzeria-mario';
 
-insert into public.ingredients (id, restaurant_id, nome, prezzo, scorta, unita, ordine) values
-  ('8abd81c1-e90d-413b-ac75-8e0acd84d425', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Riso sushi',        0,   null, 'porzione', 1),
-  ('ddc5c518-cc01-42ca-928e-d2d38aa0f329', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Riso venere',       0.5, null, 'porzione', 2),
-  ('f03ace0b-9d49-456a-980a-d890221775e8', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Tonno',             2,   3,    'porzione', 3),
-  ('af8bdd67-c550-4083-9364-708cacf7feaa', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Salmone',           1.5, 6,    'porzione', 4),
-  ('47723a14-65fc-4bf3-a226-46935bd0f137', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Tofu',              1,   null, 'porzione', 5),
-  ('b65acabd-c5dc-4dc0-8236-0c485a4b127c', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Avocado',           1,   8,    'porzione', 6),
-  ('f9233f98-9912-42a3-a683-81610f5a0752', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Edamame',           0,   null, 'porzione', 7),
-  ('d35c4588-d332-4016-8afa-f02036b3ae18', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Mango',             0.5, 5,    'porzione', 8),
-  ('016c7b50-3f26-4d30-a08e-beda5027e64a', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Salsa di soia',     0,   null, 'porzione', 9),
-  ('f368ea8b-89b8-404c-a63a-015e8d60ecc9', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Maionese piccante', 0,   null, 'porzione', 10)
+-- peso = grams of one standard portion; kcal_per_100g = nutritional density.
+insert into public.ingredients (id, restaurant_id, nome, prezzo, scorta, unita, peso, kcal_per_100g, ordine) values
+  ('8abd81c1-e90d-413b-ac75-8e0acd84d425', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Riso sushi',        0,   null, 'porzione', 150, 130, 1),
+  ('ddc5c518-cc01-42ca-928e-d2d38aa0f329', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Riso venere',       0.5, null, 'porzione', 150, 130, 2),
+  ('f03ace0b-9d49-456a-980a-d890221775e8', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Tonno',             2,   3,    'porzione',  60, 144, 3),
+  ('af8bdd67-c550-4083-9364-708cacf7feaa', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Salmone',           1.5, 6,    'porzione',  60, 208, 4),
+  ('47723a14-65fc-4bf3-a226-46935bd0f137', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Tofu',              1,   null, 'porzione',  60,  76, 5),
+  ('b65acabd-c5dc-4dc0-8236-0c485a4b127c', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Avocado',           1,   8,    'porzione',  50, 160, 6),
+  ('f9233f98-9912-42a3-a683-81610f5a0752', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Edamame',           0,   null, 'porzione',  40, 121, 7),
+  ('d35c4588-d332-4016-8afa-f02036b3ae18', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Mango',             0.5, 5,    'porzione',  40,  60, 8),
+  ('016c7b50-3f26-4d30-a08e-beda5027e64a', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Salsa di soia',     0,   null, 'porzione',  15,  53, 9),
+  ('f368ea8b-89b8-404c-a63a-015e8d60ecc9', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Maionese piccante', 0,   null, 'porzione',  20, 680, 10)
 on conflict (id) do nothing;
 
 insert into public.menu_items (id, restaurant_id, categoria, nome, descrizione, prezzo, disponibile, ordine, foto_url) values
@@ -145,19 +146,27 @@ where slug = 'pizzeria-mario';
 -- Mozzarella tracciati; Basilico illimitato per mostrare che gli ingredienti
 -- senza scorta vengono ignorati). "ingredienti" è una funzione base: basta
 -- l'interruttore del ristoratore.
+-- "ingredienti" (ricetta) + display di peso/calorie sono funzioni base: bastano
+-- gli interruttori del ristoratore.
 update public.restaurants
-  set funzionalita = funzionalita || '{"ingredienti": true}'::jsonb
+  set funzionalita = funzionalita || '{"ingredienti": true, "peso": true, "kcal": true}'::jsonb
   where slug = 'pizzeria-mario';
 
-insert into public.ingredients (id, restaurant_id, nome, prezzo, scorta, unita, ordine) values
-  ('51fed758-8178-45d5-9c1c-15a9f35aacc1', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Pomodoro',   0, 40,   null, 21),
-  ('552164b0-6a9a-4774-8df2-0cdcca13f8b3', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Mozzarella', 0, 30,   null, 22),
-  ('adafc57b-d4da-4b8d-b582-d0f0b6649e81', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Basilico',   0, null, null, 23)
+insert into public.ingredients (id, restaurant_id, nome, prezzo, scorta, unita, peso, kcal_per_100g, ordine) values
+  ('51fed758-8178-45d5-9c1c-15a9f35aacc1', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Pomodoro',   0, 40,    null,  80,  18, 21),
+  ('552164b0-6a9a-4774-8df2-0cdcca13f8b3', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Mozzarella', 0, 30,    null, 100, 280, 22),
+  ('adafc57b-d4da-4b8d-b582-d0f0b6649e81', '700df593-7de9-4ec8-8e5d-4164e6fdc68c', 'Basilico',   0, null,  null,   5,  23, 23)
 on conflict (id) do nothing;
 
+-- Recipe shape: [{ id, grammi }] (grammi null ⇒ usa la porzione di default
+-- dell'ingrediente). Margherita: pomodoro 80g + mozzarella 100g + basilico 5g
+-- → ~185 g · ~296 kcal in automatico sul menu pubblico.
 update public.menu_items
-  set ingredienti =
-    '["51fed758-8178-45d5-9c1c-15a9f35aacc1","552164b0-6a9a-4774-8df2-0cdcca13f8b3","adafc57b-d4da-4b8d-b582-d0f0b6649e81"]'::jsonb
+  set ingredienti = '[
+    {"id":"51fed758-8178-45d5-9c1c-15a9f35aacc1","grammi":null},
+    {"id":"552164b0-6a9a-4774-8df2-0cdcca13f8b3","grammi":null},
+    {"id":"adafc57b-d4da-4b8d-b582-d0f0b6649e81","grammi":null}
+  ]'::jsonb
   where restaurant_id = '700df593-7de9-4ec8-8e5d-4164e6fdc68c' and nome = 'Margherita';
 
 -- ───────────── Demo: scorte per-prodotto (anche prodotti semplici) ─────────────
