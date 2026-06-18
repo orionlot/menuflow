@@ -1146,6 +1146,7 @@ export default function MenuClient({
             dark={dark}
             t={t}
             blocked={ordersBlocked}
+            radius={radius}
             onPick={tapAdd}
           />
         )}
@@ -2147,6 +2148,7 @@ function VetrinaCarousel({
   dark,
   t,
   blocked,
+  radius,
   onPick,
 }: {
   slides: MenuItem[];
@@ -2154,8 +2156,11 @@ function VetrinaCarousel({
   dark: boolean;
   t: (it: string, i18n: Record<string, string> | undefined) => string;
   blocked: boolean;
+  radius: number;
   onPick: (item: MenuItem) => void;
 }) {
+  // Match the menu cards' photo rounding so a slide reads as the same component.
+  const photoR = Math.max(radius - 4, 4);
   const trackRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(false);
   const [active, setActive] = useState(0);
@@ -2205,6 +2210,15 @@ function VetrinaCarousel({
   const resume = () => {
     pausedRef.current = false;
   };
+  // Arrow navigation: scroll to the prev/next slide (wraps around).
+  const go = (dir: 1 | -1) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const next = (nearestIndex(el) + dir + slides.length) % slides.length;
+    const base = (el.children[0] as HTMLElement | undefined)?.offsetLeft ?? 0;
+    const kid = el.children[next] as HTMLElement | undefined;
+    el.scrollTo({ left: kid ? kid.offsetLeft - base : 0, behavior: "smooth" });
+  };
 
   return (
     <section className="px-5 pt-3" aria-label="In vetrina">
@@ -2219,85 +2233,112 @@ function VetrinaCarousel({
           In vetrina
         </h2>
       </div>
-      <div
-        ref={trackRef}
-        onScroll={onScroll}
-        onPointerDown={pause}
-        onPointerUp={resume}
-        onPointerCancel={resume}
-        onMouseEnter={pause}
-        onMouseLeave={resume}
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {slides.map((item) => {
-          const nome = t(item.nome, item.nome_i18n);
-          const annuncio = item.vetrina_annuncio?.trim();
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                if (!blocked) onPick(item);
-              }}
-              aria-disabled={blocked}
-              className="flex w-full shrink-0 snap-center items-stretch gap-3 overflow-hidden rounded-2xl p-3 text-left transition active:scale-[0.99]"
-              style={{
-                background: `linear-gradient(135deg, ${p.tint}, ${p.surface})`,
-                border: `1px solid ${p.surfaceBorder}`,
-                boxShadow: dark ? "none" : "0 8px 22px rgba(0,0,0,0.07)",
-              }}
-            >
-              {item.foto_url ? (
-                <Image
-                  src={item.foto_url}
-                  alt={nome}
-                  width={88}
-                  height={88}
-                  sizes="88px"
-                  className="h-[88px] w-[88px] shrink-0 rounded-xl object-cover"
-                  style={{ border: `1px solid ${p.surfaceBorder}` }}
-                />
-              ) : (
-                <div
-                  className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-xl font-display text-3xl font-bold"
-                  style={{ background: p.brand, color: p.onBrand }}
-                >
-                  {nome.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div className="flex min-w-0 flex-1 flex-col justify-center">
-                {annuncio && (
-                  <span
-                    className="mb-1 inline-flex w-fit max-w-full items-center truncate rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-                    style={{ background: p.brand, color: p.onBrand }}
+      <div className="relative">
+        <div
+          ref={trackRef}
+          onScroll={onScroll}
+          onPointerDown={pause}
+          onPointerUp={resume}
+          onPointerCancel={resume}
+          onMouseEnter={pause}
+          onMouseLeave={resume}
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {slides.map((item) => {
+            const nome = t(item.nome, item.nome_i18n);
+            const annuncio = item.vetrina_annuncio?.trim();
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  if (!blocked) onPick(item);
+                }}
+                aria-disabled={blocked}
+                className="flex w-full shrink-0 snap-center items-stretch gap-3.5 p-3.5 text-left transition active:opacity-90"
+                style={{
+                  background: p.surface,
+                  border: `1px solid ${p.surfaceBorder}`,
+                  borderRadius: radius,
+                  boxShadow: dark ? "none" : "0 1px 3px rgba(0,0,0,0.05)",
+                }}
+              >
+                {item.foto_url ? (
+                  <Image
+                    src={item.foto_url}
+                    alt={nome}
+                    width={120}
+                    height={120}
+                    sizes="96px"
+                    className="shrink-0 self-start object-cover"
+                    style={{ width: 96, height: 96, borderRadius: photoR }}
+                  />
+                ) : (
+                  <div
+                    className="flex shrink-0 self-start items-center justify-center font-display text-3xl font-bold"
+                    style={{ width: 96, height: 96, background: p.tint, color: p.brand, borderRadius: photoR }}
                   >
-                    {annuncio}
-                  </span>
+                    {nome.charAt(0).toUpperCase()}
+                  </div>
                 )}
-                <span
-                  className="line-clamp-2 font-display text-base font-bold leading-tight"
-                  style={{ color: p.text }}
-                >
-                  {nome}
-                </span>
-                <span className="mt-1.5 flex items-center gap-2">
-                  <span className="font-display text-lg font-bold" style={{ color: p.price }}>
-                    {formatEUR(Math.round(item.prezzo * 100))}
-                  </span>
-                  {!blocked && (
-                    <span
-                      className="ml-auto flex h-7 w-7 items-center justify-center rounded-full text-lg font-bold leading-none"
-                      style={{ background: p.accent, color: p.onAccent }}
-                      aria-hidden
-                    >
-                      +
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <h3 className="min-w-0 font-display text-[1.1rem] font-semibold leading-tight" style={{ color: p.text }}>
+                    {nome}
+                  </h3>
+                  {annuncio && (
+                    <span className="mt-1 truncate text-[11px] font-semibold" style={{ color: p.brand }}>
+                      {annuncio}
                     </span>
                   )}
-                </span>
-              </div>
+                  <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+                    <span className="font-display text-lg font-bold" style={{ color: p.price }}>
+                      {formatEUR(Math.round(item.prezzo * 100))}
+                    </span>
+                    {!blocked && (
+                      <span
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-xl font-bold leading-none"
+                        style={{ background: p.accent, color: p.onAccent }}
+                        aria-hidden
+                      >
+                        +
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        {slides.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => go(-1)}
+              aria-label="Prodotto precedente"
+              className="absolute left-1 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-lg leading-none shadow-sm backdrop-blur transition active:scale-90"
+              style={{
+                background: dark ? "rgba(20,23,28,0.78)" : "rgba(255,255,255,0.9)",
+                color: p.text,
+                border: `1px solid ${p.surfaceBorder}`,
+              }}
+            >
+              ‹
             </button>
-          );
-        })}
+            <button
+              type="button"
+              onClick={() => go(1)}
+              aria-label="Prodotto successivo"
+              className="absolute right-1 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-lg leading-none shadow-sm backdrop-blur transition active:scale-90"
+              style={{
+                background: dark ? "rgba(20,23,28,0.78)" : "rgba(255,255,255,0.9)",
+                color: p.text,
+                border: `1px solid ${p.surfaceBorder}`,
+              }}
+            >
+              ›
+            </button>
+          </>
+        )}
       </div>
       {slides.length > 1 && (
         <div className="mt-2 flex justify-center gap-1.5">
