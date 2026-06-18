@@ -457,12 +457,6 @@ export default function MenuClient({
     for (const i of items) if (!seen.includes(i.categoria)) seen.push(i.categoria);
     return seen;
   }, [items]);
-  // Featured products for the homepage "vetrina" carousel — in menu order,
-  // available only. Sold-out / unavailable items never reach the showcase.
-  const vetrinaItems = useMemo(
-    () => items.filter((i) => i.in_vetrina && i.disponibile && !(scorteOn && i.scorta === 0)),
-    [items, scorteOn],
-  );
   const [activeCat, setActiveCat] = useState<string>(categories[0] ?? "");
 
   const q = query.trim().toLowerCase();
@@ -534,6 +528,19 @@ export default function MenuClient({
   const qtyForItem = (id: string) =>
     lines.filter((l) => l.item_id === id).reduce((s, l) => s + l.qta, 0);
 
+  // Units of a menu item already in the cart (summed over all its option-variant
+  // lines, which share the same stock pool). Optionally excludes one line key.
+  const cartUnits = (c: Record<string, CartLine>, itemId: string, exceptKey?: string) => {
+    let n = 0;
+    for (const k in c) if (c[k].item_id === itemId && k !== exceptKey) n += c[k].qta;
+    return n;
+  };
+  // Max total units a customer may order of an item: its remaining stock when the
+  // "scorte" feature is on (capped at 99), otherwise just 99. Mirrors the
+  // server-side guard in pricing-core so the UI can't build a cart that submit rejects.
+  const stockCapFor = (item?: MenuItem) =>
+    item && scorteOn && item.scorta != null ? Math.min(99, item.scorta) : 99;
+
   function addLine(
     item: MenuItem,
     chosen: Chosen[],
@@ -550,6 +557,8 @@ export default function MenuClient({
     const key = lineKey(item.id, chosen, composizione, taglia?.id, cleanNota);
     setCart((c) => {
       const existing = c[key];
+      // Don't let the item's total units exceed its stock (when tracked).
+      if (cartUnits(c, item.id) >= stockCapFor(item)) return c;
       return {
         ...c,
         [key]: existing
@@ -579,7 +588,13 @@ export default function MenuClient({
     else addLine(item, []);
   }
   const setQty = (key: string, q: number) =>
-    setCart((c) => ({ ...c, [key]: { ...c[key], qta: Math.max(0, Math.min(99, q)) } }));
+    setCart((c) => {
+      const line = c[key];
+      if (!line) return c;
+      // Cap so this line + the item's other lines never exceed its stock.
+      const max = Math.max(0, stockCapFor(itemById.get(line.item_id)) - cartUnits(c, line.item_id, key));
+      return { ...c, [key]: { ...line, qta: Math.max(0, Math.min(max, q)) } };
+    });
 
   // Capture the device's current position and turn it into a Google Maps link
   // the restaurateur can open. Works best on mobile (GPS); needs user consent.
@@ -737,6 +752,14 @@ export default function MenuClient({
     return mealCena ? item.solo_cena : item.solo_pranzo;
   };
 
+  // Featured products for the homepage "vetrina" carousel — available, in stock,
+  // and within their current meal band (same visibility rules as a menu row).
+  const vetrinaItems = vetrinaOn
+    ? items.filter(
+        (i) => i.in_vetrina && i.disponibile && !(scorteOn && i.scorta === 0) && bandOk(i),
+      )
+    : [];
+
   const renderItem = (item: MenuItem, idx: number) => {
     if (!bandOk(item)) return null;
     const sold = !item.disponibile || (scorteOn && item.scorta === 0);
@@ -795,6 +818,7 @@ export default function MenuClient({
           fg={p.onAccent}
           label={`Aggiungi un ${item.nome}`}
           onClick={() => addLine(item, [])}
+          disabled={qty >= stockCapFor(item)}
         >
           +
         </Round>
@@ -946,7 +970,7 @@ export default function MenuClient({
               )}
 
               {nutriLabel && (
-                <p className="mt-1.5 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums"
+                <p className="mt-1.5 inline-flex w-fit max-w-full self-start items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums"
                   style={{ background: p.tint, color: p.text }}>
                   {nutriLabel}
                 </p>
@@ -1636,7 +1660,14 @@ export default function MenuClient({
                     <div className="flex items-center gap-2 rounded-full px-1.5 py-1" style={{ background: p.tint }}>
                       <Round bg={p.brand} fg={p.onBrand} onClick={() => setQty(l.key, l.qta - 1)}>−</Round>
                       <span className="w-4 text-center text-sm font-bold">{l.qta}</span>
-                      <Round bg={p.brand} fg={p.onBrand} onClick={() => setQty(l.key, l.qta + 1)}>+</Round>
+                      <Round
+                        bg={p.brand}
+                        fg={p.onBrand}
+                        onClick={() => setQty(l.key, l.qta + 1)}
+                        disabled={cartUnits(cart, l.item_id) >= stockCapFor(itemById.get(l.item_id))}
+                      >
+                        +
+                      </Round>
                     </div>
                     <div className="min-w-0 flex-1">
                       <span className="block truncate">
@@ -2129,23 +2160,44 @@ function VetrinaCarousel({
   const pausedRef = useRef(false);
   const [active, setActive] = useState(0);
 
-  // Auto-advance ~every 4.5s, looping; skipped while the user is interacting.
+  // Index of the slide nearest the current scroll position, measured from the
+  // real child offsets — so the inter-slide gap never skews the math.
+  const nearestIndex = (el: HTMLDivElement) => {
+    const kids = el.children;
+    if (kids.length === 0) return 0;
+    const base = (kids[0] as HTMLElement).offsetLeft;
+    const x = el.scrollLeft;
+    let best = 0;
+    let bestD = Infinity;
+    for (let i = 0; i < kids.length; i++) {
+      const d = Math.abs((kids[i] as HTMLElement).offsetLeft - base - x);
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    }
+    return best;
+  };
+
+  // Auto-advance ~every 4.5s, looping; skipped while the user is interacting and
+  // disabled entirely for visitors who prefer reduced motion.
   useEffect(() => {
     if (slides.length <= 1) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     const id = setInterval(() => {
       const el = trackRef.current;
       if (!el || pausedRef.current) return;
-      const w = el.clientWidth || 1;
-      const next = (Math.round(el.scrollLeft / w) + 1) % slides.length;
-      el.scrollTo({ left: next * w, behavior: "smooth" });
+      const next = (nearestIndex(el) + 1) % slides.length;
+      const kid = el.children[next] as HTMLElement | undefined;
+      const base = (el.children[0] as HTMLElement | undefined)?.offsetLeft ?? 0;
+      el.scrollTo({ left: kid ? kid.offsetLeft - base : 0, behavior: "smooth" });
     }, 4500);
     return () => clearInterval(id);
   }, [slides.length]);
 
   const onScroll = () => {
     const el = trackRef.current;
-    if (!el) return;
-    setActive(Math.round(el.scrollLeft / (el.clientWidth || 1)));
+    if (el) setActive(nearestIndex(el));
   };
   const pause = () => {
     pausedRef.current = true;
@@ -2172,6 +2224,7 @@ function VetrinaCarousel({
         onScroll={onScroll}
         onPointerDown={pause}
         onPointerUp={resume}
+        onPointerCancel={resume}
         onMouseEnter={pause}
         onMouseLeave={resume}
         className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -2248,17 +2301,19 @@ function VetrinaCarousel({
       </div>
       {slides.length > 1 && (
         <div className="mt-2 flex justify-center gap-1.5">
-          {slides.map((s, i) => (
-            <span
-              key={s.id}
-              aria-hidden
-              className="h-1.5 rounded-full transition-all duration-300"
-              style={{
-                width: i === active ? 18 : 6,
-                background: i === active ? p.brand : p.surfaceBorder,
-              }}
-            />
-          ))}
+          {slides.map((s, i) => {
+            // Clamp so a shrinking slide list (item sold out via realtime) can't
+            // leave `active` pointing past the end with no dot lit.
+            const on = i === Math.min(active, slides.length - 1);
+            return (
+              <span
+                key={s.id}
+                aria-hidden
+                className="h-1.5 rounded-full transition-all duration-300"
+                style={{ width: on ? 18 : 6, background: on ? p.brand : p.surfaceBorder }}
+              />
+            );
+          })}
         </div>
       )}
     </section>
@@ -2271,18 +2326,21 @@ function Round({
   fg,
   onClick,
   label,
+  disabled = false,
 }: {
   children: React.ReactNode;
   bg: string;
   fg: string;
   onClick: () => void;
   label?: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       aria-label={label}
-      className="flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold leading-none transition active:scale-90"
+      disabled={disabled}
+      className="flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold leading-none transition active:scale-90 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
       style={{ background: bg, color: fg }}
     >
       {children}

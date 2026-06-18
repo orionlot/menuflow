@@ -126,6 +126,33 @@ describe("priceLines", () => {
     expect(priceLines([item({ scorta: 1 })], [{ item_id: "i1", qta: 5 }]).itemsTotaleCents).toBe(4000);
   });
 
+  it("aggregates stock across multiple lines of the same item", () => {
+    // Two option-variant lines of one item share its stock pool: 2 + 1 > 2.
+    expect(() =>
+      priceLines(
+        [item({ scorta: 2 })],
+        [
+          { item_id: "i1", qta: 2 },
+          { item_id: "i1", qta: 1 },
+        ],
+        [],
+        { enforceScorte: true },
+      ),
+    ).toThrow(/Scorte insufficienti.*restano 2/);
+    // Sum within stock is fine.
+    expect(
+      priceLines(
+        [item({ scorta: 3 })],
+        [
+          { item_id: "i1", qta: 2 },
+          { item_id: "i1", qta: 1 },
+        ],
+        [],
+        { enforceScorte: true },
+      ).lines,
+    ).toHaveLength(2);
+  });
+
   it("throws on an empty cart", () => {
     expect(() => priceLines([item()], [])).toThrow(/Carrello vuoto/);
   });

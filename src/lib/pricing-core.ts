@@ -128,6 +128,17 @@ export function priceLines(
 
   const byId = new Map(items.map((i) => [i.id, i]));
 
+  // Total requested units per menu item across all cart lines. Option variants of
+  // the same item share one stock pool, so the stock check below compares against
+  // this aggregate — otherwise an over-order could be hidden by splitting it
+  // across lines (each line ≤ scorta, but the sum > scorta).
+  const requestedByItem = new Map<string, number>();
+  for (const l of cart) {
+    const n = Number(l.qta);
+    if (Number.isInteger(n) && n > 0)
+      requestedByItem.set(l.item_id, (requestedByItem.get(l.item_id) ?? 0) + n);
+  }
+
   const lines: OrderItem[] = [];
   let itemsTotaleCents = 0;
 
@@ -141,9 +152,12 @@ export function priceLines(
       throw new Error(`Quantità non valida per ${item.nome}`);
     }
 
-    // Stock check (only when the "scorte" feature is on for this tenant).
+    // Stock check (only when the "scorte" feature is on for this tenant). Uses
+    // the per-item aggregate so multiple option-variant lines can't collectively
+    // exceed the available stock.
     const scorta = item.scorta;
-    if (opts.enforceScorte && scorta != null && qta > scorta) {
+    const requested = requestedByItem.get(item.id) ?? qta;
+    if (opts.enforceScorte && scorta != null && requested > scorta) {
       throw new Error(
         scorta > 0
           ? `Scorte insufficienti per ${item.nome}: ne restano ${scorta}.`
