@@ -760,6 +760,24 @@ export default function MenuClient({
       )
     : [];
 
+  // The exact menu-card add control for an item — reused by the vetrina slides.
+  const renderAddControl = (item: MenuItem) => {
+    const sold = !item.disponibile || (scorteOn && item.scorta === 0);
+    return (
+      <ItemAddControl
+        item={item}
+        p={p}
+        qty={qtyForItem(item.id)}
+        hasOpts={effectiveOptions(item, tenant.aggiunte).length > 0}
+        tappable={!sold && !ordersBlocked}
+        maxQty={stockCapFor(item)}
+        onTap={() => tapAdd(item)}
+        onAddOne={() => addLine(item, [])}
+        onSetQty={(q) => setQty(item.id, q)}
+      />
+    );
+  };
+
   const renderItem = (item: MenuItem, idx: number) => {
     if (!bandOk(item)) return null;
     const sold = !item.disponibile || (scorteOn && item.scorta === 0);
@@ -799,47 +817,18 @@ export default function MenuClient({
       scorteOn && item.scorta != null && item.scorta > 0 && item.scorta <= 5;
     const tappable = !sold && !ordersBlocked;
 
-    const addControl = !tappable ? null : qty > 0 && !hasOpts ? (
-      <div
-        className="flex items-center gap-1 rounded-full p-1"
-        style={{ border: `1px solid ${p.accent}` }}
-      >
-        <Round
-          bg="transparent"
-          fg={p.accent}
-          label={`Togli un ${item.nome}`}
-          onClick={() => setQty(item.id, qty - 1)}
-        >
-          −
-        </Round>
-        <span className="w-5 text-center text-sm font-bold tabular-nums">{qty}</span>
-        <Round
-          bg={p.accent}
-          fg={p.onAccent}
-          label={`Aggiungi un ${item.nome}`}
-          onClick={() => addLine(item, [])}
-          disabled={qty >= stockCapFor(item)}
-        >
-          +
-        </Round>
-      </div>
-    ) : (
-      <button
-        onClick={() => tapAdd(item)}
-        aria-label={`Aggiungi ${item.nome}`}
-        className="relative inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-bold transition active:scale-95"
-        style={{ background: p.accent, color: p.onAccent }}
-      >
-        <span className="text-base leading-none">+</span> Aggiungi
-        {qty > 0 && (
-          <span
-            className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
-            style={{ background: p.text, color: p.pageBg }}
-          >
-            {qty}
-          </span>
-        )}
-      </button>
+    const addControl = (
+      <ItemAddControl
+        item={item}
+        p={p}
+        qty={qty}
+        hasOpts={hasOpts}
+        tappable={tappable}
+        maxQty={stockCapFor(item)}
+        onTap={() => tapAdd(item)}
+        onAddOne={() => addLine(item, [])}
+        onSetQty={(q) => setQty(item.id, q)}
+      />
     );
 
     return (
@@ -1148,6 +1137,7 @@ export default function MenuClient({
             blocked={ordersBlocked}
             radius={radius}
             onPick={tapAdd}
+            renderAdd={renderAddControl}
           />
         )}
 
@@ -2150,6 +2140,7 @@ function VetrinaCarousel({
   blocked,
   radius,
   onPick,
+  renderAdd,
 }: {
   slides: MenuItem[];
   p: Palette;
@@ -2158,6 +2149,7 @@ function VetrinaCarousel({
   blocked: boolean;
   radius: number;
   onPick: (item: MenuItem) => void;
+  renderAdd: (item: MenuItem) => React.ReactNode;
 }) {
   // Match the menu cards' photo rounding so a slide reads as the same component.
   const photoR = Math.max(radius - 4, 4);
@@ -2233,7 +2225,18 @@ function VetrinaCarousel({
           In vetrina
         </h2>
       </div>
-      <div className="relative">
+      <div className="flex items-center gap-1.5">
+        {slides.length > 1 && (
+          <button
+            type="button"
+            onClick={() => go(-1)}
+            aria-label="Prodotto precedente"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-base leading-none shadow-sm transition active:scale-90"
+            style={{ background: p.surface, color: p.text, border: `1px solid ${p.surfaceBorder}` }}
+          >
+            ‹
+          </button>
+        )}
         <div
           ref={trackRef}
           onScroll={onScroll}
@@ -2242,102 +2245,74 @@ function VetrinaCarousel({
           onPointerCancel={resume}
           onMouseEnter={pause}
           onMouseLeave={resume}
-          className="flex snap-x snap-mandatory gap-3 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex flex-1 snap-x snap-mandatory gap-3 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {slides.map((item) => {
             const nome = t(item.nome, item.nome_i18n);
             const annuncio = item.vetrina_annuncio?.trim();
             return (
-              <button
+              <div
                 key={item.id}
-                type="button"
                 onClick={() => {
                   if (!blocked) onPick(item);
                 }}
-                aria-disabled={blocked}
-                className="flex w-full shrink-0 snap-center items-stretch gap-3.5 p-3.5 text-left transition active:opacity-90"
+                className="flex w-full shrink-0 snap-center items-stretch gap-2.5 p-2.5 transition active:opacity-90"
                 style={{
                   background: p.surface,
                   border: `1px solid ${p.surfaceBorder}`,
                   borderRadius: radius,
                   boxShadow: dark ? "none" : "0 1px 3px rgba(0,0,0,0.05)",
+                  cursor: blocked ? "default" : "pointer",
                 }}
               >
                 {item.foto_url ? (
                   <Image
                     src={item.foto_url}
                     alt={nome}
-                    width={120}
-                    height={120}
-                    sizes="96px"
-                    className="shrink-0 self-start object-cover"
-                    style={{ width: 96, height: 96, borderRadius: photoR }}
+                    width={128}
+                    height={128}
+                    sizes="64px"
+                    className="shrink-0 self-center object-cover"
+                    style={{ width: 64, height: 64, borderRadius: photoR }}
                   />
                 ) : (
                   <div
-                    className="flex shrink-0 self-start items-center justify-center font-display text-3xl font-bold"
-                    style={{ width: 96, height: 96, background: p.tint, color: p.brand, borderRadius: photoR }}
+                    className="flex shrink-0 self-center items-center justify-center font-display text-2xl font-bold"
+                    style={{ width: 64, height: 64, background: p.tint, color: p.brand, borderRadius: photoR }}
                   >
                     {nome.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <h3 className="min-w-0 font-display text-[1.1rem] font-semibold leading-tight" style={{ color: p.text }}>
+                <div className="flex min-w-0 flex-1 flex-col justify-center">
+                  <h3 className="truncate font-display text-[0.95rem] font-semibold leading-tight" style={{ color: p.text }}>
                     {nome}
                   </h3>
                   {annuncio && (
-                    <span className="mt-1 truncate text-[11px] font-semibold" style={{ color: p.brand }}>
+                    <span className="truncate text-[11px] font-semibold" style={{ color: p.brand }}>
                       {annuncio}
                     </span>
                   )}
-                  <div className="mt-auto flex items-center justify-between gap-2 pt-2">
-                    <span className="font-display text-lg font-bold" style={{ color: p.price }}>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <span className="font-display text-base font-bold" style={{ color: p.price }}>
                       {formatEUR(Math.round(item.prezzo * 100))}
                     </span>
-                    {!blocked && (
-                      <span
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-xl font-bold leading-none"
-                        style={{ background: p.accent, color: p.onAccent }}
-                        aria-hidden
-                      >
-                        +
-                      </span>
-                    )}
+                    <div onClick={(e) => e.stopPropagation()}>{renderAdd(item)}</div>
                   </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
         {slides.length > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={() => go(-1)}
-              aria-label="Prodotto precedente"
-              className="absolute left-1 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-lg leading-none shadow-sm backdrop-blur transition active:scale-90"
-              style={{
-                background: dark ? "rgba(20,23,28,0.78)" : "rgba(255,255,255,0.9)",
-                color: p.text,
-                border: `1px solid ${p.surfaceBorder}`,
-              }}
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              onClick={() => go(1)}
-              aria-label="Prodotto successivo"
-              className="absolute right-1 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-lg leading-none shadow-sm backdrop-blur transition active:scale-90"
-              style={{
-                background: dark ? "rgba(20,23,28,0.78)" : "rgba(255,255,255,0.9)",
-                color: p.text,
-                border: `1px solid ${p.surfaceBorder}`,
-              }}
-            >
-              ›
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={() => go(1)}
+            aria-label="Prodotto successivo"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-base leading-none shadow-sm transition active:scale-90"
+            style={{ background: p.surface, color: p.text, border: `1px solid ${p.surfaceBorder}` }}
+          >
+            ›
+          </button>
         )}
       </div>
       {slides.length > 1 && (
@@ -2358,6 +2333,68 @@ function VetrinaCarousel({
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * The product add control used by every menu card: a "+ Aggiungi" pill (with a
+ * quantity badge) when nothing is in the cart yet or the item has options, and a
+ * "− qty +" stepper for an option-less item already in the cart. Shared so the
+ * vetrina carousel shows the exact same button as the menu rows. Returns null
+ * when the item can't be added (sold out / ordering unavailable).
+ */
+function ItemAddControl({
+  item,
+  p,
+  qty,
+  hasOpts,
+  tappable,
+  maxQty,
+  onTap,
+  onAddOne,
+  onSetQty,
+}: {
+  item: MenuItem;
+  p: Palette;
+  qty: number;
+  hasOpts: boolean;
+  tappable: boolean;
+  maxQty: number;
+  onTap: () => void;
+  onAddOne: () => void;
+  onSetQty: (q: number) => void;
+}) {
+  if (!tappable) return null;
+  if (qty > 0 && !hasOpts) {
+    return (
+      <div className="flex items-center gap-1 rounded-full p-1" style={{ border: `1px solid ${p.accent}` }}>
+        <Round bg="transparent" fg={p.accent} label={`Togli un ${item.nome}`} onClick={() => onSetQty(qty - 1)}>
+          −
+        </Round>
+        <span className="w-5 text-center text-sm font-bold tabular-nums">{qty}</span>
+        <Round bg={p.accent} fg={p.onAccent} label={`Aggiungi un ${item.nome}`} onClick={onAddOne} disabled={qty >= maxQty}>
+          +
+        </Round>
+      </div>
+    );
+  }
+  return (
+    <button
+      onClick={onTap}
+      aria-label={`Aggiungi ${item.nome}`}
+      className="relative inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-bold transition active:scale-95"
+      style={{ background: p.accent, color: p.onAccent }}
+    >
+      <span className="text-base leading-none">+</span> Aggiungi
+      {qty > 0 && (
+        <span
+          className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
+          style={{ background: p.text, color: p.pageBg }}
+        >
+          {qty}
+        </span>
+      )}
+    </button>
   );
 }
 
