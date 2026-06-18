@@ -23,6 +23,17 @@ export async function uploadImage(
   if (!(file instanceof File) || file.size === 0) throw new Error("File mancante.");
   if (file.size > 6 * 1024 * 1024) throw new Error("Immagine troppo grande (max 6MB).");
 
+  // Allow-list image types by MIME. Reject SVG (can carry inline script and this
+  // lands in a public bucket) and anything non-raster.
+  const ALLOWED_TYPES = new Map<string, string>([
+    ["image/png", "png"],
+    ["image/jpeg", "jpg"],
+    ["image/webp", "webp"],
+  ]);
+  const mime = (file.type || "").toLowerCase();
+  if (!ALLOWED_TYPES.has(mime))
+    throw new Error("Formato non supportato: usa PNG, JPG o WEBP.");
+
   const admin = createAdminClient();
 
   // Authorize: admins can upload anywhere; owners only for their own restaurant.
@@ -36,9 +47,8 @@ export async function uploadImage(
     if (!data) throw new Error("Non autorizzato per questo ristorante.");
   }
 
-  const ext =
-    (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") ||
-    "jpg";
+  // Extension derived from the validated MIME (not the attacker-controlled filename).
+  const ext = ALLOWED_TYPES.get(mime)!;
   const path = `${restaurantId}/${kind}-${Date.now()}-${Math.random()
     .toString(36)
     .slice(2, 8)}.${ext}`;
@@ -47,9 +57,10 @@ export async function uploadImage(
   const { error } = await admin.storage
     .from(STORAGE_BUCKET)
     .upload(path, buffer, {
-      contentType: file.type || "image/jpeg",
+      contentType: mime,
       upsert: true,
-      cacheControl: "3600",
+      // Filenames are immutable (timestamp + random), so cache hard for a year.
+      cacheControl: "31536000",
     });
   if (error) throw new Error(error.message);
 

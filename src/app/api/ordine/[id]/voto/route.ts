@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hitRateLimit } from "@/lib/ratelimit";
+import { hitRateLimit, clientIp } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  if (!(await hitRateLimit(`voto:${req.headers.get("x-forwarded-for") ?? "anon"}`, 10, 60_000))) {
+  if (!(await hitRateLimit(`voto:${clientIp(req.headers)}`, 10, 60_000))) {
     return NextResponse.json({ ok: false, error: "Troppe richieste." }, { status: 429 });
   }
   let body: { voto?: number };
@@ -31,11 +31,17 @@ export async function POST(
     return NextResponse.json({ ok: false }, { status: 503 });
   }
 
-  const { data } = await admin.from("orders").select("voto").eq("id", id).maybeSingle();
-  if (!data) return NextResponse.json({ ok: false, error: "Ordine non trovato." }, { status: 404 });
-  if ((data as { voto: number | null }).voto != null) {
-    return NextResponse.json({ ok: true, already: true });
-  }
-  await admin.from("orders").update({ voto }).eq("id", id);
+  // Idempotent + race-safe: only the first vote wins (UPDATE … WHERE voto IS NULL).
+  // Two concurrent posts can't both overwrite — the loser matches 0 rows.
+  const { data, error } = await admin
+    .from("orders")
+    .update({ voto })
+    .eq("id", id)
+    .is("voto", null)
+    .select("id")
+    .maybeSingle();
+  if (error) return NextResponse.json({ ok: false }, { status: 500 });
+  // No row updated → order missing or already voted; either way the vote is a no-op.
+  if (!data) return NextResponse.json({ ok: true, already: true });
   return NextResponse.json({ ok: true });
 }

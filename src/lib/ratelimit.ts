@@ -78,3 +78,19 @@ export async function hitRateLimit(
   }
   return inMemoryHit(key, max, windowMs);
 }
+
+/**
+ * Best-effort client IP for rate-limit keying. Uses the LEFTMOST `x-forwarded-for`
+ * hop (the original client; on Vercel this header is set by the platform), else
+ * `x-real-ip`, else "anon". Taking only the first hop — instead of the whole
+ * header string — stops a varying multi-proxy chain from minting a fresh bucket
+ * per request. Accepts any Headers-like object (Request.headers or next/headers).
+ */
+export function clientIp(h: { get(name: string): string | null }): string {
+  const xff = h.get("x-forwarded-for");
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return h.get("x-real-ip")?.trim() || "anon";
+}

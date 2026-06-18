@@ -41,14 +41,15 @@ git push -u origin main
 1. Crea un progetto su [supabase.com](https://supabase.com) (piano free).
 2. **Project Settings → API**: copia *Project URL*, chiave *anon public*, chiave
    *service_role*.
-3. Applica lo schema (migrazioni `0001`→`0014`). Due modi:
+3. Applica lo schema: **tutte** le migrazioni in `supabase/migrations/` in ordine
+   numerico (`0001` fino all'ultima presente). Due modi:
    - **CLI (consigliato):**
      ```bash
      supabase link --project-ref <REF-del-progetto>
      supabase db push          # applica tutte le migration in ordine
      ```
    - **Manuale:** apri il *SQL Editor* su Supabase e incolla, **in ordine**, il
-     contenuto di ogni file in `supabase/migrations/` (dal `0001` al `0014`).
+     contenuto di ogni file in `supabase/migrations/` (dal `0001` all'ultimo).
 4. *(Opzionale)* Dati demo: incolla `supabase/seed.sql` nel SQL Editor, poi crea
    gli utenti di login:
    ```bash

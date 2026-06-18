@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isFeatureOn } from "@/lib/config/features";
-import { hitRateLimit } from "@/lib/ratelimit";
+import { hitRateLimit, clientIp } from "@/lib/ratelimit";
 import { addLoad, capienzaFor, effectivePrep, waitMinutes, type RepartoLoad } from "@/lib/attesa";
 import type { Order, Restaurant } from "@/types/db";
 
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * other public endpoints: throttled, suspended/feature-off tenants return 0.
  */
 export async function GET(req: Request) {
-  const ip = req.headers.get("x-forwarded-for") ?? "anon";
+  const ip = clientIp(req.headers);
   if (!(await hitRateLimit(`attesa:${ip}`, 30, 60_000))) {
     return NextResponse.json({ ok: false }, { status: 429 });
   }

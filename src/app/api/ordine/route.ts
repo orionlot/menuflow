@@ -10,7 +10,7 @@ import { ALLERGENI_BY_ID } from "@/lib/config/allergeni";
 import { decrementIngredientStock, composableCategories } from "@/lib/ingredients";
 import { decrementMenuItemStock } from "@/lib/menu-stock";
 import { isMapsUrl } from "@/lib/urls";
-import { hitRateLimit } from "@/lib/ratelimit";
+import { hitRateLimit, clientIp } from "@/lib/ratelimit";
 import { isServiceOpen } from "@/lib/orari";
 import { createConnectPaymentIntent } from "@/lib/stripe/connect";
 import type { Order, Restaurant } from "@/types/db";
@@ -92,7 +92,7 @@ async function rememberTavolo(slug: string, tavolo: string) {
 }
 
 export async function POST(req: Request) {
-  if (!(await hitRateLimit(`ordine:${req.headers.get("x-forwarded-for") ?? "anon"}`, 60, 60_000))) {
+  if (!(await hitRateLimit(`ordine:${clientIp(req.headers)}`, 60, 60_000))) {
     return NextResponse.json({ ok: false, error: "Troppe richieste." }, { status: 429 });
   }
   let admin;
@@ -372,8 +372,12 @@ export async function POST(req: Request) {
         restaurant.pagamenti_test || process.env.NODE_ENV !== "production",
     });
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Errore durante l'invio dell'ordine.";
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+    // Unexpected failure: log it (monitoring) and return a GENERIC message — never
+    // leak internal error text to the diner — with 500 so error alerting fires.
+    console.error("[api/ordine] unexpected failure:", err);
+    return NextResponse.json(
+      { ok: false, error: "Errore durante l'invio dell'ordine. Riprova o rivolgiti allo staff." },
+      { status: 500 },
+    );
   }
 }

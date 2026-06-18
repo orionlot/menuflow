@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyServiceRequest } from "@/lib/telegram";
-import { hitRateLimit } from "@/lib/ratelimit";
+import { hitRateLimit, clientIp } from "@/lib/ratelimit";
 import { isFeatureOn } from "@/lib/config/features";
 import type { Restaurant } from "@/types/db";
 
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 /** Customer at a table calls the waiter / asks for the bill → Orders bot. */
 export async function POST(req: Request) {
-  if (!(await hitRateLimit(`chiamata:${req.headers.get("x-forwarded-for") ?? "anon"}`, 6, 60_000))) {
+  if (!(await hitRateLimit(`chiamata:${clientIp(req.headers)}`, 6, 60_000))) {
     return NextResponse.json({ ok: false, error: "Troppe richieste." }, { status: 429 });
   }
 

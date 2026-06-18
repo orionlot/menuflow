@@ -30,6 +30,3 @@ export const ALLERGENI_BY_ID = new Map(ALLERGENI.map((a) => [a.id, a]));
 export function allergeneLabel(id: string): string {
   return ALLERGENI_BY_ID.get(id)?.label ?? id;
 }
-export function allergeneShort(id: string): string {
-  return ALLERGENI_BY_ID.get(id)?.short ?? id.slice(0, 3);
-}

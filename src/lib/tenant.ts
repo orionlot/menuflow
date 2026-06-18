@@ -8,7 +8,6 @@ import type {
   PlanId,
   PublicIngredient,
   PublicRestaurant,
-  Restaurant,
 } from "@/types/db";
 
 const SAFE_RESTAURANT_COLUMNS =
@@ -64,19 +63,6 @@ export const resolveTenant = cache(
     return toPublic(byId.data);
   },
 );
-
-/** Full restaurant row incl. secrets — SERVER ONLY (order/payment internals). */
-export async function getRestaurantInternal(
-  restaurantId: string,
-): Promise<Restaurant | null> {
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("restaurants")
-    .select("*")
-    .eq("id", restaurantId)
-    .maybeSingle();
-  return (data as Restaurant) ?? null;
-}
 
 /** Available + sold-out menu items for the public page (safe columns only). */
 export async function getMenuItems(restaurantId: string): Promise<MenuItem[]> {

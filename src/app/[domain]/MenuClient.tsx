@@ -843,6 +843,7 @@ export default function MenuClient({
                 alt={t(item.nome, item.nome_i18n)}
                 width={480}
                 height={240}
+                sizes="(max-width: 768px) 100vw, 480px"
                 className="h-44 w-full object-cover"
               />
             ) : (
@@ -862,6 +863,7 @@ export default function MenuClient({
                   alt={t(item.nome, item.nome_i18n)}
                   width={140}
                   height={140}
+                  sizes="112px"
                   className="shrink-0 self-start object-cover"
                   style={{ width: 112, height: 112, borderRadius: photoRadius }}
                 />
@@ -1051,6 +1053,7 @@ export default function MenuClient({
                   alt={tenant.nome}
                   width={48}
                   height={48}
+                  sizes="48px"
                   className={`h-11 w-11 shrink-0 object-cover ${dark ? "rounded-xl" : "rounded-full"}`}
                   style={dark ? { border: `2px solid ${p.brand}` } : undefined}
                 />

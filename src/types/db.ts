@@ -386,6 +386,13 @@ export interface CustomDomain {
   restaurant_id: string;
 }
 
+/** Idempotency ledger of processed Stripe webhook event ids. Service-role only. */
+export interface StripeEvent {
+  id: string;
+  type: string;
+  received_at: string;
+}
+
 /** Whitelisted branding fields editable by the restaurateur and the admin. */
 export interface BrandingPatch {
   nome?: string;

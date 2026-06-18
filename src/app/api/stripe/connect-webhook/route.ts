@@ -35,20 +35,44 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient();
 
-  switch (event.type) {
-    case "payment_intent.succeeded": {
-      const pi = event.data.object as Stripe.PaymentIntent;
-      await markOrderPaid(admin, { paymentIntentId: pi.id });
-      break;
+  // Idempotency: Stripe can redeliver an event. Skip ones already processed.
+  const { data: seen } = await admin
+    .from("stripe_events")
+    .select("id")
+    .eq("id", event.id)
+    .maybeSingle();
+  if (seen) return NextResponse.json({ received: true, duplicate: true });
+
+  try {
+    switch (event.type) {
+      case "payment_intent.succeeded": {
+        const pi = event.data.object as Stripe.PaymentIntent;
+        // Pass the captured amount/currency so markOrderPaid can assert it matches
+        // the server-recomputed total before flipping to paid.
+        await markOrderPaid(admin, {
+          paymentIntentId: pi.id,
+          paidAmountCents: pi.amount_received ?? pi.amount,
+          currency: pi.currency,
+        });
+        break;
+      }
+      case "payment_intent.payment_failed": {
+        const pi = event.data.object as Stripe.PaymentIntent;
+        await markOrderFailed(admin, pi.id);
+        break;
+      }
+      default:
+        break;
     }
-    case "payment_intent.payment_failed": {
-      const pi = event.data.object as Stripe.PaymentIntent;
-      await markOrderFailed(admin, pi.id);
-      break;
-    }
-    default:
-      break;
+  } catch (err) {
+    // A DB-write failure must NOT be swallowed with a 200 — return 500 so Stripe
+    // retries, otherwise a real paid order would stay unmarked forever.
+    console.error(`[connect-webhook] ${event.type} (${event.id}) failed:`, err);
+    return NextResponse.json({ error: "Elaborazione fallita." }, { status: 500 });
   }
 
+  // Record only after successful processing (a failed attempt stays retryable).
+  // markOrderPaid is idempotent, so a duplicate that slips the check is harmless.
+  await admin.from("stripe_events").insert({ id: event.id, type: event.type });
   return NextResponse.json({ received: true });
 }

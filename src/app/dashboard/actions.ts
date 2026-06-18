@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isStripeConfigured } from "@/lib/env";
+import { getStripe } from "@/lib/stripe/connect";
 import { sanitizeBranding } from "@/lib/branding";
 import { sanitizeFunzionalita, isFeatureOn } from "@/lib/config/features";
 import { sanitizeUnita } from "@/lib/config/units";
@@ -523,6 +525,26 @@ export async function connectStripe(accountId: string) {
   const id = String(accountId ?? "").trim();
   if (!/^acct_[A-Za-z0-9]+$/.test(id))
     throw new Error("ID Stripe non valido: deve iniziare con acct_.");
+
+  // When Stripe is LIVE, verify the account exists and can actually accept
+  // charges before routing table payments to it (a typo / someone else's id
+  // would otherwise silently divert every payment). In test/stub mode (Stripe
+  // not configured) we keep the bypass so the flow is testable without a real
+  // Connect account — Stripe will be wired up later.
+  if (isStripeConfigured()) {
+    let chargesEnabled = false;
+    try {
+      const acct = await getStripe().accounts.retrieve(id);
+      chargesEnabled = Boolean(acct.charges_enabled);
+    } catch {
+      throw new Error("Account Stripe non trovato o non accessibile con questa chiave.");
+    }
+    if (!chargesEnabled)
+      throw new Error(
+        "L'account Stripe non è ancora abilitato ai pagamenti: completa l'onboarding su Stripe e riprova.",
+      );
+  }
+
   const admin = createAdminClient();
   const { error } = await admin
     .from("restaurants")

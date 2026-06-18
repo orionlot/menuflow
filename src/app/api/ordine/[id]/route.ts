@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hitRateLimit } from "@/lib/ratelimit";
+import { hitRateLimit, clientIp } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +35,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (!UUID_RE.test(id)) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
-  if (!(await hitRateLimit(`ordine-status:${req.headers.get("x-forwarded-for") ?? "anon"}`, 60, 60_000))) {
+  if (!(await hitRateLimit(`ordine-status:${clientIp(req.headers)}`, 60, 60_000))) {
     return NextResponse.json({ ok: false, error: "Troppe richieste." }, { status: 429 });
   }
   try {
