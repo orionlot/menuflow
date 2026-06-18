@@ -224,6 +224,45 @@ export async function adminSetOwnerPassword(formData: FormData) {
 }
 
 /**
+ * Admin: attach an owner login account to a shop that has none (or re-assign it).
+ * If a user with the given email already exists it is linked (and its password
+ * updated when one is provided); otherwise a new confirmed user is created with
+ * the given password and linked. Sets restaurants.owner_id. requireAdmin-guarded.
+ */
+export async function adminCreateOrLinkOwner(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  if (!id) throw new Error("ID mancante.");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error("Email non valida.");
+
+  const admin = createAdminClient();
+  // Find an existing auth user with this email (the admin API has no get-by-email).
+  const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  let user = (list?.users ?? []).find((u) => u.email?.toLowerCase() === email) ?? null;
+
+  if (user) {
+    // Existing account → optionally reset its password to the provided one.
+    if (password) {
+      if (password.length < 8) throw new Error("La password deve avere almeno 8 caratteri.");
+      const { error } = await admin.auth.admin.updateUserById(user.id, { password });
+      if (error) throw new Error(error.message);
+    }
+  } else {
+    // No such account → create it (a password is required to create).
+    if (password.length < 8) throw new Error("Per creare l'account serve una password di almeno 8 caratteri.");
+    const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+    if (error || !data?.user) throw new Error(error?.message ?? "Impossibile creare l'account.");
+    user = data.user;
+  }
+
+  const { error: linkErr } = await admin.from("restaurants").update({ owner_id: user.id }).eq("id", id);
+  if (linkErr) throw new Error(linkErr.message);
+  revalidatePath("/admin");
+}
+
+/**
  * Admin: permanently delete a shop and ALL its data — menu, orders, ingredients,
  * custom domains (via ON DELETE CASCADE) — plus its owner login account, unless
  * that account also owns another shop. Requires typing the slug to confirm, so a

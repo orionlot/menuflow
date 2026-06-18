@@ -11,6 +11,7 @@ import FeaturesAdmin from "./FeaturesAdmin";
 import EmbedSnippet from "./EmbedSnippet";
 import {
   addInitialMenuItem,
+  adminCreateOrLinkOwner,
   adminDeleteRestaurant,
   adminSetOwnerPassword,
   createRestaurant,
@@ -295,7 +296,7 @@ export default async function AdminHome() {
                   )}
                 </p>
 
-                {r.owner_id && (
+                {r.owner_id ? (
                   <form
                     action={adminSetOwnerPassword}
                     className="flex flex-wrap items-end gap-3"
@@ -313,6 +314,38 @@ export default async function AdminHome() {
                       />
                     </Field>
                     <button className={btnSecondary}>Cambia password</button>
+                  </form>
+                ) : (
+                  <form
+                    action={adminCreateOrLinkOwner}
+                    className="flex flex-wrap items-end gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3"
+                  >
+                    <input type="hidden" name="id" value={r.id} />
+                    <Field label="Email titolare">
+                      <input
+                        name="email"
+                        type="email"
+                        required
+                        autoComplete="off"
+                        placeholder="titolare@email.com"
+                        className={inputClass}
+                      />
+                    </Field>
+                    <Field label="Password (min 8)">
+                      <input
+                        name="password"
+                        type="text"
+                        minLength={8}
+                        autoComplete="off"
+                        placeholder="password"
+                        className={inputClass}
+                      />
+                    </Field>
+                    <button className={btnPrimary}>Crea / collega account</button>
+                    <p className="w-full text-[11px] text-neutral-400">
+                      Se l&apos;email esiste già viene collegata (password opzionale, la cambia);
+                      altrimenti crea un nuovo account (password obbligatoria).
+                    </p>
                   </form>
                 )}
 
