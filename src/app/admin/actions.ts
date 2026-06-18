@@ -197,6 +197,74 @@ export async function setAttivo(id: string, attivo: boolean) {
   revalidatePath("/admin");
 }
 
+/**
+ * Admin: set a new login password for a shop's owner account. The owner is
+ * resolved from restaurants.owner_id and updated via the service-role auth admin
+ * API. Guarded by requireAdmin (the page guard alone wouldn't stop a direct call).
+ */
+export async function adminSetOwnerPassword(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const password = String(formData.get("password") ?? "");
+  if (!id) throw new Error("ID mancante.");
+  if (password.length < 8) throw new Error("La password deve avere almeno 8 caratteri.");
+
+  const admin = createAdminClient();
+  const { data: r } = await admin
+    .from("restaurants")
+    .select("owner_id")
+    .eq("id", id)
+    .maybeSingle();
+  const ownerId = (r as { owner_id: string | null } | null)?.owner_id ?? null;
+  if (!ownerId) throw new Error("Questo negozio non ha un account di accesso collegato.");
+
+  const { error } = await admin.auth.admin.updateUserById(ownerId, { password });
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin");
+}
+
+/**
+ * Admin: permanently delete a shop and ALL its data — menu, orders, ingredients,
+ * custom domains (via ON DELETE CASCADE) — plus its owner login account, unless
+ * that account also owns another shop. Requires typing the slug to confirm, so a
+ * misclick can't wipe a tenant. Guarded by requireAdmin; service-role only.
+ */
+export async function adminDeleteRestaurant(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const confirmSlug = String(formData.get("confirm_slug") ?? "").trim();
+  if (!id) throw new Error("ID mancante.");
+
+  const admin = createAdminClient();
+  const { data: r } = await admin
+    .from("restaurants")
+    .select("slug, owner_id")
+    .eq("id", id)
+    .maybeSingle();
+  const row = r as { slug: string; owner_id: string | null } | null;
+  if (!row) throw new Error("Negozio non trovato.");
+  if (confirmSlug !== row.slug)
+    throw new Error(`Conferma non valida: digita esattamente lo slug "${row.slug}" per eliminare.`);
+
+  // Delete the restaurant → cascades menu_items / orders / ingredients /
+  // custom_domains (all those FKs are ON DELETE CASCADE).
+  const { error } = await admin.from("restaurants").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  // Remove the owner login too — but only if no OTHER shop still uses that account.
+  if (row.owner_id) {
+    const { count } = await admin
+      .from("restaurants")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", row.owner_id);
+    if (!count) {
+      const { error: uErr } = await admin.auth.admin.deleteUser(row.owner_id);
+      if (uErr) console.error(`[adminDeleteRestaurant] owner ${row.owner_id} delete failed:`, uErr.message);
+    }
+  }
+  revalidatePath("/admin");
+}
+
 export async function addInitialMenuItem(formData: FormData) {
   await requireAdmin();
   const restaurantId = String(formData.get("restaurant_id") ?? "");

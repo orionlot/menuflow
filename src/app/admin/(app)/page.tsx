@@ -11,6 +11,8 @@ import FeaturesAdmin from "./FeaturesAdmin";
 import EmbedSnippet from "./EmbedSnippet";
 import {
   addInitialMenuItem,
+  adminDeleteRestaurant,
+  adminSetOwnerPassword,
   createRestaurant,
   setAttivo,
   updateRestaurant,
@@ -28,6 +30,16 @@ export default async function AdminHome() {
     .order("created_at", { ascending: true });
   const restaurants = (data as Restaurant[]) ?? [];
   const origin = await appOrigin();
+
+  // Owner email per restaurant (to label the account when changing its password).
+  // Best-effort: if the auth admin call fails, the page still renders.
+  const emailById = new Map<string, string>();
+  try {
+    const { data: usersData } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    for (const u of usersData?.users ?? []) if (u.email) emailById.set(u.id, u.email);
+  } catch {
+    /* leave emails blank */
+  }
 
   return (
     <div className="space-y-8">
@@ -267,6 +279,66 @@ export default async function AdminHome() {
                 />
                 <button className={btnPrimary}>Aggiungi</button>
               </form>
+            </details>
+
+            <details className="mt-3 text-sm">
+              <summary className={summaryClass}>Account negozio &amp; eliminazione</summary>
+              <div className="mt-3 space-y-4">
+                <p className="text-xs text-neutral-500">
+                  Account di accesso:{" "}
+                  {r.owner_id && emailById.get(r.owner_id) ? (
+                    <span className="font-medium text-neutral-700">
+                      {emailById.get(r.owner_id)}
+                    </span>
+                  ) : (
+                    <span className="italic">nessun account collegato</span>
+                  )}
+                </p>
+
+                {r.owner_id && (
+                  <form
+                    action={adminSetOwnerPassword}
+                    className="flex flex-wrap items-end gap-3"
+                  >
+                    <input type="hidden" name="id" value={r.id} />
+                    <Field label="Nuova password (min 8)">
+                      <input
+                        name="password"
+                        type="text"
+                        minLength={8}
+                        required
+                        autoComplete="off"
+                        placeholder="nuova password"
+                        className={inputClass}
+                      />
+                    </Field>
+                    <button className={btnSecondary}>Cambia password</button>
+                  </form>
+                )}
+
+                <form
+                  action={adminDeleteRestaurant}
+                  className="flex flex-wrap items-end gap-3 rounded-lg border border-red-200 bg-red-50 p-3"
+                >
+                  <input type="hidden" name="id" value={r.id} />
+                  <Field label={`Elimina TUTTO — digita "${r.slug}" per confermare`}>
+                    <input
+                      name="confirm_slug"
+                      required
+                      autoComplete="off"
+                      placeholder={r.slug}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <button className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900">
+                    Elimina negozio
+                  </button>
+                </form>
+                <p className="text-[11px] text-neutral-400">
+                  Elimina il negozio e tutti i suoi dati (menu, ordini, ingredienti, domini) e
+                  l&apos;account di accesso. Irreversibile.
+                </p>
+              </div>
             </details>
           </div>
         ))}
