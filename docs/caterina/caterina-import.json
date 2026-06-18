@@ -1,0 +1,1761 @@
+{
+  "version": 1,
+  "restaurant": "caterina-sala-consilina",
+  "items": [
+    {
+      "categoria": "Colazione",
+      "nome": "Uova e Bacon",
+      "descrizione": "Uova, bacon croccante e pane tostato",
+      "prezzo": 5.0,
+      "disponibile": true,
+      "ordine": 1,
+      "foto_url": "/menu/caterina/uova-bacon.webp",
+      "allergeni": [
+        "uova",
+        "glutine"
+      ],
+      "ingredienti": [
+        {
+          "id": "7add0841-2a40-5eaf-9f60-9deb67dc921a",
+          "grammi": 110
+        },
+        {
+          "id": "99867749-6b6d-5f08-83fa-86993f76c18c",
+          "grammi": 40
+        },
+        {
+          "id": "19e82508-2d15-5921-ac9e-dee0a52d528f",
+          "grammi": 60
+        }
+      ],
+      "composizione": [],
+      "peso": 210,
+      "kcal": 549
+    },
+    {
+      "categoria": "Colazione",
+      "nome": "Pancake Sciroppo d'Acero e Frutti di Bosco",
+      "descrizione": "Pancake con sciroppo d'acero e frutti di bosco",
+      "prezzo": 5.0,
+      "disponibile": true,
+      "ordine": 2,
+      "foto_url": "/menu/caterina/pancake-sciroppo-d_acero-frutti-bosco.webp",
+      "allergeni": [
+        "glutine",
+        "uova",
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "b51eb433-fbd5-5625-985a-02b7a1c06d41",
+          "grammi": 150
+        },
+        {
+          "id": "266490da-b13d-530e-af2d-d9b703c7ea17",
+          "grammi": 40
+        },
+        {
+          "id": "56c067b8-05da-59f1-ab99-535ec9c186f5",
+          "grammi": 60
+        }
+      ],
+      "composizione": [],
+      "peso": 250,
+      "kcal": 476
+    },
+    {
+      "categoria": "Colazione",
+      "nome": "Pancake Sciroppo d'Acero e Fragole",
+      "descrizione": "Pancake con sciroppo d'acero e fragole",
+      "prezzo": 5.0,
+      "disponibile": true,
+      "ordine": 3,
+      "foto_url": "/menu/caterina/pancake-sciroppo-acero-fragole.webp",
+      "allergeni": [
+        "glutine",
+        "uova",
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "b51eb433-fbd5-5625-985a-02b7a1c06d41",
+          "grammi": 150
+        },
+        {
+          "id": "266490da-b13d-530e-af2d-d9b703c7ea17",
+          "grammi": 40
+        },
+        {
+          "id": "63def11e-8402-5e39-b3d0-aea4558de682",
+          "grammi": 70
+        }
+      ],
+      "composizione": [],
+      "peso": 260,
+      "kcal": 471
+    },
+    {
+      "categoria": "Colazione",
+      "nome": "Pancake Cioccolato Bianco e Frutti di Bosco",
+      "descrizione": "Pancake con cioccolato bianco e frutti di bosco",
+      "prezzo": 5.0,
+      "disponibile": true,
+      "ordine": 4,
+      "foto_url": "/menu/caterina/colazione-pancake-cioccolatobiancoefruttidibosco.webp",
+      "allergeni": [
+        "glutine",
+        "uova",
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "b51eb433-fbd5-5625-985a-02b7a1c06d41",
+          "grammi": 150
+        },
+        {
+          "id": "dc617f76-0fc6-5ee1-a892-fd707b4d758c",
+          "grammi": 35
+        },
+        {
+          "id": "56c067b8-05da-59f1-ab99-535ec9c186f5",
+          "grammi": 60
+        }
+      ],
+      "composizione": [],
+      "peso": 245,
+      "kcal": 561
+    },
+    {
+      "categoria": "Colazione",
+      "nome": "Waffle Sciroppo d'Acero, Panna, Fragole e Gocce di Cioccolato",
+      "descrizione": "Waffle con sciroppo d'acero, panna montata, fragole e gocce di cioccolato",
+      "prezzo": 5.0,
+      "disponibile": true,
+      "ordine": 5,
+      "foto_url": null,
+      "allergeni": [
+        "glutine",
+        "uova",
+        "latte",
+        "soia"
+      ],
+      "ingredienti": [
+        {
+          "id": "652fb1bd-8f54-5b95-be48-82bec4a07a38",
+          "grammi": 130
+        },
+        {
+          "id": "266490da-b13d-530e-af2d-d9b703c7ea17",
+          "grammi": 35
+        },
+        {
+          "id": "5cc975b3-c8bf-56cf-a92b-e72913b90c35",
+          "grammi": 40
+        },
+        {
+          "id": "63def11e-8402-5e39-b3d0-aea4558de682",
+          "grammi": 50
+        },
+        {
+          "id": "62bfc92e-102c-56fa-9631-b91790c07e2e",
+          "grammi": 20
+        }
+      ],
+      "composizione": [],
+      "peso": 275,
+      "kcal": 728
+    },
+    {
+      "categoria": "Colazione",
+      "nome": "Avocado Toast",
+      "descrizione": "Pane tostato, salmone affumicato, avocado, limone e noci",
+      "prezzo": 6.0,
+      "disponibile": true,
+      "ordine": 6,
+      "foto_url": "/menu/caterina/avocado-toast.webp",
+      "allergeni": [
+        "glutine",
+        "pesce",
+        "frutta_a_guscio"
+      ],
+      "ingredienti": [
+        {
+          "id": "19e82508-2d15-5921-ac9e-dee0a52d528f",
+          "grammi": 70
+        },
+        {
+          "id": "5a1a4cd6-0a46-5a4c-8ff2-57c5855b3dd4",
+          "grammi": 50
+        },
+        {
+          "id": "1447f277-1f07-5d4a-9c07-a14761e61b7d",
+          "grammi": 60
+        },
+        {
+          "id": "a0f3cb48-40f4-5dc1-aa21-9b9b37b5862d",
+          "grammi": 15
+        },
+        {
+          "id": "13e3e8ca-3a29-5780-b155-33099088342a",
+          "grammi": 5
+        }
+      ],
+      "composizione": [],
+      "peso": 200,
+      "kcal": 443
+    },
+    {
+      "categoria": "Colazione",
+      "nome": "Toast",
+      "descrizione": "Pane tostato, prosciutto cotto, mozzarella e burro",
+      "prezzo": 6.0,
+      "disponibile": true,
+      "ordine": 7,
+      "foto_url": "/menu/caterina/toast.webp",
+      "allergeni": [
+        "glutine",
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "19e82508-2d15-5921-ac9e-dee0a52d528f",
+          "grammi": 80
+        },
+        {
+          "id": "8b34dd08-d46f-558f-93a7-21c4adb21853",
+          "grammi": 50
+        },
+        {
+          "id": "695cd426-ab0c-56e3-8492-61ec2a39aeda",
+          "grammi": 60
+        },
+        {
+          "id": "9982c470-12b0-5832-a5ab-9e0837a99338",
+          "grammi": 10
+        }
+      ],
+      "composizione": [],
+      "peso": 200,
+      "kcal": 563
+    },
+    {
+      "categoria": "Colazione",
+      "nome": "French Toast",
+      "descrizione": "Fragole e cioccolato bianco",
+      "prezzo": 7.0,
+      "disponibile": true,
+      "ordine": 8,
+      "foto_url": "/menu/caterina/colazione-frenchtoast.webp",
+      "allergeni": [
+        "glutine",
+        "uova",
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "79c98d43-0cf6-56d0-aa69-23c7528a25a0",
+          "grammi": 90
+        },
+        {
+          "id": "7add0841-2a40-5eaf-9f60-9deb67dc921a",
+          "grammi": 50
+        },
+        {
+          "id": "63def11e-8402-5e39-b3d0-aea4558de682",
+          "grammi": 60
+        },
+        {
+          "id": "dc617f76-0fc6-5ee1-a892-fd707b4d758c",
+          "grammi": 30
+        }
+      ],
+      "composizione": [],
+      "peso": 230,
+      "kcal": 502
+    },
+    {
+      "categoria": "Antipasti",
+      "nome": "Cacio alla Piastra",
+      "descrizione": "Caciocavallo di latte vaccino, fuso alla piastra con crosticina dorata",
+      "prezzo": 7.9,
+      "disponibile": true,
+      "ordine": 1,
+      "foto_url": "/menu/caterina/caciocavallo-piastra-img.jpg",
+      "allergeni": [
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "9bb1de8f-2145-541f-877c-3daa59e04a92",
+          "grammi": 150
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 5
+        },
+        {
+          "id": "da2bc923-462a-576b-a0f0-34e7faff8dde",
+          "grammi": 10
+        }
+      ],
+      "composizione": [],
+      "peso": 165,
+      "kcal": 624
+    },
+    {
+      "categoria": "Antipasti",
+      "nome": "Classico",
+      "descrizione": "Bocconcini di fior di latte e prosciutto crudo",
+      "prezzo": 7.9,
+      "disponibile": true,
+      "ordine": 2,
+      "foto_url": "/menu/caterina/classico.webp",
+      "allergeni": [
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "1b421bb6-423b-59bb-a6dd-07131ea512bc",
+          "grammi": 120
+        },
+        {
+          "id": "7cbc3300-0465-57e9-8b00-f868da03cddb",
+          "grammi": 50
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 5
+        }
+      ],
+      "composizione": [],
+      "peso": 175,
+      "kcal": 411
+    },
+    {
+      "categoria": "Antipasti",
+      "nome": "Polpette al Sugo",
+      "descrizione": "Pane casereccio, uova bio, macinato di scottona, formaggio",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 3,
+      "foto_url": "/menu/caterina/secondi-polpette-al-sugo.webp",
+      "allergeni": [
+        "glutine",
+        "uova",
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "30fd19d9-4900-5168-8c3a-401343642376",
+          "grammi": 150
+        },
+        {
+          "id": "da2bc923-462a-576b-a0f0-34e7faff8dde",
+          "grammi": 40
+        },
+        {
+          "id": "761774d6-a937-50ab-941a-a2343af9d2d3",
+          "grammi": 30
+        },
+        {
+          "id": "c704025b-c681-5808-988b-b1401a288959",
+          "grammi": 20
+        },
+        {
+          "id": "ae4041c5-99cd-589f-a6ef-62cc0bf39b2d",
+          "grammi": 80
+        }
+      ],
+      "composizione": [],
+      "peso": 320,
+      "kcal": 539
+    },
+    {
+      "categoria": "Primi",
+      "nome": "Orecchiette al Pesto",
+      "descrizione": "Basilico fresco, olio evo, mandorle, pinoli, grana",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 1,
+      "foto_url": "/menu/caterina/ristorante-orecchietteallarrabbiata.webp",
+      "allergeni": [
+        "glutine",
+        "frutta_a_guscio",
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "d4262e7d-48e7-5975-95da-2d949ff17946",
+          "grammi": 250
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 20
+        },
+        {
+          "id": "c609251e-6e72-5283-9cff-5014cc740d6b",
+          "grammi": 20
+        },
+        {
+          "id": "1dbc8169-7446-5085-96df-5e797ee36ec5",
+          "grammi": 15
+        },
+        {
+          "id": "25886b56-a781-5dd9-a213-3df14cbc98ac",
+          "grammi": 15
+        },
+        {
+          "id": "be3ce8f8-d8d9-5cd8-a4a8-7521d77aa481",
+          "grammi": 30
+        }
+      ],
+      "composizione": [],
+      "peso": 350,
+      "kcal": 700
+    },
+    {
+      "categoria": "Primi",
+      "nome": "Gnocchi alla Sorrentina",
+      "descrizione": "Gnocchi di patate, sugo di pomodoro fresco, mozzarella",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 2,
+      "foto_url": null,
+      "allergeni": [
+        "glutine",
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "eadd80a8-5bfe-5b7b-933d-65428cfb46dd",
+          "grammi": 250
+        },
+        {
+          "id": "ffb860f2-389e-5fed-b264-89c9cf7712b8",
+          "grammi": 120
+        },
+        {
+          "id": "695cd426-ab0c-56e3-8492-61ec2a39aeda",
+          "grammi": 30
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 10
+        }
+      ],
+      "composizione": [],
+      "peso": 410,
+      "kcal": 595
+    },
+    {
+      "categoria": "Primi",
+      "nome": "Rigatoni alla Carbonara",
+      "descrizione": "Guanciale croccante, pecorino romano DOP, formaggio grana",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 3,
+      "foto_url": null,
+      "allergeni": [
+        "glutine",
+        "uova",
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "9920f222-d98a-52bc-a72c-f4a1518a3973",
+          "grammi": 250
+        },
+        {
+          "id": "b26e57c4-96f1-5a5f-a96e-bba80e02cfd5",
+          "grammi": 60
+        },
+        {
+          "id": "7add0841-2a40-5eaf-9f60-9deb67dc921a",
+          "grammi": 40
+        },
+        {
+          "id": "762e6539-11cd-5ff0-9498-d42807d3c0f5",
+          "grammi": 15
+        },
+        {
+          "id": "be3ce8f8-d8d9-5cd8-a4a8-7521d77aa481",
+          "grammi": 15
+        }
+      ],
+      "composizione": [],
+      "peso": 380,
+      "kcal": 855
+    },
+    {
+      "categoria": "Primi",
+      "nome": "Pennette Gamberetti e Zucchine",
+      "descrizione": "Pennette lisce, gamberetti, zucchine, cipolla e olio evo",
+      "prezzo": 11.9,
+      "disponibile": true,
+      "ordine": 4,
+      "foto_url": "/menu/caterina/primi-fusilli-alla-siciliana-1.webp",
+      "allergeni": [
+        "glutine",
+        "crostacei"
+      ],
+      "ingredienti": [
+        {
+          "id": "2688c444-6e19-58d6-bbde-89dd11d29684",
+          "grammi": 250
+        },
+        {
+          "id": "dd73ad66-61b6-56ff-a257-0c297b4b51b6",
+          "grammi": 80
+        },
+        {
+          "id": "47450017-1996-5c25-a3f8-9aa18713bdf2",
+          "grammi": 60
+        },
+        {
+          "id": "49428664-0e25-585b-a574-fe99ef42029c",
+          "grammi": 20
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 20
+        }
+      ],
+      "composizione": [],
+      "peso": 410,
+      "kcal": 600
+    },
+    {
+      "categoria": "Secondi",
+      "nome": "Cotoletta e Patatine",
+      "descrizione": "Petto di pollo dorato e croccante con patatine fritte",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 1,
+      "foto_url": "/menu/caterina/Copia-di-milanese.webp",
+      "allergeni": [
+        "glutine",
+        "uova"
+      ],
+      "ingredienti": [
+        {
+          "id": "f41723c2-35a8-54e6-a8aa-cfe4d231de9c",
+          "grammi": 160
+        },
+        {
+          "id": "6531c0dd-7c7e-5974-8b31-10669a68d1dd",
+          "grammi": 30
+        },
+        {
+          "id": "4560f0d2-51c6-5100-977e-85f4a180ef74",
+          "grammi": 20
+        },
+        {
+          "id": "91e35518-e5cf-51a3-b541-9f04fa786d70",
+          "grammi": 180
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 20
+        }
+      ],
+      "composizione": [],
+      "peso": 410,
+      "kcal": 762
+    },
+    {
+      "categoria": "Secondi",
+      "nome": "Salmone alla Piastra",
+      "descrizione": "Filetto di salmone alla piastra su letto di misticanza",
+      "prezzo": 11.9,
+      "disponibile": true,
+      "ordine": 2,
+      "foto_url": "/menu/caterina/salmone.png",
+      "allergeni": [
+        "pesce"
+      ],
+      "ingredienti": [
+        {
+          "id": "57a0f382-0eb7-5629-833b-c70315634aec",
+          "grammi": 200
+        },
+        {
+          "id": "5632a719-1384-553f-b886-32a6b1aace1f",
+          "grammi": 70
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 15
+        },
+        {
+          "id": "13e3e8ca-3a29-5780-b155-33099088342a",
+          "grammi": 5
+        }
+      ],
+      "composizione": [],
+      "peso": 290,
+      "kcal": 561
+    },
+    {
+      "categoria": "Secondi",
+      "nome": "Tonno alla Piastra",
+      "descrizione": "Filetto di tonno pinna gialla alla piastra",
+      "prezzo": 11.9,
+      "disponibile": true,
+      "ordine": 3,
+      "foto_url": "/menu/caterina/img-tuna-teriaki.png",
+      "allergeni": [
+        "pesce"
+      ],
+      "ingredienti": [
+        {
+          "id": "91231d10-083b-5bd3-955c-b0157dd004ec",
+          "grammi": 200
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 15
+        },
+        {
+          "id": "5632a719-1384-553f-b886-32a6b1aace1f",
+          "grammi": 15
+        },
+        {
+          "id": "13e3e8ca-3a29-5780-b155-33099088342a",
+          "grammi": 5
+        }
+      ],
+      "composizione": [],
+      "peso": 235,
+      "kcal": 376
+    },
+    {
+      "categoria": "Secondi",
+      "nome": "Tagliata di Bovino alla Piastra",
+      "descrizione": "Entrecote selezionato cotto alla piastra, funghi cardoncelli",
+      "prezzo": 13.9,
+      "disponibile": true,
+      "ordine": 4,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [
+        {
+          "id": "679d8870-a945-5d12-aae5-5f128f633512",
+          "grammi": 220
+        },
+        {
+          "id": "ac59d188-1c41-542f-af02-606c7ee71721",
+          "grammi": 80
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 15
+        },
+        {
+          "id": "7f29a222-2b9f-5296-bac9-8de2a47fcc73",
+          "grammi": 5
+        }
+      ],
+      "composizione": [],
+      "peso": 320,
+      "kcal": 624
+    },
+    {
+      "categoria": "Contorni",
+      "nome": "Insalata Mista",
+      "descrizione": "Lattuga croccante e radicchio",
+      "prezzo": 2.9,
+      "disponibile": true,
+      "ordine": 1,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [
+        {
+          "id": "7b66496c-9395-5317-9db3-90b02d6aa4ec",
+          "grammi": 70
+        },
+        {
+          "id": "98b035e6-7138-515c-9224-83d61ab7b625",
+          "grammi": 40
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 10
+        }
+      ],
+      "composizione": [],
+      "peso": 130,
+      "kcal": 41
+    },
+    {
+      "categoria": "Contorni",
+      "nome": "Verdure Grigliate",
+      "descrizione": "Zucchine e melanzane arrostite alla piastra",
+      "prezzo": 5.9,
+      "disponibile": true,
+      "ordine": 2,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [
+        {
+          "id": "47450017-1996-5c25-a3f8-9aa18713bdf2",
+          "grammi": 110
+        },
+        {
+          "id": "dbce5b98-070b-57b9-9180-c6c42d2c727d",
+          "grammi": 110
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 10
+        }
+      ],
+      "composizione": [],
+      "peso": 230,
+      "kcal": 132
+    },
+    {
+      "categoria": "Contorni",
+      "nome": "Rucola, Pomodorini, Noci e Grana",
+      "descrizione": "Rucola, pomodorini, noci e grana",
+      "prezzo": 5.9,
+      "disponibile": true,
+      "ordine": 3,
+      "foto_url": null,
+      "allergeni": [
+        "latte",
+        "frutta_a_guscio"
+      ],
+      "ingredienti": [
+        {
+          "id": "7f29a222-2b9f-5296-bac9-8de2a47fcc73",
+          "grammi": 50
+        },
+        {
+          "id": "a4435a65-f0ec-545f-882a-44c07d58ff13",
+          "grammi": 70
+        },
+        {
+          "id": "a0f3cb48-40f4-5dc1-aa21-9b9b37b5862d",
+          "grammi": 20
+        },
+        {
+          "id": "be3ce8f8-d8d9-5cd8-a4a8-7521d77aa481",
+          "grammi": 25
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 10
+        }
+      ],
+      "composizione": [],
+      "peso": 175,
+      "kcal": 304
+    },
+    {
+      "categoria": "Contorni",
+      "nome": "Ciambotta di Peperoni, Zucchine e Melanzane",
+      "descrizione": "Peperoni, zucchine e melanzane in padella",
+      "prezzo": 5.9,
+      "disponibile": true,
+      "ordine": 4,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [
+        {
+          "id": "eef5da5b-50a5-5fb6-9617-6dd5b9bdf9b4",
+          "grammi": 90
+        },
+        {
+          "id": "47450017-1996-5c25-a3f8-9aa18713bdf2",
+          "grammi": 90
+        },
+        {
+          "id": "dbce5b98-070b-57b9-9180-c6c42d2c727d",
+          "grammi": 90
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 15
+        }
+      ],
+      "composizione": [],
+      "peso": 285,
+      "kcal": 196
+    },
+    {
+      "categoria": "Dolci",
+      "nome": "Tartufo Gelato al Cioccolato",
+      "descrizione": "Tartufo di gelato al cioccolato",
+      "prezzo": 3.0,
+      "disponibile": true,
+      "ordine": 1,
+      "foto_url": null,
+      "allergeni": [
+        "latte",
+        "uova",
+        "soia"
+      ],
+      "ingredienti": [
+        {
+          "id": "44925f3a-7917-5dba-b03c-4cb2cb7406e1",
+          "grammi": 70
+        },
+        {
+          "id": "92b1c52e-bccd-587c-b1a1-a703d70b7c30",
+          "grammi": 15
+        },
+        {
+          "id": "7ee84a4e-c44e-5c10-bc03-f26a275e4e06",
+          "grammi": 5
+        },
+        {
+          "id": "e91a4007-3e7f-5692-9f7a-a83eb13542b2",
+          "grammi": 5
+        }
+      ],
+      "composizione": [],
+      "peso": 95,
+      "kcal": 245
+    },
+    {
+      "categoria": "Dolci",
+      "nome": "Tartufo Gelato Bianco",
+      "descrizione": "Tartufo di gelato bianco",
+      "prezzo": 3.0,
+      "disponibile": true,
+      "ordine": 2,
+      "foto_url": null,
+      "allergeni": [
+        "latte",
+        "uova",
+        "frutta_a_guscio"
+      ],
+      "ingredienti": [
+        {
+          "id": "b1600da2-11aa-580f-8044-2696e9702ad8",
+          "grammi": 70
+        },
+        {
+          "id": "dc617f76-0fc6-5ee1-a892-fd707b4d758c",
+          "grammi": 15
+        },
+        {
+          "id": "c12cb3ae-32ec-5874-88cf-eb97b43fef56",
+          "grammi": 5
+        },
+        {
+          "id": "e91a4007-3e7f-5692-9f7a-a83eb13542b2",
+          "grammi": 5
+        }
+      ],
+      "composizione": [],
+      "peso": 95,
+      "kcal": 230
+    },
+    {
+      "categoria": "Dolci",
+      "nome": "Gelato al Cocco",
+      "descrizione": "Gelato al cocco",
+      "prezzo": 3.5,
+      "disponibile": true,
+      "ordine": 3,
+      "foto_url": null,
+      "allergeni": [
+        "latte",
+        "uova"
+      ],
+      "ingredienti": [
+        {
+          "id": "65cc80f8-2a46-50fc-84e1-816485b6fdbc",
+          "grammi": 95
+        },
+        {
+          "id": "0ff3f25a-870a-58c7-bec5-4d03d6ad5138",
+          "grammi": 8
+        },
+        {
+          "id": "e91a4007-3e7f-5692-9f7a-a83eb13542b2",
+          "grammi": 7
+        }
+      ],
+      "composizione": [],
+      "peso": 110,
+      "kcal": 238
+    },
+    {
+      "categoria": "Dolci",
+      "nome": "Cheesecake al Caramello Salato",
+      "descrizione": "Cheesecake al caramello salato",
+      "prezzo": 5.0,
+      "disponibile": true,
+      "ordine": 4,
+      "foto_url": null,
+      "allergeni": [
+        "latte",
+        "glutine",
+        "uova"
+      ],
+      "ingredienti": [
+        {
+          "id": "02e4d650-23ed-5eb9-9410-38e1994fdb96",
+          "grammi": 70
+        },
+        {
+          "id": "c1a853f3-7809-5c66-80c8-269b54abcc30",
+          "grammi": 40
+        },
+        {
+          "id": "5c4debec-82e2-5243-8f06-84a1b7f07fd4",
+          "grammi": 25
+        },
+        {
+          "id": "e91a4007-3e7f-5692-9f7a-a83eb13542b2",
+          "grammi": 15
+        }
+      ],
+      "composizione": [],
+      "peso": 150,
+      "kcal": 460
+    },
+    {
+      "categoria": "Dolci",
+      "nome": "Monoporzione Cioccolato e Lampone",
+      "descrizione": "Monoporzione cioccolato e lampone",
+      "prezzo": 5.0,
+      "disponibile": true,
+      "ordine": 5,
+      "foto_url": null,
+      "allergeni": [
+        "latte",
+        "glutine",
+        "uova",
+        "soia"
+      ],
+      "ingredienti": [
+        {
+          "id": "b497c3c0-c4a5-5c32-80e6-b38c4b8e1b62",
+          "grammi": 60
+        },
+        {
+          "id": "302541f2-2dbd-517b-83b9-fe8ca6134893",
+          "grammi": 35
+        },
+        {
+          "id": "1dfaf25a-9c43-5271-ae61-b79ad2f88958",
+          "grammi": 20
+        },
+        {
+          "id": "92b1c52e-bccd-587c-b1a1-a703d70b7c30",
+          "grammi": 10
+        },
+        {
+          "id": "d55df3ec-485a-56c3-a2ab-4ba244433863",
+          "grammi": 5
+        }
+      ],
+      "composizione": [],
+      "peso": 130,
+      "kcal": 415
+    },
+    {
+      "categoria": "Panini",
+      "nome": "Caprese",
+      "descrizione": "Fior di latte, pomodori, basilico e olio evo",
+      "prezzo": 5.0,
+      "disponibile": true,
+      "ordine": 1,
+      "foto_url": "/menu/caterina/panino-caprese-1.webp",
+      "allergeni": [
+        "glutine",
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "79c98d43-0cf6-56d0-aa69-23c7528a25a0",
+          "grammi": 100
+        },
+        {
+          "id": "1b421bb6-423b-59bb-a6dd-07131ea512bc",
+          "grammi": 70
+        },
+        {
+          "id": "2a9dd634-67d1-5773-b039-de1d7adf52dc",
+          "grammi": 50
+        },
+        {
+          "id": "266c64b2-62e4-51e4-814d-e14ac080e6d0",
+          "grammi": 3
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 7
+        }
+      ],
+      "composizione": [],
+      "peso": 230,
+      "kcal": 478
+    },
+    {
+      "categoria": "Panini",
+      "nome": "Classico",
+      "descrizione": "Prosciutto crudo, rucola e fior di latte",
+      "prezzo": 6.0,
+      "disponibile": true,
+      "ordine": 2,
+      "foto_url": "/menu/caterina/panino-classico-2.webp",
+      "allergeni": [
+        "glutine",
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "79c98d43-0cf6-56d0-aa69-23c7528a25a0",
+          "grammi": 100
+        },
+        {
+          "id": "7cbc3300-0465-57e9-8b00-f868da03cddb",
+          "grammi": 50
+        },
+        {
+          "id": "1b421bb6-423b-59bb-a6dd-07131ea512bc",
+          "grammi": 50
+        },
+        {
+          "id": "7f29a222-2b9f-5296-bac9-8de2a47fcc73",
+          "grammi": 15
+        }
+      ],
+      "composizione": [],
+      "peso": 215,
+      "kcal": 595
+    },
+    {
+      "categoria": "Panini",
+      "nome": "Mediterraneo",
+      "descrizione": "Tonno, pomodori, maionese e olio evo",
+      "prezzo": 6.0,
+      "disponibile": true,
+      "ordine": 3,
+      "foto_url": "/menu/caterina/panino-mediterraneo-2.webp",
+      "allergeni": [
+        "glutine",
+        "pesce",
+        "uova"
+      ],
+      "ingredienti": [
+        {
+          "id": "79c98d43-0cf6-56d0-aa69-23c7528a25a0",
+          "grammi": 100
+        },
+        {
+          "id": "531f245a-ea2d-5c09-9c61-9e23e11adc77",
+          "grammi": 70
+        },
+        {
+          "id": "2a9dd634-67d1-5773-b039-de1d7adf52dc",
+          "grammi": 40
+        },
+        {
+          "id": "5f919807-71e7-50df-b1cf-b33a2e2c58e4",
+          "grammi": 10
+        },
+        {
+          "id": "20486ac5-2db9-57ff-a338-3210d813e0f0",
+          "grammi": 5
+        }
+      ],
+      "composizione": [],
+      "peso": 225,
+      "kcal": 555
+    },
+    {
+      "categoria": "Pokè",
+      "nome": "Mediterrasia",
+      "descrizione": "Riso basmati, pollo arrosto, salsa teriyaki, pomodorini",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 1,
+      "foto_url": "/menu/caterina/poke-meditterasia.webp",
+      "allergeni": [
+        "soia",
+        "glutine"
+      ],
+      "ingredienti": [
+        {
+          "id": "4a982aed-0146-5240-b6ce-d85927709491",
+          "grammi": 200
+        },
+        {
+          "id": "e84f98c6-5e6b-53dd-a21e-7d5fe8eebbdd",
+          "grammi": 120
+        },
+        {
+          "id": "a2e6b417-85bc-58b5-900f-0a17e4503d41",
+          "grammi": 40
+        },
+        {
+          "id": "a4435a65-f0ec-545f-882a-44c07d58ff13",
+          "grammi": 50
+        }
+      ],
+      "composizione": [],
+      "peso": 410,
+      "kcal": 499
+    },
+    {
+      "categoria": "Pokè",
+      "nome": "Salmone Creamy",
+      "descrizione": "Riso sushi, salmone crudo, avocado, philadelphia",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 2,
+      "foto_url": "/menu/caterina/salmone.png",
+      "allergeni": [
+        "pesce",
+        "latte"
+      ],
+      "ingredienti": [
+        {
+          "id": "405e257e-98a8-551e-bf82-0a9db5adfb76",
+          "grammi": 200
+        },
+        {
+          "id": "a33aeaa9-aa7f-5ccd-8b5c-8843443040c7",
+          "grammi": 100
+        },
+        {
+          "id": "1447f277-1f07-5d4a-9c07-a14761e61b7d",
+          "grammi": 60
+        },
+        {
+          "id": "3c200914-decb-5a01-809d-559967782be3",
+          "grammi": 40
+        }
+      ],
+      "composizione": [],
+      "peso": 400,
+      "kcal": 597
+    },
+    {
+      "categoria": "Pokè",
+      "nome": "Fritto Gustoso",
+      "descrizione": "Misticanza, pollo fritto, carote, mandorle, cipolla",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 3,
+      "foto_url": "/menu/caterina/poke-fritto-gustoso.webp",
+      "allergeni": [
+        "glutine",
+        "frutta_a_guscio"
+      ],
+      "ingredienti": [
+        {
+          "id": "5632a719-1384-553f-b886-32a6b1aace1f",
+          "grammi": 100
+        },
+        {
+          "id": "61cf10e7-ea9c-588a-b362-a3d0e2e22b75",
+          "grammi": 130
+        },
+        {
+          "id": "380d38d8-35d0-525c-a8fe-26515c25a448",
+          "grammi": 50
+        },
+        {
+          "id": "25886b56-a781-5dd9-a213-3df14cbc98ac",
+          "grammi": 35
+        },
+        {
+          "id": "49428664-0e25-585b-a574-fe99ef42029c",
+          "grammi": 40
+        }
+      ],
+      "composizione": [],
+      "peso": 355,
+      "kcal": 545
+    },
+    {
+      "categoria": "Pokè",
+      "nome": "Leggero",
+      "descrizione": "Misticanza, pollo arrosto, zucchine grigliate, avocado",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 4,
+      "foto_url": "/menu/caterina/poke-leggero.webp",
+      "allergeni": [],
+      "ingredienti": [
+        {
+          "id": "5632a719-1384-553f-b886-32a6b1aace1f",
+          "grammi": 100
+        },
+        {
+          "id": "e84f98c6-5e6b-53dd-a21e-7d5fe8eebbdd",
+          "grammi": 120
+        },
+        {
+          "id": "dfed1307-220b-5ed8-9a1e-f35496d34e35",
+          "grammi": 80
+        },
+        {
+          "id": "1447f277-1f07-5d4a-9c07-a14761e61b7d",
+          "grammi": 50
+        }
+      ],
+      "composizione": [],
+      "peso": 350,
+      "kcal": 392
+    },
+    {
+      "categoria": "Pokè",
+      "nome": "Tuna Teriaki",
+      "descrizione": "Riso sushi, tonno crudo, avocado, pomodorini, sesamo",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 5,
+      "foto_url": "/menu/caterina/img-tuna-teriaki.png",
+      "allergeni": [
+        "pesce",
+        "sesamo",
+        "soia"
+      ],
+      "ingredienti": [
+        {
+          "id": "405e257e-98a8-551e-bf82-0a9db5adfb76",
+          "grammi": 200
+        },
+        {
+          "id": "56d12046-3ae8-503e-9df9-8bdf9845df93",
+          "grammi": 100
+        },
+        {
+          "id": "1447f277-1f07-5d4a-9c07-a14761e61b7d",
+          "grammi": 60
+        },
+        {
+          "id": "a4435a65-f0ec-545f-882a-44c07d58ff13",
+          "grammi": 50
+        },
+        {
+          "id": "0965d17d-3505-5f3b-8978-bbece922414a",
+          "grammi": 10
+        }
+      ],
+      "composizione": [],
+      "peso": 420,
+      "kcal": 540
+    },
+    {
+      "categoria": "Pokè",
+      "nome": "Gambero Spicy",
+      "descrizione": "Riso sushi, gamberi, cetrioli, wakame, spicy mayo",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 6,
+      "foto_url": "/menu/caterina/gambero.png",
+      "allergeni": [
+        "crostacei",
+        "uova",
+        "soia"
+      ],
+      "ingredienti": [
+        {
+          "id": "405e257e-98a8-551e-bf82-0a9db5adfb76",
+          "grammi": 200
+        },
+        {
+          "id": "3189f9c1-5cf2-55f7-aa15-75e454f1eec5",
+          "grammi": 100
+        },
+        {
+          "id": "0255a48d-0321-599e-9298-8692841cc009",
+          "grammi": 50
+        },
+        {
+          "id": "2f2ae951-ded4-5bd3-850e-b30695773c5d",
+          "grammi": 20
+        },
+        {
+          "id": "fc49e73b-4418-5a60-9f97-d162497edf6e",
+          "grammi": 30
+        }
+      ],
+      "composizione": [],
+      "peso": 400,
+      "kcal": 531
+    },
+    {
+      "categoria": "Pokè",
+      "nome": "Componi la Tua Pokè",
+      "descrizione": "Crea la tua pokè: scegli base, proteine, topping e salse",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 7,
+      "foto_url": "/menu/caterina/Copia-di-bowl-1.webp",
+      "allergeni": [],
+      "ingredienti": [
+        {
+          "id": "ed765f44-4af0-5929-8933-07cddb8cbb1a",
+          "grammi": 200
+        },
+        {
+          "id": "096fbcb4-7580-581f-83da-f3df1e2371c2",
+          "grammi": 110
+        },
+        {
+          "id": "fb4a0eea-d628-5f15-aaa0-e7448e9b5d39",
+          "grammi": 60
+        },
+        {
+          "id": "e1c198b4-7e0a-53dc-8b5d-2fb06cbbef74",
+          "grammi": 30
+        }
+      ],
+      "composizione": [
+        {
+          "id": "g-1",
+          "nome": "Proteine",
+          "categorie": [],
+          "min": 1,
+          "max": 2,
+          "ingredienti": [
+            {
+              "ingredient_id": "e84f98c6-5e6b-53dd-a21e-7d5fe8eebbdd"
+            },
+            {
+              "ingredient_id": "a33aeaa9-aa7f-5ccd-8b5c-8843443040c7"
+            },
+            {
+              "ingredient_id": "56d12046-3ae8-503e-9df9-8bdf9845df93"
+            },
+            {
+              "ingredient_id": "3189f9c1-5cf2-55f7-aa15-75e454f1eec5"
+            },
+            {
+              "ingredient_id": "61cf10e7-ea9c-588a-b362-a3d0e2e22b75"
+            }
+          ]
+        },
+        {
+          "id": "g-2",
+          "nome": "Topping",
+          "categorie": [],
+          "min": 0,
+          "max": 3,
+          "ingredienti": [
+            {
+              "ingredient_id": "1447f277-1f07-5d4a-9c07-a14761e61b7d"
+            },
+            {
+              "ingredient_id": "380d38d8-35d0-525c-a8fe-26515c25a448"
+            },
+            {
+              "ingredient_id": "a4435a65-f0ec-545f-882a-44c07d58ff13"
+            },
+            {
+              "ingredient_id": "dfed1307-220b-5ed8-9a1e-f35496d34e35"
+            },
+            {
+              "ingredient_id": "0255a48d-0321-599e-9298-8692841cc009"
+            }
+          ]
+        },
+        {
+          "id": "g-3",
+          "nome": "Salse",
+          "categorie": [],
+          "min": 0,
+          "max": 2,
+          "ingredienti": [
+            {
+              "ingredient_id": "a2e6b417-85bc-58b5-900f-0a17e4503d41"
+            },
+            {
+              "ingredient_id": "fc49e73b-4418-5a60-9f97-d162497edf6e"
+            }
+          ]
+        }
+      ],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Pokè",
+      "nome": "Vegan",
+      "descrizione": "Riso basmati, falafel, avocado, carote, pomodorini",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 8,
+      "foto_url": null,
+      "allergeni": [
+        "glutine",
+        "sesamo"
+      ],
+      "ingredienti": [
+        {
+          "id": "4a982aed-0146-5240-b6ce-d85927709491",
+          "grammi": 200
+        },
+        {
+          "id": "37b575d7-303c-5b3e-b1f8-6ceebeb32536",
+          "grammi": 90
+        },
+        {
+          "id": "1447f277-1f07-5d4a-9c07-a14761e61b7d",
+          "grammi": 60
+        },
+        {
+          "id": "380d38d8-35d0-525c-a8fe-26515c25a448",
+          "grammi": 50
+        },
+        {
+          "id": "a4435a65-f0ec-545f-882a-44c07d58ff13",
+          "grammi": 50
+        }
+      ],
+      "composizione": [],
+      "peso": 400,
+      "kcal": 571
+    },
+    {
+      "categoria": "Pokè",
+      "nome": "Insalata Mediterranea",
+      "descrizione": "Lattuga, tonno sott'olio, pomodorini, olive nere",
+      "prezzo": 9.9,
+      "disponibile": true,
+      "ordine": 9,
+      "foto_url": null,
+      "allergeni": [
+        "pesce"
+      ],
+      "ingredienti": [
+        {
+          "id": "7b66496c-9395-5317-9db3-90b02d6aa4ec",
+          "grammi": 120
+        },
+        {
+          "id": "26befe70-58fa-5fb2-8e0a-a8cbd5239a7b",
+          "grammi": 90
+        },
+        {
+          "id": "a4435a65-f0ec-545f-882a-44c07d58ff13",
+          "grammi": 80
+        },
+        {
+          "id": "f6792f43-e5ec-5543-a29c-f84decc0fce6",
+          "grammi": 50
+        }
+      ],
+      "composizione": [],
+      "peso": 340,
+      "kcal": 290
+    },
+    {
+      "categoria": "Birre",
+      "nome": "Becks alla spina 20cl",
+      "descrizione": null,
+      "prezzo": 2.0,
+      "disponibile": true,
+      "ordine": 1,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Birre",
+      "nome": "Stella Artois 33cl",
+      "descrizione": null,
+      "prezzo": 2.5,
+      "disponibile": true,
+      "ordine": 2,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Birre",
+      "nome": "Corona 33cl",
+      "descrizione": null,
+      "prezzo": 3.0,
+      "disponibile": true,
+      "ordine": 3,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Birre",
+      "nome": "Becks alla spina 40cl",
+      "descrizione": null,
+      "prezzo": 4.0,
+      "disponibile": true,
+      "ordine": 4,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Birre",
+      "nome": "Birra Cilentana Rossa 33cl",
+      "descrizione": null,
+      "prezzo": 6.0,
+      "disponibile": true,
+      "ordine": 5,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Cocktails",
+      "nome": "Campari Spritz",
+      "descrizione": null,
+      "prezzo": 6.0,
+      "disponibile": true,
+      "ordine": 1,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Cocktails",
+      "nome": "Select Spritz",
+      "descrizione": null,
+      "prezzo": 6.0,
+      "disponibile": true,
+      "ordine": 2,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Cocktails",
+      "nome": "Aperol Spritz",
+      "descrizione": null,
+      "prezzo": 6.0,
+      "disponibile": true,
+      "ordine": 3,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Cocktails",
+      "nome": "Americano",
+      "descrizione": null,
+      "prezzo": 6.0,
+      "disponibile": true,
+      "ordine": 4,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Cocktails",
+      "nome": "Hugo Spritz",
+      "descrizione": null,
+      "prezzo": 7.0,
+      "disponibile": true,
+      "ordine": 5,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Cocktails",
+      "nome": "Negroni",
+      "descrizione": null,
+      "prezzo": 7.0,
+      "disponibile": true,
+      "ordine": 6,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Cocktails",
+      "nome": "Margarita",
+      "descrizione": null,
+      "prezzo": 9.0,
+      "disponibile": true,
+      "ordine": 7,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Cocktails",
+      "nome": "Moscow Mule",
+      "descrizione": null,
+      "prezzo": 9.0,
+      "disponibile": true,
+      "ordine": 8,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Cocktails",
+      "nome": "Paloma",
+      "descrizione": null,
+      "prezzo": 9.0,
+      "disponibile": true,
+      "ordine": 9,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Cocktails",
+      "nome": "Pina Colada",
+      "descrizione": null,
+      "prezzo": 9.0,
+      "disponibile": true,
+      "ordine": 10,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Cocktails",
+      "nome": "Espresso Martini",
+      "descrizione": null,
+      "prezzo": 9.0,
+      "disponibile": true,
+      "ordine": 11,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Soft Drink",
+      "nome": "Acqua naturale 50cl",
+      "descrizione": null,
+      "prezzo": 1.0,
+      "disponibile": true,
+      "ordine": 1,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Soft Drink",
+      "nome": "Acqua frizzante 50cl",
+      "descrizione": null,
+      "prezzo": 1.0,
+      "disponibile": true,
+      "ordine": 2,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Soft Drink",
+      "nome": "Tonica",
+      "descrizione": null,
+      "prezzo": 2.5,
+      "disponibile": true,
+      "ordine": 3,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Soft Drink",
+      "nome": "Coca-Cola",
+      "descrizione": null,
+      "prezzo": 3.0,
+      "disponibile": true,
+      "ordine": 4,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Soft Drink",
+      "nome": "Fanta",
+      "descrizione": null,
+      "prezzo": 3.0,
+      "disponibile": true,
+      "ordine": 5,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    },
+    {
+      "categoria": "Soft Drink",
+      "nome": "Succo di frutta",
+      "descrizione": null,
+      "prezzo": 3.0,
+      "disponibile": true,
+      "ordine": 6,
+      "foto_url": null,
+      "allergeni": [],
+      "ingredienti": [],
+      "composizione": [],
+      "peso": null,
+      "kcal": null
+    }
+  ]
+}

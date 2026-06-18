@@ -1,0 +1,1515 @@
+{
+"categories": [
+{
+"categoria": "Colazione",
+"items": [
+{
+"nome": "Uova e Bacon",
+"descrizione": "Uova, bacon croccante e pane tostato",
+"prezzo": 5,
+"ordine": 1,
+"foto_file": "uova-bacon.webp",
+"allergeni": [
+"uova",
+"glutine"
+],
+"peso_g": 210,
+"kcal": 549,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Uova",
+"grammi": 110,
+"kcal_per_100g": 155
+},
+{
+"nome": "Bacon",
+"grammi": 40,
+"kcal_per_100g": 540
+},
+{
+"nome": "Pane tostato",
+"grammi": 60,
+"kcal_per_100g": 270
+}
+]
+},
+{
+"nome": "Pancake Sciroppo d'Acero e Frutti di Bosco",
+"descrizione": "Pancake con sciroppo d'acero e frutti di bosco",
+"prezzo": 5,
+"ordine": 2,
+"foto_file": "pancake-sciroppo-d_acero-frutti-bosco.webp",
+"allergeni": [
+"glutine",
+"uova",
+"latte"
+],
+"peso_g": 250,
+"kcal": 476,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Pancake",
+"grammi": 150,
+"kcal_per_100g": 230
+},
+{
+"nome": "Sciroppo d'acero",
+"grammi": 40,
+"kcal_per_100g": 260
+},
+{
+"nome": "Frutti di bosco",
+"grammi": 60,
+"kcal_per_100g": 45
+}
+]
+},
+{
+"nome": "Pancake Sciroppo d'Acero e Fragole",
+"descrizione": "Pancake con sciroppo d'acero e fragole",
+"prezzo": 5,
+"ordine": 3,
+"foto_file": "pancake-sciroppo-acero-fragole.webp",
+"allergeni": [
+"glutine",
+"uova",
+"latte"
+],
+"peso_g": 260,
+"kcal": 471,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Pancake",
+"grammi": 150,
+"kcal_per_100g": 230
+},
+{
+"nome": "Sciroppo d'acero",
+"grammi": 40,
+"kcal_per_100g": 260
+},
+{
+"nome": "Fragole",
+"grammi": 70,
+"kcal_per_100g": 32
+}
+]
+},
+{
+"nome": "Pancake Cioccolato Bianco e Frutti di Bosco",
+"descrizione": "Pancake con cioccolato bianco e frutti di bosco",
+"prezzo": 5,
+"ordine": 4,
+"foto_file": "colazione-pancake-cioccolatobiancoefruttidibosco.webp",
+"allergeni": [
+"glutine",
+"uova",
+"latte"
+],
+"peso_g": 245,
+"kcal": 561,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Pancake",
+"grammi": 150,
+"kcal_per_100g": 230
+},
+{
+"nome": "Cioccolato bianco",
+"grammi": 35,
+"kcal_per_100g": 540
+},
+{
+"nome": "Frutti di bosco",
+"grammi": 60,
+"kcal_per_100g": 45
+}
+]
+},
+{
+"nome": "Waffle Sciroppo d'Acero, Panna, Fragole e Gocce di Cioccolato",
+"descrizione": "Waffle con sciroppo d'acero, panna montata, fragole e gocce di cioccolato",
+"prezzo": 5,
+"ordine": 5,
+"foto_file": null,
+"allergeni": [
+"glutine",
+"uova",
+"latte",
+"soia"
+],
+"peso_g": 275,
+"kcal": 728,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Waffle",
+"grammi": 130,
+"kcal_per_100g": 290
+},
+{
+"nome": "Sciroppo d'acero",
+"grammi": 35,
+"kcal_per_100g": 260
+},
+{
+"nome": "Panna montata",
+"grammi": 40,
+"kcal_per_100g": 340
+},
+{
+"nome": "Fragole",
+"grammi": 50,
+"kcal_per_100g": 32
+},
+{
+"nome": "Gocce di cioccolato",
+"grammi": 20,
+"kcal_per_100g": 540
+}
+]
+},
+{
+"nome": "Avocado Toast",
+"descrizione": "Pane tostato, salmone affumicato, avocado, limone e noci",
+"prezzo": 6,
+"ordine": 6,
+"foto_file": "avocado-toast.webp",
+"allergeni": [
+"glutine",
+"pesce",
+"frutta_a_guscio"
+],
+"peso_g": 200,
+"kcal": 443,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Pane tostato",
+"grammi": 70,
+"kcal_per_100g": 270
+},
+{
+"nome": "Salmone affumicato",
+"grammi": 50,
+"kcal_per_100g": 117
+},
+{
+"nome": "Avocado",
+"grammi": 60,
+"kcal_per_100g": 160
+},
+{
+"nome": "Noci",
+"grammi": 15,
+"kcal_per_100g": 654
+},
+{
+"nome": "Limone",
+"grammi": 5,
+"kcal_per_100g": 29
+}
+]
+},
+{
+"nome": "Toast",
+"descrizione": "Pane tostato, prosciutto cotto, mozzarella e burro",
+"prezzo": 6,
+"ordine": 7,
+"foto_file": "toast.webp",
+"allergeni": [
+"glutine",
+"latte"
+],
+"peso_g": 200,
+"kcal": 563,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Pane tostato",
+"grammi": 80,
+"kcal_per_100g": 270
+},
+{
+"nome": "Prosciutto cotto",
+"grammi": 50,
+"kcal_per_100g": 215
+},
+{
+"nome": "Mozzarella",
+"grammi": 60,
+"kcal_per_100g": 280
+},
+{
+"nome": "Burro",
+"grammi": 10,
+"kcal_per_100g": 717
+}
+]
+},
+{
+"nome": "French Toast",
+"descrizione": "Fragole e cioccolato bianco",
+"prezzo": 7,
+"ordine": 8,
+"foto_file": "colazione-frenchtoast.webp",
+"allergeni": [
+"glutine",
+"uova",
+"latte"
+],
+"peso_g": 230,
+"kcal": 502,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Pane",
+"grammi": 90,
+"kcal_per_100g": 270
+},
+{
+"nome": "Uova",
+"grammi": 50,
+"kcal_per_100g": 155
+},
+{
+"nome": "Fragole",
+"grammi": 60,
+"kcal_per_100g": 32
+},
+{
+"nome": "Cioccolato bianco",
+"grammi": 30,
+"kcal_per_100g": 540
+}
+]
+}
+]
+},
+{
+"categoria": "Antipasti",
+"items": [
+{
+"nome": "Cacio alla Piastra",
+"descrizione": "Caciocavallo di latte vaccino, fuso alla piastra con crosticina dorata",
+"prezzo": 7.9,
+"ordine": 1,
+"foto_file": "caciocavallo-piastra-img.jpg",
+"allergeni": [
+"latte"
+],
+"peso_g": 165,
+"kcal": 624,
+"ingredienti": [
+{
+"nome": "Caciocavallo",
+"grammi": 150,
+"kcal_per_100g": 400
+},
+{
+"nome": "Olio extravergine d'oliva",
+"grammi": 5,
+"kcal_per_100g": 884
+},
+{
+"nome": "Pane casereccio (crostino)",
+"grammi": 10,
+"kcal_per_100g": 270
+}
+],
+"composabile": false
+},
+{
+"nome": "Classico",
+"descrizione": "Bocconcini di fior di latte e prosciutto crudo",
+"prezzo": 7.9,
+"ordine": 2,
+"foto_file": "classico.webp",
+"allergeni": [
+"latte"
+],
+"peso_g": 175,
+"kcal": 411,
+"ingredienti": [
+{
+"nome": "Fior di latte (bocconcini)",
+"grammi": 120,
+"kcal_per_100g": 250
+},
+{
+"nome": "Prosciutto crudo",
+"grammi": 50,
+"kcal_per_100g": 220
+},
+{
+"nome": "Olio extravergine d'oliva",
+"grammi": 5,
+"kcal_per_100g": 884
+}
+],
+"composabile": false
+},
+{
+"nome": "Polpette al Sugo",
+"descrizione": "Pane casereccio, uova bio, macinato di scottona, formaggio",
+"prezzo": 9.9,
+"ordine": 3,
+"foto_file": "secondi-polpette-al-sugo.webp",
+"allergeni": [
+"glutine",
+"uova",
+"latte"
+],
+"peso_g": 320,
+"kcal": 539,
+"ingredienti": [
+{
+"nome": "Macinato di scottona",
+"grammi": 150,
+"kcal_per_100g": 215
+},
+{
+"nome": "Pane casereccio",
+"grammi": 40,
+"kcal_per_100g": 270
+},
+{
+"nome": "Uova bio",
+"grammi": 30,
+"kcal_per_100g": 155
+},
+{
+"nome": "Formaggio (grana)",
+"grammi": 20,
+"kcal_per_100g": 390
+},
+{
+"nome": "Sugo di pomodoro",
+"grammi": 80,
+"kcal_per_100g": 40
+}
+],
+"composabile": false
+}
+]
+},
+{
+"categoria": "Primi",
+"items": [
+{
+"nome": "Orecchiette al Pesto",
+"descrizione": "Basilico fresco, olio evo, mandorle, pinoli, grana",
+"prezzo": 9.9,
+"ordine": 1,
+"foto_file": null,
+"allergeni": [
+"glutine",
+"frutta_a_guscio",
+"latte"
+],
+"peso_g": 350,
+"kcal": 700,
+"ingredienti": [
+{
+"nome": "Orecchiette (pasta cotta)",
+"grammi": 250,
+"kcal_per_100g": 155
+},
+{
+"nome": "Olio evo",
+"grammi": 20,
+"kcal_per_100g": 884
+},
+{
+"nome": "Basilico fresco",
+"grammi": 20,
+"kcal_per_100g": 23
+},
+{
+"nome": "Pinoli",
+"grammi": 15,
+"kcal_per_100g": 673
+},
+{
+"nome": "Mandorle",
+"grammi": 15,
+"kcal_per_100g": 579
+},
+{
+"nome": "Grana",
+"grammi": 30,
+"kcal_per_100g": 390
+}
+],
+"composabile": false
+},
+{
+"nome": "Gnocchi alla Sorrentina",
+"descrizione": "Gnocchi di patate, sugo di pomodoro fresco, mozzarella",
+"prezzo": 9.9,
+"ordine": 2,
+"foto_file": null,
+"allergeni": [
+"glutine",
+"latte"
+],
+"peso_g": 410,
+"kcal": 595,
+"ingredienti": [
+{
+"nome": "Gnocchi di patate",
+"grammi": 250,
+"kcal_per_100g": 160
+},
+{
+"nome": "Sugo di pomodoro fresco",
+"grammi": 120,
+"kcal_per_100g": 35
+},
+{
+"nome": "Mozzarella",
+"grammi": 30,
+"kcal_per_100g": 280
+},
+{
+"nome": "Olio evo",
+"grammi": 10,
+"kcal_per_100g": 884
+}
+],
+"composabile": false
+},
+{
+"nome": "Rigatoni alla Carbonara",
+"descrizione": "Guanciale croccante, pecorino romano DOP, formaggio grana",
+"prezzo": 9.9,
+"ordine": 3,
+"foto_file": "classico.webp",
+"allergeni": [
+"glutine",
+"uova",
+"latte"
+],
+"peso_g": 380,
+"kcal": 855,
+"ingredienti": [
+{
+"nome": "Rigatoni (pasta cotta)",
+"grammi": 250,
+"kcal_per_100g": 155
+},
+{
+"nome": "Guanciale",
+"grammi": 60,
+"kcal_per_100g": 655
+},
+{
+"nome": "Uova",
+"grammi": 40,
+"kcal_per_100g": 155
+},
+{
+"nome": "Pecorino romano DOP",
+"grammi": 15,
+"kcal_per_100g": 390
+},
+{
+"nome": "Grana",
+"grammi": 15,
+"kcal_per_100g": 390
+}
+],
+"composabile": false
+},
+{
+"nome": "Pennette Gamberetti e Zucchine",
+"descrizione": "Pennette lisce, gamberetti, zucchine, cipolla e olio evo",
+"prezzo": 11.9,
+"ordine": 4,
+"foto_file": "gambero.png",
+"allergeni": [
+"glutine",
+"crostacei"
+],
+"peso_g": 410,
+"kcal": 600,
+"ingredienti": [
+{
+"nome": "Pennette (pasta cotta)",
+"grammi": 250,
+"kcal_per_100g": 155
+},
+{
+"nome": "Gamberetti",
+"grammi": 80,
+"kcal_per_100g": 99
+},
+{
+"nome": "Zucchine",
+"grammi": 60,
+"kcal_per_100g": 17
+},
+{
+"nome": "Cipolla",
+"grammi": 20,
+"kcal_per_100g": 40
+},
+{
+"nome": "Olio evo",
+"grammi": 20,
+"kcal_per_100g": 884
+}
+],
+"composabile": false
+}
+]
+},
+{
+"categoria": "Secondi",
+"items": [
+{
+"nome": "Cotoletta e Patatine",
+"descrizione": "Petto di pollo dorato e croccante con patatine fritte",
+"prezzo": 9.9,
+"ordine": 1,
+"foto_file": "Copia-di-milanese.webp",
+"allergeni": [
+"glutine",
+"uova"
+],
+"peso_g": 410,
+"kcal": 762,
+"ingredienti": [
+{
+"nome": "Petto di pollo",
+"grammi": 160,
+"kcal_per_100g": 165
+},
+{
+"nome": "Pangrattato",
+"grammi": 30,
+"kcal_per_100g": 350
+},
+{
+"nome": "Uovo",
+"grammi": 20,
+"kcal_per_100g": 155
+},
+{
+"nome": "Patatine fritte",
+"grammi": 180,
+"kcal_per_100g": 310
+},
+{
+"nome": "Olio extravergine d'oliva",
+"grammi": 20,
+"kcal_per_100g": 884
+}
+],
+"composabile": false
+},
+{
+"nome": "Salmone alla Piastra",
+"descrizione": "Filetto di salmone alla piastra su letto di misticanza",
+"prezzo": 11.9,
+"ordine": 2,
+"foto_file": "salmone.png",
+"allergeni": [
+"pesce"
+],
+"peso_g": 290,
+"kcal": 561,
+"ingredienti": [
+{
+"nome": "Filetto di salmone",
+"grammi": 200,
+"kcal_per_100g": 208
+},
+{
+"nome": "Misticanza",
+"grammi": 70,
+"kcal_per_100g": 20
+},
+{
+"nome": "Olio extravergine d'oliva",
+"grammi": 15,
+"kcal_per_100g": 884
+},
+{
+"nome": "Limone",
+"grammi": 5,
+"kcal_per_100g": 29
+}
+],
+"composabile": false
+},
+{
+"nome": "Tonno alla Piastra",
+"descrizione": "Filetto di tonno pinna gialla alla piastra",
+"prezzo": 11.9,
+"ordine": 3,
+"foto_file": "img-tuna-teriaki.png",
+"allergeni": [
+"pesce"
+],
+"peso_g": 235,
+"kcal": 376,
+"ingredienti": [
+{
+"nome": "Filetto di tonno pinna gialla",
+"grammi": 200,
+"kcal_per_100g": 144
+},
+{
+"nome": "Olio extravergine d'oliva",
+"grammi": 15,
+"kcal_per_100g": 884
+},
+{
+"nome": "Misticanza",
+"grammi": 15,
+"kcal_per_100g": 20
+},
+{
+"nome": "Limone",
+"grammi": 5,
+"kcal_per_100g": 29
+}
+],
+"composabile": false
+},
+{
+"nome": "Tagliata di Bovino alla Piastra",
+"descrizione": "Entrecote selezionato cotto alla piastra, funghi cardoncelli",
+"prezzo": 13.9,
+"ordine": 4,
+"foto_file": "classico.webp",
+"allergeni": [],
+"peso_g": 320,
+"kcal": 624,
+"ingredienti": [
+{
+"nome": "Entrecote di bovino",
+"grammi": 220,
+"kcal_per_100g": 217
+},
+{
+"nome": "Funghi cardoncelli",
+"grammi": 80,
+"kcal_per_100g": 25
+},
+{
+"nome": "Olio extravergine d'oliva",
+"grammi": 15,
+"kcal_per_100g": 884
+},
+{
+"nome": "Rucola",
+"grammi": 5,
+"kcal_per_100g": 25
+}
+],
+"composabile": false
+}
+]
+},
+{
+"categoria": "Contorni",
+"items": [
+{
+"nome": "Insalata Mista",
+"descrizione": "Lattuga croccante e radicchio",
+"prezzo": 2.9,
+"ordine": 1,
+"foto_file": null,
+"allergeni": [],
+"peso_g": 130,
+"kcal": 41,
+"ingredienti": [
+{
+"nome": "Lattuga",
+"grammi": 70,
+"kcal_per_100g": 15
+},
+{
+"nome": "Radicchio",
+"grammi": 40,
+"kcal_per_100g": 23
+},
+{
+"nome": "Olio extravergine d'oliva",
+"grammi": 10,
+"kcal_per_100g": 884
+}
+],
+"composabile": false
+},
+{
+"nome": "Verdure Grigliate",
+"descrizione": "Zucchine e melanzane arrostite alla piastra",
+"prezzo": 5.9,
+"ordine": 2,
+"foto_file": null,
+"allergeni": [],
+"peso_g": 230,
+"kcal": 132,
+"ingredienti": [
+{
+"nome": "Zucchine",
+"grammi": 110,
+"kcal_per_100g": 17
+},
+{
+"nome": "Melanzane",
+"grammi": 110,
+"kcal_per_100g": 25
+},
+{
+"nome": "Olio extravergine d'oliva",
+"grammi": 10,
+"kcal_per_100g": 884
+}
+],
+"composabile": false
+},
+{
+"nome": "Rucola, Pomodorini, Noci e Grana",
+"descrizione": "Rucola, pomodorini, noci e grana",
+"prezzo": 5.9,
+"ordine": 3,
+"foto_file": null,
+"allergeni": [
+"latte",
+"frutta_a_guscio"
+],
+"peso_g": 175,
+"kcal": 304,
+"ingredienti": [
+{
+"nome": "Rucola",
+"grammi": 50,
+"kcal_per_100g": 25
+},
+{
+"nome": "Pomodorini",
+"grammi": 70,
+"kcal_per_100g": 18
+},
+{
+"nome": "Noci",
+"grammi": 20,
+"kcal_per_100g": 654
+},
+{
+"nome": "Grana",
+"grammi": 25,
+"kcal_per_100g": 390
+},
+{
+"nome": "Olio extravergine d'oliva",
+"grammi": 10,
+"kcal_per_100g": 884
+}
+],
+"composabile": false
+},
+{
+"nome": "Ciambotta di Peperoni, Zucchine e Melanzane",
+"descrizione": "Peperoni, zucchine e melanzane in padella",
+"prezzo": 5.9,
+"ordine": 4,
+"foto_file": null,
+"allergeni": [],
+"peso_g": 285,
+"kcal": 196,
+"ingredienti": [
+{
+"nome": "Peperoni",
+"grammi": 90,
+"kcal_per_100g": 26
+},
+{
+"nome": "Zucchine",
+"grammi": 90,
+"kcal_per_100g": 17
+},
+{
+"nome": "Melanzane",
+"grammi": 90,
+"kcal_per_100g": 25
+},
+{
+"nome": "Olio extravergine d'oliva",
+"grammi": 15,
+"kcal_per_100g": 884
+}
+],
+"composabile": false
+}
+]
+},
+{
+"categoria": "Dolci",
+"items": [
+{
+"nome": "Tartufo Gelato al Cioccolato",
+"descrizione": "Tartufo di gelato al cioccolato",
+"prezzo": 3,
+"ordine": 1,
+"foto_file": null,
+"allergeni": [
+"latte",
+"uova",
+"soia"
+],
+"peso_g": 95,
+"kcal": 245,
+"ingredienti": [
+{
+"nome": "Gelato al cioccolato",
+"grammi": 70,
+"kcal_per_100g": 216
+},
+{
+"nome": "Cioccolato fondente (copertura)",
+"grammi": 15,
+"kcal_per_100g": 530
+},
+{
+"nome": "Cacao amaro in polvere",
+"grammi": 5,
+"kcal_per_100g": 350
+},
+{
+"nome": "Panna",
+"grammi": 5,
+"kcal_per_100g": 290
+}
+],
+"composabile": false
+},
+{
+"nome": "Tartufo Gelato Bianco",
+"descrizione": "Tartufo di gelato bianco",
+"prezzo": 3,
+"ordine": 2,
+"foto_file": null,
+"allergeni": [
+"latte",
+"uova",
+"frutta_a_guscio"
+],
+"peso_g": 95,
+"kcal": 230,
+"ingredienti": [
+{
+"nome": "Gelato fiordilatte",
+"grammi": 70,
+"kcal_per_100g": 200
+},
+{
+"nome": "Cioccolato bianco (copertura)",
+"grammi": 15,
+"kcal_per_100g": 540
+},
+{
+"nome": "Nocciole tritate",
+"grammi": 5,
+"kcal_per_100g": 628
+},
+{
+"nome": "Panna",
+"grammi": 5,
+"kcal_per_100g": 290
+}
+],
+"composabile": false
+},
+{
+"nome": "Gelato al Cocco",
+"descrizione": "Gelato al cocco",
+"prezzo": 3.5,
+"ordine": 3,
+"foto_file": null,
+"allergeni": [
+"latte",
+"uova"
+],
+"peso_g": 110,
+"kcal": 238,
+"ingredienti": [
+{
+"nome": "Gelato al cocco",
+"grammi": 95,
+"kcal_per_100g": 210
+},
+{
+"nome": "Cocco rapè",
+"grammi": 8,
+"kcal_per_100g": 604
+},
+{
+"nome": "Panna",
+"grammi": 7,
+"kcal_per_100g": 290
+}
+],
+"composabile": false
+},
+{
+"nome": "Cheesecake al Caramello Salato",
+"descrizione": "Cheesecake al caramello salato",
+"prezzo": 5,
+"ordine": 4,
+"foto_file": null,
+"allergeni": [
+"latte",
+"glutine",
+"uova"
+],
+"peso_g": 150,
+"kcal": 460,
+"ingredienti": [
+{
+"nome": "Formaggio cremoso",
+"grammi": 70,
+"kcal_per_100g": 340
+},
+{
+"nome": "Base biscotto e burro",
+"grammi": 40,
+"kcal_per_100g": 480
+},
+{
+"nome": "Salsa al caramello salato",
+"grammi": 25,
+"kcal_per_100g": 380
+},
+{
+"nome": "Panna",
+"grammi": 15,
+"kcal_per_100g": 290
+}
+],
+"composabile": false
+},
+{
+"nome": "Monoporzione Cioccolato e Lampone",
+"descrizione": "Monoporzione cioccolato e lampone",
+"prezzo": 5,
+"ordine": 5,
+"foto_file": null,
+"allergeni": [
+"latte",
+"glutine",
+"uova",
+"soia"
+],
+"peso_g": 130,
+"kcal": 415,
+"ingredienti": [
+{
+"nome": "Mousse al cioccolato",
+"grammi": 60,
+"kcal_per_100g": 380
+},
+{
+"nome": "Base di pan di Spagna",
+"grammi": 35,
+"kcal_per_100g": 300
+},
+{
+"nome": "Coulis di lamponi",
+"grammi": 20,
+"kcal_per_100g": 110
+},
+{
+"nome": "Cioccolato fondente (glassa)",
+"grammi": 10,
+"kcal_per_100g": 530
+},
+{
+"nome": "Lamponi freschi",
+"grammi": 5,
+"kcal_per_100g": 52
+}
+],
+"composabile": false
+}
+]
+},
+{
+"categoria": "Panini",
+"items": [
+{
+"nome": "Caprese",
+"descrizione": "Fior di latte, pomodori, basilico e olio evo",
+"prezzo": 5,
+"ordine": 1,
+"foto_file": "panino-caprese-1.webp",
+"allergeni": [
+"glutine",
+"latte"
+],
+"peso_g": 230,
+"kcal": 478,
+"ingredienti": [
+{
+"nome": "Pane",
+"grammi": 100,
+"kcal_per_100g": 270
+},
+{
+"nome": "Fior di latte",
+"grammi": 70,
+"kcal_per_100g": 280
+},
+{
+"nome": "Pomodori",
+"grammi": 50,
+"kcal_per_100g": 18
+},
+{
+"nome": "Basilico",
+"grammi": 3,
+"kcal_per_100g": 23
+},
+{
+"nome": "Olio evo",
+"grammi": 7,
+"kcal_per_100g": 884
+}
+],
+"composabile": false
+},
+{
+"nome": "Classico",
+"descrizione": "Prosciutto crudo, rucola e fior di latte",
+"prezzo": 6,
+"ordine": 2,
+"foto_file": "panino-classico-2.webp",
+"allergeni": [
+"glutine",
+"latte"
+],
+"peso_g": 215,
+"kcal": 595,
+"ingredienti": [
+{
+"nome": "Pane",
+"grammi": 100,
+"kcal_per_100g": 270
+},
+{
+"nome": "Prosciutto crudo",
+"grammi": 50,
+"kcal_per_100g": 268
+},
+{
+"nome": "Fior di latte",
+"grammi": 50,
+"kcal_per_100g": 280
+},
+{
+"nome": "Rucola",
+"grammi": 15,
+"kcal_per_100g": 25
+}
+],
+"composabile": false
+},
+{
+"nome": "Mediterraneo",
+"descrizione": "Tonno, pomodori, maionese e olio evo",
+"prezzo": 6,
+"ordine": 3,
+"foto_file": "panino-mediterraneo-2.webp",
+"allergeni": [
+"glutine",
+"pesce",
+"uova"
+],
+"peso_g": 225,
+"kcal": 555,
+"ingredienti": [
+{
+"nome": "Pane",
+"grammi": 100,
+"kcal_per_100g": 270
+},
+{
+"nome": "Tonno",
+"grammi": 70,
+"kcal_per_100g": 200
+},
+{
+"nome": "Pomodori",
+"grammi": 40,
+"kcal_per_100g": 18
+},
+{
+"nome": "Maionese",
+"grammi": 10,
+"kcal_per_100g": 680
+},
+{
+"nome": "Olio evo",
+"grammi": 5,
+"kcal_per_100g": 884
+}
+],
+"composabile": false
+}
+]
+},
+{
+"categoria": "Pokè",
+"items": [
+{
+"nome": "Mediterrasia",
+"descrizione": "Riso basmati, pollo arrosto, salsa teriyaki, pomodorini",
+"prezzo": 9.9,
+"ordine": 1,
+"foto_file": "poke-meditterasia.webp",
+"allergeni": [
+"soia",
+"glutine"
+],
+"peso_g": 410,
+"kcal": 499,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Riso basmati cotto",
+"grammi": 200,
+"kcal_per_100g": 130
+},
+{
+"nome": "Pollo arrosto",
+"grammi": 120,
+"kcal_per_100g": 165
+},
+{
+"nome": "Salsa teriyaki",
+"grammi": 40,
+"kcal_per_100g": 130
+},
+{
+"nome": "Pomodorini",
+"grammi": 50,
+"kcal_per_100g": 18
+}
+]
+},
+{
+"nome": "Salmone Creamy",
+"descrizione": "Riso sushi, salmone crudo, avocado, philadelphia",
+"prezzo": 9.9,
+"ordine": 2,
+"foto_file": "salmone.png",
+"allergeni": [
+"pesce",
+"latte"
+],
+"peso_g": 400,
+"kcal": 597,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Riso sushi cotto",
+"grammi": 200,
+"kcal_per_100g": 130
+},
+{
+"nome": "Salmone crudo",
+"grammi": 100,
+"kcal_per_100g": 208
+},
+{
+"nome": "Avocado",
+"grammi": 60,
+"kcal_per_100g": 160
+},
+{
+"nome": "Philadelphia",
+"grammi": 40,
+"kcal_per_100g": 250
+}
+]
+},
+{
+"nome": "Fritto Gustoso",
+"descrizione": "Misticanza, pollo fritto, carote, mandorle, cipolla",
+"prezzo": 9.9,
+"ordine": 3,
+"foto_file": "poke-fritto-gustoso.webp",
+"allergeni": [
+"glutine",
+"frutta_a_guscio"
+],
+"peso_g": 355,
+"kcal": 545,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Misticanza",
+"grammi": 100,
+"kcal_per_100g": 17
+},
+{
+"nome": "Pollo fritto",
+"grammi": 130,
+"kcal_per_100g": 290
+},
+{
+"nome": "Carote",
+"grammi": 50,
+"kcal_per_100g": 35
+},
+{
+"nome": "Mandorle",
+"grammi": 35,
+"kcal_per_100g": 579
+},
+{
+"nome": "Cipolla",
+"grammi": 40,
+"kcal_per_100g": 40
+}
+]
+},
+{
+"nome": "Leggero",
+"descrizione": "Misticanza, pollo arrosto, zucchine grigliate, avocado",
+"prezzo": 9.9,
+"ordine": 4,
+"foto_file": "poke-leggero.webp",
+"allergeni": [],
+"peso_g": 350,
+"kcal": 392,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Misticanza",
+"grammi": 100,
+"kcal_per_100g": 17
+},
+{
+"nome": "Pollo arrosto",
+"grammi": 120,
+"kcal_per_100g": 165
+},
+{
+"nome": "Zucchine grigliate",
+"grammi": 80,
+"kcal_per_100g": 17
+},
+{
+"nome": "Avocado",
+"grammi": 50,
+"kcal_per_100g": 160
+}
+]
+},
+{
+"nome": "Tuna Teriaki",
+"descrizione": "Riso sushi, tonno crudo, avocado, pomodorini, sesamo",
+"prezzo": 9.9,
+"ordine": 5,
+"foto_file": "img-tuna-teriaki.png",
+"allergeni": [
+"pesce",
+"sesamo",
+"soia"
+],
+"peso_g": 420,
+"kcal": 540,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Riso sushi cotto",
+"grammi": 200,
+"kcal_per_100g": 130
+},
+{
+"nome": "Tonno crudo",
+"grammi": 100,
+"kcal_per_100g": 144
+},
+{
+"nome": "Avocado",
+"grammi": 60,
+"kcal_per_100g": 160
+},
+{
+"nome": "Pomodorini",
+"grammi": 50,
+"kcal_per_100g": 18
+},
+{
+"nome": "Sesamo",
+"grammi": 10,
+"kcal_per_100g": 573
+}
+]
+},
+{
+"nome": "Gambero Spicy",
+"descrizione": "Riso sushi, gamberi, cetrioli, wakame, spicy mayo",
+"prezzo": 9.9,
+"ordine": 6,
+"foto_file": "gambero.png",
+"allergeni": [
+"crostacei",
+"uova",
+"soia"
+],
+"peso_g": 400,
+"kcal": 531,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Riso sushi cotto",
+"grammi": 200,
+"kcal_per_100g": 130
+},
+{
+"nome": "Gamberi",
+"grammi": 100,
+"kcal_per_100g": 99
+},
+{
+"nome": "Cetrioli",
+"grammi": 50,
+"kcal_per_100g": 15
+},
+{
+"nome": "Wakame",
+"grammi": 20,
+"kcal_per_100g": 45
+},
+{
+"nome": "Spicy mayo",
+"grammi": 30,
+"kcal_per_100g": 680
+}
+]
+},
+{
+"nome": "Componi la Tua Pokè",
+"descrizione": "Crea la tua pokè: scegli base, proteine, topping e salse",
+"prezzo": 9.9,
+"ordine": 7,
+"foto_file": "Copia-di-bowl-1.webp",
+"allergeni": [],
+"peso_g": 400,
+"kcal": 487,
+"composabile": true,
+"ingredienti": [
+{
+"nome": "Base (riso)",
+"grammi": 200,
+"kcal_per_100g": 130
+},
+{
+"nome": "Proteine",
+"grammi": 110,
+"kcal_per_100g": 165
+},
+{
+"nome": "Topping",
+"grammi": 60,
+"kcal_per_100g": 80
+},
+{
+"nome": "Salsa",
+"grammi": 30,
+"kcal_per_100g": 130
+}
+]
+},
+{
+"nome": "Vegan",
+"descrizione": "Riso basmati, falafel, avocado, carote, pomodorini",
+"prezzo": 9.9,
+"ordine": 8,
+"foto_file": null,
+"allergeni": [
+"glutine",
+"sesamo"
+],
+"peso_g": 400,
+"kcal": 571,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Riso basmati cotto",
+"grammi": 200,
+"kcal_per_100g": 130
+},
+{
+"nome": "Falafel",
+"grammi": 90,
+"kcal_per_100g": 333
+},
+{
+"nome": "Avocado",
+"grammi": 60,
+"kcal_per_100g": 160
+},
+{
+"nome": "Carote",
+"grammi": 50,
+"kcal_per_100g": 35
+},
+{
+"nome": "Pomodorini",
+"grammi": 50,
+"kcal_per_100g": 18
+}
+]
+},
+{
+"nome": "Insalata Mediterranea",
+"descrizione": "Lattuga, tonno sott'olio, pomodorini, olive nere",
+"prezzo": 9.9,
+"ordine": 9,
+"foto_file": null,
+"allergeni": [
+"pesce"
+],
+"peso_g": 340,
+"kcal": 290,
+"composabile": false,
+"ingredienti": [
+{
+"nome": "Lattuga",
+"grammi": 120,
+"kcal_per_100g": 15
+},
+{
+"nome": "Tonno sott'olio sgocciolato",
+"grammi": 90,
+"kcal_per_100g": 192
+},
+{
+"nome": "Pomodorini",
+"grammi": 80,
+"kcal_per_100g": 18
+},
+{
+"nome": "Olive nere",
+"grammi": 50,
+"kcal_per_100g": 235
+}
+]
+}
+]
+}
+],
+"totalItems": 40
+}
