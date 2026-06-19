@@ -13,7 +13,7 @@ import type {
 } from "@/types/db";
 import { formatEUR } from "@/lib/config/plans";
 import { brandPalette, type Palette } from "@/lib/brand";
-import { publicCookiesFor } from "@/lib/cookies";
+import { publicCookiesFor, parseConsent, hasConsent, CONSENT_COOKIE } from "@/lib/cookies";
 import CookieConsent from "./CookieConsent";
 import { resolveLayout, FONT_VARS } from "@/lib/config/layout";
 import { isServiceOpen, orariLabel, activeChiusura } from "@/lib/orari";
@@ -38,6 +38,13 @@ const FASE_META: Record<string, { label: string; bg: string; fg: string }> = {
   servito: { label: "Servito", bg: "#e5e7eb", fg: "#6b7280" },
   fallito: { label: "Pagamento fallito", bg: "#fee2e2", fg: "#991b1b" },
 };
+/** Client-side check: has the visitor granted "funzionali" cookie consent?
+ *  Gates reading the functional cookies (mf_tavolo / mf_ordini). */
+function funzionaliConsentGranted(): boolean {
+  if (typeof document === "undefined") return false;
+  const m = document.cookie.split("; ").find((c) => c.startsWith(`${CONSENT_COOKIE}=`));
+  return hasConsent(parseConsent(m?.slice(CONSENT_COOKIE.length + 1)), "funzionali");
+}
 function FaseChip({ fase }: { fase?: string }) {
   const m = fase ? FASE_META[fase] : undefined;
   if (!m) return null;
@@ -302,6 +309,7 @@ export default function MenuClient({
       setTavolo(t);
       return;
     }
+    if (!funzionaliConsentGranted()) return; // functional cookie — needs consent
     try {
       const m = document.cookie.split("; ").find((c) => c.startsWith("mf_tavolo="));
       if (!m) return;
@@ -382,6 +390,10 @@ export default function MenuClient({
   // "Segui il tuo ordine" link for this tenant's recent orders. Cookies only —
   // no localStorage/sessionStorage (project rule). Re-reads after each order.
   useEffect(() => {
+    if (!funzionaliConsentGranted()) {
+      setMyOrders([]);
+      return;
+    }
     try {
       const m = document.cookie.split("; ").find((c) => c.startsWith("mf_ordini="));
       if (!m) {

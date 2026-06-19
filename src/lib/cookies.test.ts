@@ -42,20 +42,38 @@ describe("cookie registry integrity", () => {
 });
 
 describe("every cookie set in the source is registered", () => {
-  // App cookies are mf_-prefixed by convention. Any `mf_…` literal anywhere in
-  // the source must correspond to a registry entry — so a new cookie can't ship
-  // without showing up in the consent banner.
-  it("flags any unregistered mf_ cookie", () => {
+  // Detects cookie WRITES regardless of naming convention, by scanning for the
+  // forms used in this codebase:
+  //   • document.cookie = "NAME=…"
+  //   • res/req .cookies.set("NAME", …)         (Next request/response cookies)
+  //   • cookieStore / store .set("NAME", …)     (next/headers cookie store)
+  //   • any "mf_…" literal                       (covers names used via a constant)
+  // This closes the gap where a non-mf cookie (e.g. "_ga", "analytics_id") could
+  // ship unregistered. Cookies written with a DYNAMIC name (e.g. Supabase's
+  // sb-… set from a variable) can't be extracted statically and are instead
+  // covered by prefix registry entries.
+  const prefixes = COOKIE_REGISTRY.filter((c) => c.prefix).map((c) => c.name);
+  const isRegistered = (n: string) =>
+    registeredNames.has(n) || prefixes.some((px) => n.startsWith(px));
+
+  it("flags any unregistered cookie written in the source", () => {
     const files = walk(join(process.cwd(), "src"));
     const found = new Set<string>();
+    const patterns = [
+      /document\.cookie\s*=\s*[`"']\s*([A-Za-z_][A-Za-z0-9_.\-]*)\s*=/g,
+      /\.cookies\.set\(\s*["'`]([A-Za-z_][A-Za-z0-9_.\-]*)["'`]/g,
+      /\b(?:cookieStore|store)\.set\(\s*["'`]([A-Za-z_][A-Za-z0-9_.\-]*)["'`]/g,
+      /['"`](mf_[a-z0-9_]+)['"`]/g,
+    ];
     for (const f of files) {
       const src = readFileSync(f, "utf8");
-      for (const m of src.matchAll(/['"`](mf_[a-z0-9_]+)['"`]/g)) found.add(m[1]);
+      for (const re of patterns) for (const m of src.matchAll(re)) found.add(m[1]);
     }
-    // Guard the guard: we must actually be finding the known cookies.
+    // Guard the guard: the scan must actually be finding the known cookies.
     expect(found.has("mf_consent")).toBe(true);
     expect(found.has("mf_tavolo")).toBe(true);
-    const unregistered = [...found].filter((n) => !registeredNames.has(n));
+    expect(found.has("mf_ordini")).toBe(true);
+    const unregistered = [...found].filter((n) => !isRegistered(n));
     expect(unregistered, `unregistered cookies: ${unregistered.join(", ")}`).toEqual([]);
   });
 });

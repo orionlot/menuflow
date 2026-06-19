@@ -68,6 +68,7 @@ async function recordOrderCookie(slug: string, orderId: string) {
       maxAge: 7200,
       path: "/",
       sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
       httpOnly: false,
     });
   } catch {
@@ -89,6 +90,7 @@ async function rememberTavolo(slug: string, tavolo: string) {
       maxAge: 4 * 60 * 60,
       path: "/",
       sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
       httpOnly: false,
     });
   } catch {
@@ -328,8 +330,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, maintenance: true }, { status: 503 });
     }
 
-    // Remember it for the customer's "Segui il tuo ordine" list (2h cookie).
-    await recordOrderCookie(slug, order.id);
+    // Remember it for the customer's "Segui il tuo ordine" list (2h cookie) —
+    // only when that feature is on (matches the cookie registry's gate).
+    if (isFeatureOn(restaurant, "tracking_ordine")) await recordOrderCookie(slug, order.id);
     if (tipo === "tavolo") await rememberTavolo(slug, tavolo);
 
     // ── Case A: no online payment (payments off OR pay-at-counter) → valid now ──

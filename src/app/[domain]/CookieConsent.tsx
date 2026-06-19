@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import type { Palette } from "@/lib/brand";
 import {
   CONSENT_CATEGORIES,
   CONSENT_COOKIE,
   CONSENT_MAX_AGE,
+  CONSENT_VERSION,
   NON_NECESSARY,
   defaultConsent,
-  grantAll,
+  hasConsent,
   parseConsent,
   serializeConsent,
   type Consent,
@@ -45,17 +46,19 @@ function writeConsentCookie(c: Consent) {
 
 /** Half-eaten cookie, tinted with the tenant brand colour. */
 function BiscuitIcon({ color, size = 26 }: { color: string; size?: number }) {
+  // Unique mask id per instance (avoids id collisions if more than one renders).
+  const maskId = `mf-biscuit-${useId().replace(/:/g, "")}`;
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
       <defs>
-        <mask id="mf-biscuit-bite">
+        <mask id={maskId}>
           <rect width="48" height="48" fill="black" />
           <circle cx="23" cy="25" r="20" fill="white" />
           {/* the bite taken out of the top-right */}
           <circle cx="42" cy="9" r="12" fill="black" />
         </mask>
       </defs>
-      <g mask="url(#mf-biscuit-bite)">
+      <g mask={`url(#${maskId})`}>
         <circle cx="23" cy="25" r="20" fill={color} />
       </g>
       {/* chocolate chips */}
@@ -108,24 +111,30 @@ export default function CookieConsent({ p, cookies }: { p: Palette; cookies: Coo
   const [view, setView] = useState<"hidden" | "banner" | "settings">("hidden");
   const [prefs, setPrefs] = useState<Prefs>(defaultConsent());
 
-  useEffect(() => {
-    setMounted(true);
-    const existing = readConsentCookie();
-    setConsent(existing);
-    if (existing) setPrefs(existing);
-    setView(existing ? "hidden" : "banner");
-  }, []);
-
   // Categories that actually have a cookie for this tenant (necessari always has
   // at least the consent cookie itself).
   const categories = useMemo(
     () => CONSENT_CATEGORIES.filter((cat) => cookies.some((c) => c.category === cat.id)),
     [cookies],
   );
+  // Anything to consent to? (≥1 non-necessary cookie). If not, show nothing.
+  const needsConsent = useMemo(
+    () => cookies.some((c) => NON_NECESSARY.includes(c.category)),
+    [cookies],
+  );
+
+  useEffect(() => {
+    setMounted(true);
+    const existing = readConsentCookie();
+    setConsent(existing);
+    if (existing) setPrefs(existing);
+    setView(existing || !needsConsent ? "hidden" : "banner");
+  }, [needsConsent]);
 
   if (!mounted || view === "hidden") {
-    // Once a choice exists, only the floating biscuit remains.
-    if (mounted && consent) {
+    // Once a choice exists, only the floating biscuit remains (bottom-right, so
+    // it doesn't sit on the bottom-left "Serve aiuto?" button).
+    if (mounted && consent && needsConsent) {
       return (
         <button
           type="button"
@@ -134,7 +143,7 @@ export default function CookieConsent({ p, cookies }: { p: Palette; cookies: Coo
             setView("settings");
           }}
           aria-label="Impostazioni cookie"
-          className="fixed bottom-4 left-4 z-40 flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition active:scale-90"
+          className="fixed bottom-4 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full shadow-lg transition active:scale-90"
           style={{ background: p.surface, border: `1px solid ${p.surfaceBorder}` }}
         >
           <BiscuitIcon color={p.brand} />
@@ -144,8 +153,31 @@ export default function CookieConsent({ p, cookies }: { p: Palette; cookies: Coo
     return null;
   }
 
+  // Build a consent object, granting only the categories actually shown to the
+  // user (so "Accetta tutti" never records consent for a category we never
+  // displayed — e.g. marketing, which has no cookies yet).
+  const toConsent = (g: Prefs): Consent => ({
+    v: CONSENT_VERSION,
+    funzionali: g.funzionali,
+    statistiche: g.statistiche,
+    marketing: g.marketing,
+  });
+  const grantShown = (): Consent => {
+    const g: Prefs = { funzionali: false, statistiche: false, marketing: false };
+    for (const cat of categories) if (NON_NECESSARY.includes(cat.id)) g[cat.id as keyof Prefs] = true;
+    return toConsent(g);
+  };
+
   const save = (c: Consent) => {
     writeConsentCookie(c);
+    // Withdraw: delete client-readable cookies whose category is now denied, so
+    // revoking consent actually removes the data (not just the banner choice).
+    for (const ck of cookies) {
+      if (ck.prefix || ck.category === "necessari" || hasConsent(c, ck.category)) continue;
+      const secure =
+        typeof location !== "undefined" && location.protocol === "https:" ? "; Secure" : "";
+      document.cookie = `${ck.name}=; Max-Age=0; Path=/; SameSite=Lax${secure}`;
+    }
     setConsent(c);
     setView("hidden");
   };
@@ -189,7 +221,7 @@ export default function CookieConsent({ p, cookies }: { p: Palette; cookies: Coo
               </button>
               <button
                 type="button"
-                onClick={() => save(grantAll())}
+                onClick={() => save(grantShown())}
                 className="rounded-full px-5 py-2 text-sm font-bold transition active:scale-95"
                 style={{ background: p.brand, color: p.onBrand }}
               >
@@ -299,7 +331,7 @@ export default function CookieConsent({ p, cookies }: { p: Palette; cookies: Coo
               </button>
               <button
                 type="button"
-                onClick={() => save({ v: defaultConsent().v, ...prefs })}
+                onClick={() => save(toConsent(prefs))}
                 className="rounded-full px-4 py-2 text-sm font-semibold"
                 style={{ border: `1px solid ${p.brand}`, color: p.brand }}
               >
@@ -307,7 +339,7 @@ export default function CookieConsent({ p, cookies }: { p: Palette; cookies: Coo
               </button>
               <button
                 type="button"
-                onClick={() => save(grantAll())}
+                onClick={() => save(grantShown())}
                 className="rounded-full px-5 py-2 text-sm font-bold active:scale-95"
                 style={{ background: p.brand, color: p.onBrand }}
               >
