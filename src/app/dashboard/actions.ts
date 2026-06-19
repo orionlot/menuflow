@@ -37,6 +37,7 @@ import type {
   CategoryAddon,
   ComposizioneGruppo,
   Order,
+  PrenotazioneStato,
   PublicIngredient,
   Restaurant,
   TagliaComposizione,
@@ -630,6 +631,16 @@ export async function reorderItems(updates: { id: string; ordine: number }[]) {
   );
   revalidatePath("/dashboard/menu");
   revalidatePath("/[domain]", "page");
+}
+
+/** Confirm / decline / cancel a reservation. RLS scopes it to the owner's rows. */
+export async function setReservationStatus(id: string, stato: PrenotazioneStato) {
+  const allowed: PrenotazioneStato[] = ["in_attesa", "confermata", "rifiutata", "annullata"];
+  if (!allowed.includes(stato)) throw new Error("Stato non valido.");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("prenotazioni").update({ stato }).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/prenotazioni");
 }
 
 export async function toggleScontrino(orderId: string, value: boolean) {

@@ -1,5 +1,5 @@
 import "server-only";
-import type { Order, Restaurant } from "@/types/db";
+import type { Order, Prenotazione, Restaurant } from "@/types/db";
 import { formatEUR } from "@/lib/config/plans";
 
 /**
@@ -107,6 +107,31 @@ export async function notifyNewOrder(
 }
 
 /** Bot PAGAMENTI: action to perform, NOT a fiscal confirmation. */
+/** New table-reservation request → Orders bot/chat (reuses the orders channel). */
+export async function notifyNewReservation(
+  restaurant: Pick<Restaurant, "telegram_chat_ordini" | "telegram_topic_ordini">,
+  p: Prenotazione,
+) {
+  const text = [
+    `📅 <b>NUOVA PRENOTAZIONE</b>`,
+    `━━━━━━━━━━━━━━━━━━`,
+    `👤 ${escapeHtml(p.nome)}  ·  ☎️ ${escapeHtml(p.telefono)}`,
+    `🗓 ${escapeHtml(p.data)} alle ${escapeHtml(p.ora)}  ·  ${p.coperti} ${p.coperti === 1 ? "persona" : "persone"}`,
+    p.sala ? `🪑 Sala: ${escapeHtml(p.sala)}` : "",
+    p.note ? `\n📝 ${escapeHtml(p.note)}` : "",
+    `\nConferma o rifiuta dal pannello Prenotazioni.`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  await send(
+    process.env.TELEGRAM_BOT_ORDINI_TOKEN,
+    restaurant.telegram_chat_ordini,
+    text,
+    restaurant.telegram_topic_ordini,
+  );
+}
+
 export async function notifyPaidOrder(
   restaurant: Pick<
     Restaurant,

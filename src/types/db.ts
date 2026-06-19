@@ -379,6 +379,23 @@ export interface Order {
 
 export type OrderTipo = "tavolo" | "asporto" | "delivery";
 
+export type PrenotazioneStato = "in_attesa" | "confermata" | "rifiutata" | "annullata";
+
+/** A request-based table reservation (gated by the `prenotazioni` feature). */
+export interface Prenotazione {
+  id: string;
+  restaurant_id: string;
+  nome: string;
+  telefono: string;
+  data: string; // YYYY-MM-DD
+  ora: string; // HH:MM
+  coperti: number;
+  sala: string | null;
+  note: string | null;
+  stato: PrenotazioneStato;
+  created_at: string;
+}
+
 /** A customer-at-table service request (call waiter / ask for the bill). */
 export interface ServiceRequest {
   id: string;

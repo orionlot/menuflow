@@ -15,6 +15,7 @@ import { formatEUR } from "@/lib/config/plans";
 import { brandPalette, type Palette } from "@/lib/brand";
 import { publicCookiesFor, parseConsent, hasConsent, CONSENT_COOKIE } from "@/lib/cookies";
 import CookieConsent from "./CookieConsent";
+import PrenotaModal from "./PrenotaModal";
 import { resolveLayout, FONT_VARS } from "@/lib/config/layout";
 import { isServiceOpen, orariLabel, activeChiusura } from "@/lib/orari";
 import { effectiveOptions, effectiveNota } from "@/lib/menu";
@@ -233,6 +234,7 @@ export default function MenuClient({
   const asportoOn = Boolean(tenant.funzioni_attive?.asporto);
   const etichetteOn = Boolean(tenant.funzioni_attive?.etichette);
   const vetrinaOn = Boolean(tenant.funzioni_attive?.vetrina);
+  const prenotazioniOn = Boolean(tenant.funzioni_attive?.prenotazioni);
   const fasceOrarieOn = Boolean(tenant.funzioni_attive?.fasce_orarie);
   const prezzoAsportoOn = Boolean(tenant.funzioni_attive?.prezzo_asporto);
   const deliveryOn = Boolean(tenant.funzioni_attive?.delivery);
@@ -1170,6 +1172,13 @@ export default function MenuClient({
             onPick={tapAdd}
             renderAdd={renderAddControl}
           />
+        )}
+
+        {/* Table reservation CTA (gated by the `prenotazioni` feature) */}
+        {prenotazioniOn && (
+          <div className="px-5 pt-3">
+            <PrenotaModal slug={tenant.slug} p={p} sale={tenant.sale} />
+          </div>
         )}
 
         {/* Announcement banner (brand-coloured, dismissible in-memory) */}

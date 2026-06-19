@@ -39,6 +39,7 @@ export default async function DashboardLayout({
         esci={esci}
         salaOn={isFeatureOn(restaurant, "sala")}
         contiOn={isFeatureOn(restaurant, "conti")}
+        prenotazioniOn={isFeatureOn(restaurant, "prenotazioni")}
         dark={dark}
         setTema={setDashboardTema}
       />

@@ -37,7 +37,8 @@ export type FeatureId =
   | "allergeni_ordine"
   | "sala_ordine"
   | "stampa_automatica"
-  | "vetrina";
+  | "vetrina"
+  | "prenotazioni";
 
 export interface FeatureDef {
   id: FeatureId;
@@ -168,6 +169,14 @@ export const FEATURES: FeatureDef[] = [
     nome: "Vetrina in homepage",
     descrizione:
       "Carosello in cima al menu con i prodotti che scegli (del giorno, di stagione…), con annuncio personalizzabile per ciascuno.",
+    pianoMinimo: "base",
+    defaultOn: false,
+  },
+  {
+    id: "prenotazioni",
+    nome: "Prenotazione tavolo",
+    descrizione:
+      "Il cliente invia una richiesta di prenotazione (nome, telefono, data, ora, persone); tu confermi o rifiuti dal pannello.",
     pianoMinimo: "base",
     defaultOn: false,
   },
