@@ -33,6 +33,16 @@ export default async function Home() {
           Menu digitali e ordini al tavolo per ristoranti e bar. Una sola
           piattaforma, ogni locale è un sottodominio.
         </p>
+        {/* Public pitch deck (static, served via /presentazione). Full nav, not
+            a Next route → plain <a> opening in a new tab. */}
+        <a
+          href="/presentazione"
+          target="_blank"
+          rel="noopener"
+          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
+        >
+          ▶ Guarda la presentazione
+        </a>
       </header>
 
       <section className="mb-12">
