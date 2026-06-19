@@ -1283,20 +1283,47 @@ export default function MenuClient({
               <button
                 onClick={() => setCatOpen((o) => !o)}
                 aria-expanded={catOpen}
-                className="flex w-full items-center justify-between rounded-full px-4 py-2 text-sm font-semibold transition"
-                style={{
-                  background: catOpen ? p.chipActiveBg : p.chipBg,
-                  color: catOpen ? p.chipActiveText : p.chipText,
-                  border: catOpen ? "none" : `1px solid ${p.surfaceBorder}`,
-                }}
+                aria-label="Sfoglia le categorie"
+                className="flex w-full items-center justify-between gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition active:scale-[0.99]"
+                style={{ background: p.tint, color: p.brand, border: `1.5px solid ${p.brand}` }}
               >
-                <span className="truncate">Categorie · {tuttoOn ? "Tutto" : activeCat || categories[0]}</span>
-                <span
-                  aria-hidden
-                  className="ml-2 text-base leading-none"
-                  style={{ transform: catOpen ? "rotate(45deg)" : "none", transition: "transform .15s" }}
-                >
-                  +
+                <span className="flex min-w-0 items-center gap-2">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M4 6h10M4 12h10M4 18h10" />
+                    <circle cx="19" cy="6" r="1.3" />
+                    <circle cx="19" cy="12" r="1.3" />
+                    <circle cx="19" cy="18" r="1.3" />
+                  </svg>
+                  <span className="truncate">Sfoglia le categorie</span>
+                </span>
+                <span className="flex shrink-0 items-center gap-1.5">
+                  <span className="max-w-[42vw] truncate text-xs font-semibold opacity-80">
+                    {tuttoOn ? "Tutto" : activeCat || categories[0]}
+                  </span>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                    style={{ transform: catOpen ? "rotate(180deg)" : "none", transition: "transform .15s" }}
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
                 </span>
               </button>
               {catOpen && (
