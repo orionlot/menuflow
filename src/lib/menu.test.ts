@@ -6,7 +6,21 @@ import {
   sanitizeComposizione,
   sanitizeReparti,
   sanitizeSale,
+  sanitizeCategorieOrdine,
 } from "@/lib/menu";
+
+describe("sanitizeCategorieOrdine", () => {
+  it("trims, drops blanks, de-duplicates, preserves order", () => {
+    expect(sanitizeCategorieOrdine([" Antipasti ", "Primi", "", "Antipasti", "  "])).toEqual([
+      "Antipasti",
+      "Primi",
+    ]);
+  });
+  it("returns [] for non-arrays and caps the length", () => {
+    expect(sanitizeCategorieOrdine("nope")).toEqual([]);
+    expect(sanitizeCategorieOrdine(Array.from({ length: 200 }, (_, i) => `C${i}`))).toHaveLength(100);
+  });
+});
 
 describe("sanitizeSale", () => {
   it("keeps room + table ids, clamps x/y to 0–100, keeps valid posti", () => {

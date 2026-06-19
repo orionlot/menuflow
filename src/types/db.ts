@@ -137,6 +137,9 @@ export interface Restaurant {
   sale: Sala[];
   /** Per-category average prep minutes, e.g. { "Antipasti": 10 } — fallback for the KDS estimate. */
   categoria_tempi: Record<string, number>;
+  /** Custom display order of categories on the public menu (category names).
+   *  Categories not listed fall back to alphabetical after the listed ones. */
+  categorie_ordine: string[];
   /** Default kitchen concurrency (dishes prepared at once) for the wait estimate
    *  when an item has no reparto / reparti aren't used. null ⇒ 1 (serial). */
   capienza_default: number | null;
@@ -182,6 +185,7 @@ export type PublicRestaurant = Pick<
   | "etichette"
   | "sale"
   | "categoria_tempi"
+  | "categorie_ordine"
   | "capienza_default"
   | "reparti"
   | "attivo"

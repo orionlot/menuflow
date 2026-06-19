@@ -153,6 +153,18 @@ export function sanitizeCategoriaTempi(raw: unknown): Record<string, number> {
   return out;
 }
 
+/** Whitelist a custom category-order list: trimmed, de-duplicated, capped. */
+export function sanitizeCategorieOrdine(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const v of raw) {
+    const name = String(v ?? "").trim().slice(0, 60);
+    if (name && !out.includes(name)) out.push(name);
+    if (out.length >= 100) break;
+  }
+  return out;
+}
+
 /** Coerce a menu item's `ingredienti` value READ FROM THE DB into the canonical
  *  RicettaVoce[] shape. Tolerates legacy bare-id strings (pre-0035 rows, seeds,
  *  or out-of-band writes) and drops malformed entries. Apply at every read

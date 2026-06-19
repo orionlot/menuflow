@@ -475,8 +475,19 @@ export default function MenuClient({
   const categories = useMemo(() => {
     const seen: string[] = [];
     for (const i of items) if (!seen.includes(i.categoria)) seen.push(i.categoria);
+    // Apply the restaurateur's custom category order; categories not listed keep
+    // their current (DB/alphabetical) order after the listed ones.
+    const order = tenant.categorie_ordine ?? [];
+    if (order.length) {
+      const idx = new Map(order.map((c, i) => [c, i]));
+      seen.sort((a, b) => {
+        const ia = idx.has(a) ? idx.get(a)! : Infinity;
+        const ib = idx.has(b) ? idx.get(b)! : Infinity;
+        return ia === ib ? 0 : ia - ib;
+      });
+    }
     return seen;
-  }, [items]);
+  }, [items, tenant.categorie_ordine]);
   const [activeCat, setActiveCat] = useState<string>(categories[0] ?? "");
 
   const q = query.trim().toLowerCase();

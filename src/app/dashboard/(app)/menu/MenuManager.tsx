@@ -60,6 +60,7 @@ export interface MenuActions {
   updateEtichette?: (etichette: string[]) => Promise<void>;
   updateReparti?: (reparti: Reparto[]) => Promise<void>;
   updateCategoriaTempi?: (value: Record<string, number>) => Promise<void>;
+  updateCategorieOrdine?: (order: string[]) => Promise<void>;
   updateCapienzaDefault?: (value: number | null) => Promise<void>;
   reorder: (updates: { id: string; ordine: number }[]) => Promise<void>;
 }
@@ -100,6 +101,7 @@ export default function MenuManager({
   fasceOrarieOn = false,
   tempoStimatoOn = false,
   categoriaTempi = {},
+  categorieOrdine: initialCategorieOrdine = [],
   capienzaDefault = null,
   pesoOn = false,
   kcalOn = false,
@@ -124,6 +126,7 @@ export default function MenuManager({
   fasceOrarieOn?: boolean;
   tempoStimatoOn?: boolean;
   categoriaTempi?: Record<string, number>;
+  categorieOrdine?: string[];
   capienzaDefault?: number | null;
   pesoOn?: boolean;
   kcalOn?: boolean;
@@ -133,6 +136,7 @@ export default function MenuManager({
 }) {
   const router = useRouter();
   const [items, setItems] = useState<MenuItem[]>(initialItems);
+  const [categorieOrdine, setCategorieOrdine] = useState<string[]>(initialCategorieOrdine);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [openOptions, setOpenOptions] = useState<string | null>(null);
@@ -144,6 +148,7 @@ export default function MenuManager({
   const popularSet = useMemo(() => new Set(popularIds), [popularIds]);
 
   useEffect(() => setItems(initialItems), [initialItems]);
+  useEffect(() => setCategorieOrdine(initialCategorieOrdine), [initialCategorieOrdine]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -169,16 +174,26 @@ export default function MenuManager({
     return m;
   }, [items]);
 
-  const categoryNames = useMemo(
-    () =>
-      [...grouped.keys()].sort((a, b) => {
-        // "Senza categoria" is an exception: always pinned to the top.
-        if (a === "Senza categoria") return -1;
-        if (b === "Senza categoria") return 1;
-        return a.localeCompare(b);
-      }),
-    [grouped],
-  );
+  const categoryNames = useMemo(() => {
+    const idx = new Map(categorieOrdine.map((c, i) => [c, i]));
+    return [...grouped.keys()].sort((a, b) => {
+      // "Senza categoria" is an exception: always pinned to the top.
+      if (a === "Senza categoria") return -1;
+      if (b === "Senza categoria") return 1;
+      // Custom order first; categories not in the list fall back to alphabetical.
+      const ia = idx.has(a) ? idx.get(a)! : Infinity;
+      const ib = idx.has(b) ? idx.get(b)! : Infinity;
+      if (ia !== ib) return ia - ib;
+      return a.localeCompare(b);
+    });
+  }, [grouped, categorieOrdine]);
+
+  // Persist a new category order (optimistic). "Senza categoria" stays pinned and
+  // is never part of the saved order.
+  function reorderCategorie(order: string[]) {
+    setCategorieOrdine(order);
+    if (actions.updateCategorieOrdine) run(() => actions.updateCategorieOrdine!(order));
+  }
 
   function run(fn: () => Promise<void>) {
     setError(null);
@@ -557,6 +572,7 @@ export default function MenuManager({
           categories={categoryNames}
           grouped={grouped}
           disabled={pending}
+          onReorder={reorderCategorie}
           onRename={(oldName, newName) => {
             const targets = (grouped.get(oldName) ?? []).map((i) => i.id);
             setItems((prev) =>
@@ -1496,12 +1512,14 @@ function CategoriesTab({
   grouped,
   disabled,
   onRename,
+  onReorder,
   onAdd,
 }: {
   categories: string[];
   grouped: Map<string, MenuItem[]>;
   disabled: boolean;
   onRename: (oldName: string, newName: string) => void;
+  onReorder: (order: string[]) => void;
   onAdd: (name: string) => void;
 }) {
   const [editing, setEditing] = useState<string | null>(null);
@@ -1516,12 +1534,24 @@ function CategoriesTab({
     setEditing(null);
   }
 
+  // Categories the customer can reorder ("Senza categoria" stays pinned on top).
+  const movable = categories.filter((c) => c !== "Senza categoria");
+  function move(cat: string, dir: -1 | 1) {
+    const i = movable.indexOf(cat);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= movable.length) return;
+    const next = [...movable];
+    [next[i], next[j]] = [next[j], next[i]];
+    onReorder(next);
+  }
+
   return (
     <div className="rounded-xl border border-neutral-200 bg-white p-4">
       <h2 className="font-medium">Categorie</h2>
       <p className="mb-3 mt-1 text-sm text-neutral-500">
-        Rinomina una categoria (aggiorna tutti i suoi prodotti) o creane una nuova. Per spostare
-        un prodotto, cambia la sua categoria dalla scheda nel tab Piatti.
+        Riordina le categorie con le frecce per decidere come appaiono nel menu, rinomina una
+        categoria (aggiorna tutti i suoi prodotti) o creane una nuova. Per spostare un prodotto,
+        cambia la sua categoria dalla scheda nel tab Piatti.
       </p>
       <ul className="divide-y divide-neutral-100">
         {categories.map((cat) => {
@@ -1563,17 +1593,41 @@ function CategoriesTab({
                     <span className="text-sm font-normal text-neutral-400">({count})</span>
                   </span>
                   {isException ? (
-                    <span className="text-xs text-neutral-400">non rinominabile</span>
+                    <span className="text-xs text-neutral-400">sempre in cima</span>
                   ) : (
-                    <button
-                      onClick={() => {
-                        setEditing(cat);
-                        setDraft(cat);
-                      }}
-                      className="cursor-pointer rounded-md px-2 py-1 text-sm text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
-                    >
-                      ✎ Rinomina
-                    </button>
+                    <>
+                      <div className="flex items-center">
+                        <button
+                          type="button"
+                          onClick={() => move(cat, -1)}
+                          disabled={disabled || movable.indexOf(cat) === 0}
+                          aria-label={`Sposta «${cat}» più in alto`}
+                          title="Sposta su"
+                          className="cursor-pointer rounded-md px-1.5 py-1 text-sm text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-30"
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => move(cat, 1)}
+                          disabled={disabled || movable.indexOf(cat) === movable.length - 1}
+                          aria-label={`Sposta «${cat}» più in basso`}
+                          title="Sposta giù"
+                          className="cursor-pointer rounded-md px-1.5 py-1 text-sm text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-30"
+                        >
+                          ▼
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setEditing(cat);
+                          setDraft(cat);
+                        }}
+                        className="cursor-pointer rounded-md px-2 py-1 text-sm text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+                      >
+                        ✎ Rinomina
+                      </button>
+                    </>
                   )}
                 </>
               )}

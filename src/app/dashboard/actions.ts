@@ -27,6 +27,7 @@ import {
   sanitizeSale,
   sanitizeI18n,
   sanitizeCategoriaTempi,
+  sanitizeCategorieOrdine,
   type ItemPatch,
 } from "@/lib/menu";
 import { parseCsv, rowsToItemPatches } from "@/lib/csv";
@@ -467,6 +468,17 @@ export async function updateCategoriaTempi(value: unknown) {
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/menu");
   revalidatePath("/dashboard/cucina");
+}
+
+export async function updateCategorieOrdine(value: unknown) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ categorie_ordine: sanitizeCategorieOrdine(value) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/menu");
 }
 
 export async function updateReparti(reparti: unknown) {
