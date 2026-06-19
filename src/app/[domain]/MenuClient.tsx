@@ -1796,12 +1796,12 @@ export default function MenuClient({
                         type="button"
                         onClick={sendPosition}
                         disabled={posState === "loading"}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:opacity-60"
-                        style={{
-                          background: posState === "ok" ? p.tint : "transparent",
-                          border: `1px solid ${posState === "ok" ? p.brand : p.surfaceBorder}`,
-                          color: posState === "ok" ? p.brand : p.text,
-                        }}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold shadow-sm transition active:scale-[0.98] disabled:opacity-60"
+                        style={
+                          posState === "ok"
+                            ? { background: p.tint, border: `1px solid ${p.brand}`, color: p.brand }
+                            : { background: p.brand, color: p.onBrand }
+                        }
                       >
                         📍{" "}
                         {posState === "loading"
@@ -2647,6 +2647,15 @@ function OptionsModal({
                     const soldOut = ing.scorta != null && ing.scorta <= 0;
                     const perMax = Math.min(ing.scorta ?? Infinity, effMax(g) - total + qty);
                     const prezzo = s.prezzo ?? ing.prezzo;
+                    // Meta line — intentionally NO "incluso" label and NO unit of
+                    // measure ("porzione") for composable items (hidden for now).
+                    const kc = kcalDaGrammi(ing.peso, ing.kcal_per_100g);
+                    const meta = [
+                      prezzo > 0 ? `+ ${formatEUR(Math.round(prezzo * 100))}` : null,
+                      pesoOn && ing.peso != null ? `${ing.peso} g` : null,
+                      kcalOn && kc != null ? `${Math.round(kc)} kcal` : null,
+                      !soldOut && ing.scorta != null ? `ne restano ${ing.scorta}` : null,
+                    ].filter(Boolean) as string[];
                     return (
                       <div
                         key={s.ingredient_id}
@@ -2658,22 +2667,12 @@ function OptionsModal({
                         }}
                       >
                         <span className="min-w-0">
-                          <span className="block truncate">
-                            {ingName(ing)}
-                            {ing.unita ? (
-                              <span className="font-normal" style={{ color: p.textMuted }}>
-                                {" "}· {ing.unita}
-                              </span>
-                            ) : null}
-                          </span>
-                          <span className="text-xs" style={{ color: p.textMuted }}>
-                            {prezzo > 0 ? `+ ${formatEUR(Math.round(prezzo * 100))}` : "incluso"}
-                            {pesoOn && ing.peso != null ? ` · ${ing.peso} g` : ""}
-                            {kcalOn && kcalDaGrammi(ing.peso, ing.kcal_per_100g) != null
-                              ? ` · ${Math.round(kcalDaGrammi(ing.peso, ing.kcal_per_100g)!)} kcal`
-                              : ""}
-                            {!soldOut && ing.scorta != null ? ` · ne restano ${ing.scorta}` : ""}
-                          </span>
+                          <span className="block truncate">{ingName(ing)}</span>
+                          {meta.length > 0 && (
+                            <span className="text-xs" style={{ color: p.textMuted }}>
+                              {meta.join(" · ")}
+                            </span>
+                          )}
                         </span>
                         {soldOut ? (
                           <span
