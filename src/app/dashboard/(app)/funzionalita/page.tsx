@@ -10,7 +10,9 @@ import {
   disconnectStripe,
   updateTelegram,
   testTelegram,
+  updateDatiLegali,
 } from "@/app/dashboard/actions";
+import LegalDataForm from "@/components/LegalDataForm";
 import { isTelegramConfigured } from "@/lib/env";
 import FeaturesOwner from "./FeaturesOwner";
 import ServiceSettings from "./ServiceSettings";
@@ -26,6 +28,7 @@ const TABS = [
   { href: "#pagamenti", label: "Pagamenti" },
   { href: "#notifiche", label: "Notifiche" },
   { href: "#funzioni", label: "Funzioni menu" },
+  { href: "#legale", label: "Dati legali" },
 ];
 
 export default async function FunzionalitaPage() {
@@ -117,6 +120,13 @@ export default async function FunzionalitaPage() {
       <section id="funzioni" className="scroll-mt-28">
         <h2 className="mb-2 text-sm font-semibold text-neutral-700">Funzioni del menu</h2>
         <FeaturesOwner features={features} action={updateFunzionalita} />
+      </section>
+
+      <section id="legale" className="scroll-mt-28">
+        <h2 className="mb-2 text-sm font-semibold text-neutral-700">Dati legali (Cookie & Privacy Policy)</h2>
+        <div className="rounded-xl border border-neutral-200 bg-white p-4">
+          <LegalDataForm initial={restaurant.dati_legali ?? {}} action={updateDatiLegali} />
+        </div>
       </section>
     </div>
   );

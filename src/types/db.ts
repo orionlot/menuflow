@@ -93,6 +93,20 @@ export interface Sala {
 /** Kitchen order priority. */
 export type Priorita = "alta" | "media" | "bassa";
 
+/** Per-tenant legal/privacy data filling the Cookie & Privacy policy templates.
+ *  All optional; the policy pages fall back to sensible defaults. */
+export interface DatiLegali {
+  titolare?: string; // ragione sociale / nome del titolare del trattamento
+  piva?: string; // P.IVA / Codice Fiscale
+  indirizzo?: string; // indirizzo operativo del locale
+  sede_legale?: string; // sede legale (se diversa dall'indirizzo)
+  email?: string; // email per richieste privacy
+  pec?: string; // PEC (facoltativa)
+  telefono?: string; // telefono di contatto (facoltativo)
+  dominio?: string; // dominio del sito (default: host risolto)
+  aggiornato_il?: string; // data ultimo aggiornamento (YYYY-MM-DD)
+}
+
 export interface Restaurant {
   id: string;
   slug: string;
@@ -140,6 +154,8 @@ export interface Restaurant {
   /** Custom display order of categories on the public menu (category names).
    *  Categories not listed fall back to alphabetical after the listed ones. */
   categorie_ordine: string[];
+  /** Per-tenant legal data that fills the Cookie/Privacy policy templates. */
+  dati_legali: DatiLegali;
   /** Default kitchen concurrency (dishes prepared at once) for the wait estimate
    *  when an item has no reparto / reparti aren't used. null ⇒ 1 (serial). */
   capienza_default: number | null;
@@ -186,6 +202,7 @@ export type PublicRestaurant = Pick<
   | "sale"
   | "categoria_tempi"
   | "categorie_ordine"
+  | "dati_legali"
   | "capienza_default"
   | "reparti"
   | "attivo"

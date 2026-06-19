@@ -1,5 +1,9 @@
 "use client";
 
+/* eslint-disable @next/next/no-html-link-for-pages --
+   /cookie-policy and /privacy-policy are tenant-relative routes served via the
+   Host-based middleware rewrite; full <a> navigation is required (a <Link> would
+   client-match the [domain] dynamic root). */
 import { useEffect, useId, useMemo, useState } from "react";
 import type { Palette } from "@/lib/brand";
 import {
@@ -197,10 +201,21 @@ export default function CookieConsent({ p, cookies }: { p: Palette; cookies: Coo
               <span className="mt-0.5 shrink-0">
                 <BiscuitIcon color={p.brand} size={30} />
               </span>
-              <p className="text-sm leading-snug" style={{ color: p.textMuted }}>
-                Usiamo i cookie per far funzionare il menu e, con il tuo consenso, per ricordare le
-                tue preferenze. Puoi scegliere quali accettare.
-              </p>
+              <div className="min-w-0">
+                <p className="text-sm leading-snug" style={{ color: p.textMuted }}>
+                  Usiamo i cookie per far funzionare il menu e, con il tuo consenso, per ricordare
+                  le tue preferenze. Puoi scegliere quali accettare.
+                </p>
+                <p className="mt-1.5 text-xs">
+                  <a href="/cookie-policy" className="font-semibold underline" style={{ color: p.brand }}>
+                    Cookie Policy
+                  </a>{" "}
+                  ·{" "}
+                  <a href="/privacy-policy" className="font-semibold underline" style={{ color: p.brand }}>
+                    Privacy Policy
+                  </a>
+                </p>
+              </div>
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
               <button
@@ -266,6 +281,17 @@ export default function CookieConsent({ p, cookies }: { p: Palette; cookies: Coo
             </div>
 
             <div className="space-y-3 px-5 py-4">
+              <p className="text-xs" style={{ color: p.textMuted }}>
+                Maggiori dettagli nella{" "}
+                <a href="/cookie-policy" className="font-semibold underline" style={{ color: p.brand }}>
+                  Cookie Policy
+                </a>{" "}
+                e nella{" "}
+                <a href="/privacy-policy" className="font-semibold underline" style={{ color: p.brand }}>
+                  Privacy Policy
+                </a>
+                .
+              </p>
               {categories.map((cat) => {
                 const locked = Boolean(cat.sempre);
                 const on = locked || prefs[cat.id as keyof Prefs];

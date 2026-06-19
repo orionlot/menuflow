@@ -7,6 +7,7 @@ import { buildTenantUrl, tenantSubdomainUrl } from "@/lib/urls";
 import { appOrigin } from "@/lib/origin";
 import type { Restaurant } from "@/types/db";
 import BrandingForm from "@/components/BrandingForm";
+import LegalDataForm from "@/components/LegalDataForm";
 import FeaturesAdmin from "./FeaturesAdmin";
 import EmbedSnippet from "./EmbedSnippet";
 import {
@@ -14,6 +15,7 @@ import {
   adminCreateOrLinkOwner,
   adminDeleteRestaurant,
   adminSetOwnerPassword,
+  adminUpdateDatiLegali,
   createRestaurant,
   setAttivo,
   updateRestaurant,
@@ -280,6 +282,17 @@ export default async function AdminHome() {
                 />
                 <button className={btnPrimary}>Aggiungi</button>
               </form>
+            </details>
+
+            <details className="mt-3 text-sm">
+              <summary className={summaryClass}>Dati legali (Cookie &amp; Privacy)</summary>
+              <div className="mt-3">
+                <LegalDataForm
+                  initial={r.dati_legali ?? {}}
+                  action={adminUpdateDatiLegali}
+                  restaurantId={r.id}
+                />
+              </div>
             </details>
 
             <details className="mt-3 text-sm">

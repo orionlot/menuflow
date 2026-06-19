@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sanitizeBranding } from "@/lib/branding";
+import { sanitizeDatiLegali } from "@/lib/legal";
 import { sanitizeFunzionalita } from "@/lib/config/features";
 import {
   sanitizeItemPatch,
@@ -202,6 +203,34 @@ export async function setAttivo(id: string, attivo: boolean) {
  * resolved from restaurants.owner_id and updated via the service-role auth admin
  * API. Guarded by requireAdmin (the page guard alone wouldn't stop a direct call).
  */
+const LEGAL_FIELDS = [
+  "titolare",
+  "piva",
+  "indirizzo",
+  "sede_legale",
+  "email",
+  "pec",
+  "telefono",
+  "dominio",
+  "aggiornato_il",
+] as const;
+
+/** Admin edits any shop's legal/privacy data (fills its policy pages). */
+export async function adminUpdateDatiLegali(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (!id) throw new Error("ID mancante.");
+  const o: Record<string, string> = {};
+  for (const k of LEGAL_FIELDS) o[k] = String(formData.get(k) ?? "");
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ dati_legali: sanitizeDatiLegali(o) })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin");
+}
+
 export async function adminSetOwnerPassword(formData: FormData) {
   await requireAdmin();
   const id = String(formData.get("id") ?? "");

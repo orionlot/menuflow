@@ -31,6 +31,7 @@ import {
   type ItemPatch,
 } from "@/lib/menu";
 import { parseCsv, rowsToItemPatches } from "@/lib/csv";
+import { sanitizeDatiLegali } from "@/lib/legal";
 import { MAX_CONTO_ORDERS } from "@/lib/conto";
 import type {
   BrandingPatch,
@@ -480,6 +481,38 @@ export async function updateCategorieOrdine(value: unknown) {
     .eq("id", restaurantId);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/menu");
+}
+
+const LEGAL_FIELDS = [
+  "titolare",
+  "piva",
+  "indirizzo",
+  "sede_legale",
+  "email",
+  "pec",
+  "telefono",
+  "dominio",
+  "aggiornato_il",
+] as const;
+
+function legaliFromForm(fd: FormData): Record<string, string> {
+  const o: Record<string, string> = {};
+  for (const k of LEGAL_FIELDS) o[k] = String(fd.get(k) ?? "");
+  return o;
+}
+
+/** Restaurateur edits their own legal/privacy data (fills the policy pages). */
+export async function updateDatiLegali(formData: FormData) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ dati_legali: sanitizeDatiLegali(legaliFromForm(formData)) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/funzionalita");
+  revalidatePath("/[domain]/cookie-policy", "page");
+  revalidatePath("/[domain]/privacy-policy", "page");
 }
 
 export async function updateReparti(reparti: unknown) {
