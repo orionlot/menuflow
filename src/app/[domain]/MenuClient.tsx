@@ -13,6 +13,8 @@ import type {
 } from "@/types/db";
 import { formatEUR } from "@/lib/config/plans";
 import { brandPalette, type Palette } from "@/lib/brand";
+import { publicCookiesFor } from "@/lib/cookies";
+import CookieConsent from "./CookieConsent";
 import { resolveLayout, FONT_VARS } from "@/lib/config/layout";
 import { isServiceOpen, orariLabel, activeChiusura } from "@/lib/orari";
 import { effectiveOptions, effectiveNota } from "@/lib/menu";
@@ -229,6 +231,12 @@ export default function MenuClient({
   const deliveryOn = Boolean(tenant.funzioni_attive?.delivery);
   const trackingOn = tenant.funzioni_attive?.tracking_ordine !== false; // default on
   const servizioOn = tenant.funzioni_attive?.richiesta_servizio !== false; // default on
+  // Cookies that apply to THIS tenant's public menu (filtered by its features /
+  // payments) — drives the consent banner.
+  const cookieList = useMemo(
+    () => publicCookiesFor({ funzioni: tenant.funzioni_attive, pagamenti: tenant.pagamenti_attivi }),
+    [tenant.funzioni_attive, tenant.pagamenti_attivi],
+  );
   const itemById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const ingredientiById = useMemo(
     () => new Map(ingredienti.map((i) => [i.id, i])),
@@ -2121,6 +2129,8 @@ export default function MenuClient({
           </button>
         </Overlay>
       )}
+
+      <CookieConsent p={p} cookies={cookieList} />
     </div>
   );
 }

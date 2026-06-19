@@ -11,6 +11,7 @@ import { decrementIngredientStock, composableCategories } from "@/lib/ingredient
 import { decrementMenuItemStock } from "@/lib/menu-stock";
 import { isMapsUrl } from "@/lib/urls";
 import { hitRateLimit, clientIp } from "@/lib/ratelimit";
+import { parseConsent, hasConsent } from "@/lib/cookies";
 import { isServiceOpen } from "@/lib/orari";
 import { createConnectPaymentIntent } from "@/lib/stripe/connect";
 import type { Order, Restaurant } from "@/types/db";
@@ -41,6 +42,8 @@ function cleanMapsUrl(s: unknown, max = 500): string | null {
 async function recordOrderCookie(slug: string, orderId: string) {
   try {
     const store = await cookies();
+    // Functional cookie — only set it when the visitor has consented.
+    if (!hasConsent(parseConsent(store.get("mf_consent")?.value), "funzionali")) return;
     const now = Date.now();
     let list: { id: string; slug: string; at: number }[] = [];
     const raw = store.get("mf_ordini")?.value;
@@ -80,6 +83,8 @@ async function recordOrderCookie(slug: string, orderId: string) {
 async function rememberTavolo(slug: string, tavolo: string) {
   try {
     const store = await cookies();
+    // Functional cookie — only set it when the visitor has consented.
+    if (!hasConsent(parseConsent(store.get("mf_consent")?.value), "funzionali")) return;
     store.set("mf_tavolo", JSON.stringify({ slug, tavolo, at: Date.now() }), {
       maxAge: 4 * 60 * 60,
       path: "/",
