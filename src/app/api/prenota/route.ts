@@ -8,9 +8,12 @@ import type { Prenotazione, Restaurant } from "@/types/db";
 
 export const dynamic = "force-dynamic";
 
-/** Today's date (YYYY-MM-DD) in the restaurant's locale, to reject past bookings. */
-function todayRome(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date());
+/** A date (YYYY-MM-DD) in the restaurant's locale, offset by `addYears`. Used to
+ *  bound reservations between today and ~1 year out. */
+function romeDate(addYears = 0): string {
+  const now = new Date();
+  if (addYears) now.setUTCFullYear(now.getUTCFullYear() + addYears);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(now);
 }
 
 export async function POST(req: Request) {
@@ -53,7 +56,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Prenotazioni non disponibili." }, { status: 403 });
     }
 
-    const v = validatePrenotazione(body, { minDate: todayRome() });
+    const v = validatePrenotazione(body, { minDate: romeDate(), maxDate: romeDate(1) });
     if (!v.ok) return NextResponse.json({ ok: false, error: v.error }, { status: 400 });
 
     const { data: inserted, error: iErr } = await admin

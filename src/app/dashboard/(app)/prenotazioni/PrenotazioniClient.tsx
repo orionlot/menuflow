@@ -37,19 +37,25 @@ export default function PrenotazioniClient({
   // Group the visible reservations by day (already sorted by data, ora server-side).
   const byDay = useMemo(() => {
     const m = new Map<string, Prenotazione[]>();
-    for (const r of visible) (m.get(r.data) ?? m.set(r.data, []).get(r.data)!).push(r);
+    for (const r of visible) {
+      const arr = m.get(r.data);
+      if (arr) arr.push(r);
+      else m.set(r.data, [r]);
+    }
     return [...m.entries()];
   }, [visible]);
 
   function update(id: string, stato: PrenotazioneStato) {
     setError(null);
+    const prevStato = rows.find((r) => r.id === id)?.stato;
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, stato } : r)));
     startTransition(async () => {
       try {
         await setStatus(id, stato);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Errore nel salvataggio.");
-        setRows(initial);
+        // Revert ONLY this row to its prior status (don't discard other edits).
+        if (prevStato) setRows((prev) => prev.map((r) => (r.id === id ? { ...r, stato: prevStato } : r)));
       }
     });
   }
@@ -99,7 +105,7 @@ export default function PrenotazioniClient({
                       <div className="w-14 shrink-0 text-center">
                         <div className="font-display text-lg font-bold leading-none">{r.ora}</div>
                         <div className="mt-1 text-xs text-neutral-400">
-                          {r.coperti} {r.coperti === 1 ? "pers." : "pers."}
+                          {r.coperti} {r.coperti === 1 ? "persona" : "persone"}
                         </div>
                       </div>
                       <div className="min-w-0 flex-1">

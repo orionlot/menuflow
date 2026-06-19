@@ -19,6 +19,13 @@ export type PrenotazioneResult =
 
 const clean = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 
+/** True only for a real calendar date (rejects 2026-13-40, 2026-02-31, …). */
+function isRealDate(iso: string): boolean {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
+
 export function validatePrenotazione(
   raw: {
     nome?: unknown;
@@ -29,27 +36,30 @@ export function validatePrenotazione(
     sala?: unknown;
     note?: unknown;
   },
-  opts: { minDate?: string } = {},
+  opts: { minDate?: string; maxDate?: string } = {},
 ): PrenotazioneResult {
   const nome = clean(raw.nome, 80);
   if (nome.length < 2) return { ok: false, error: "Inserisci il tuo nome." };
 
   const telefono = clean(raw.telefono, 30);
-  if (!/^[+\d][\d\s().\-]{5,}$/.test(telefono))
+  // Shape + at least 6 actual digits (so "+()()()" and the like are rejected).
+  if (!/^[+\d][\d\s().\-]{5,}$/.test(telefono) || (telefono.match(/\d/g) ?? []).length < 6)
     return { ok: false, error: "Inserisci un numero di telefono valido." };
 
   const data = clean(raw.data, 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(data))
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data) || !isRealDate(data))
     return { ok: false, error: "Seleziona una data valida." };
   if (opts.minDate && data < opts.minDate)
     return { ok: false, error: "Scegli una data futura." };
+  if (opts.maxDate && data > opts.maxDate)
+    return { ok: false, error: "Data troppo lontana: prenota entro un anno." };
 
   const ora = clean(raw.ora, 5);
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(ora))
     return { ok: false, error: "Seleziona un orario valido." };
 
   const coperti = Math.floor(Number(raw.coperti));
-  if (!Number.isFinite(coperti) || coperti < 1 || coperti > 200)
+  if (!Number.isFinite(coperti) || coperti < 1 || coperti > 50)
     return { ok: false, error: "Numero di persone non valido." };
 
   const sala = clean(raw.sala, 60) || null;

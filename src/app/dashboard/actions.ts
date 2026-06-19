@@ -637,9 +637,18 @@ export async function reorderItems(updates: { id: string; ordine: number }[]) {
 export async function setReservationStatus(id: string, stato: PrenotazioneStato) {
   const allowed: PrenotazioneStato[] = ["in_attesa", "confermata", "rifiutata", "annullata"];
   if (!allowed.includes(stato)) throw new Error("Stato non valido.");
+  const restaurantId = await ownerRestaurantId();
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("prenotazioni").update({ stato }).eq("id", id);
+  // Explicit restaurant scope (defence in depth alongside RLS) + a row-affected
+  // check so a bad/cross-tenant id fails loudly instead of silently no-op'ing.
+  const { data, error } = await supabase
+    .from("prenotazioni")
+    .update({ stato })
+    .eq("id", id)
+    .eq("restaurant_id", restaurantId)
+    .select("id");
   if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error("Prenotazione non trovata.");
   revalidatePath("/dashboard/prenotazioni");
 }
 

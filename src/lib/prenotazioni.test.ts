@@ -25,6 +25,22 @@ describe("validatePrenotazione", () => {
     expect(validatePrenotazione({ ...base, ora: "25:00" })).toMatchObject({ ok: false });
   });
 
+  it("rejects impossible calendar dates", () => {
+    expect(validatePrenotazione({ ...base, data: "2026-13-40" })).toMatchObject({ ok: false });
+    expect(validatePrenotazione({ ...base, data: "2027-02-31" })).toMatchObject({ ok: false });
+  });
+
+  it("rejects dates beyond the max horizon", () => {
+    expect(
+      validatePrenotazione({ ...base, data: "2999-12-31" }, { maxDate: "2027-06-19" }),
+    ).toMatchObject({ ok: false });
+  });
+
+  it("rejects a phone with too few real digits", () => {
+    expect(validatePrenotazione({ ...base, telefono: "+()()()()" })).toMatchObject({ ok: false });
+    expect(validatePrenotazione({ ...base, telefono: "+39 12" })).toMatchObject({ ok: false });
+  });
+
   it("rejects a past date when minDate is given", () => {
     expect(validatePrenotazione({ ...base, data: "2020-01-01" }, { minDate: "2026-06-19" })).toMatchObject({
       ok: false,

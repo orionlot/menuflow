@@ -12,11 +12,14 @@ export default async function PrenotazioniPage() {
   const { restaurant } = await requireOwner();
   if (!isFeatureOn(restaurant, "prenotazioni")) notFound();
 
+  // Today onward (Europe/Rome) — past days aren't actionable and would clutter the list.
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date());
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("prenotazioni")
     .select("*")
     .eq("restaurant_id", restaurant.id)
+    .gte("data", today)
     .order("data", { ascending: true })
     .order("ora", { ascending: true });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Palette } from "@/lib/brand";
 import type { Sala } from "@/types/db";
 
@@ -26,16 +26,33 @@ export default function PrenotaModal({
   const [note, setNote] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "ok" | "error">("idle");
   const [err, setErr] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
   // Today (local) for the date picker minimum.
   const todayStr = new Intl.DateTimeFormat("en-CA").format(new Date());
 
+  function openModal() {
+    setState("idle"); // fresh form on every open (don't show a stale success screen)
+    setErr(null);
+    setOpen(true);
+  }
+
+  // Close on Escape while open.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   async function submit() {
+    if (submittingRef.current) return; // guard against double-submit
     setErr(null);
     if (nome.trim().length < 2) return setErr("Inserisci il tuo nome.");
     if (telefono.trim().length < 6) return setErr("Inserisci un numero di telefono valido.");
     if (!data) return setErr("Scegli una data.");
     if (!ora) return setErr("Scegli un orario.");
+    submittingRef.current = true;
     setState("sending");
     try {
       const res = await fetch("/api/prenota", {
@@ -53,6 +70,8 @@ export default function PrenotaModal({
     } catch {
       setState("error");
       setErr("Errore di rete. Riprova.");
+    } finally {
+      submittingRef.current = false;
     }
   }
 
@@ -62,7 +81,7 @@ export default function PrenotaModal({
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={openModal}
         className="flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold shadow-sm transition active:scale-[0.99]"
         style={{ background: p.brand, color: p.onBrand }}
       >
