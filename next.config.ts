@@ -25,6 +25,10 @@ if (supaUrl) {
 
 const nextConfig: NextConfig = {
   images: { remotePatterns },
+  // Clean slug for the static pitch deck (public/presentazione.html).
+  async rewrites() {
+    return [{ source: "/presentazione", destination: "/presentazione.html" }];
+  },
 };
 
 export default nextConfig;

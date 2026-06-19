@@ -46,6 +46,10 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/onboarding")) {
     return NextResponse.next();
   }
+  // Static marketing/pitch deck (public/presentazione.html) — never rewrite.
+  if (pathname === "/presentazione" || pathname === "/presentazione.html") {
+    return NextResponse.next();
+  }
 
   const host = (request.headers.get("host") ?? "").split(":")[0].toLowerCase();
   const identifier = tenantIdentifier(host);

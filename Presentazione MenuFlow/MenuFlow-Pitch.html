@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MenuFlow — Pitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --green:#16855c; --green-d:#0c3b2e; --ink:#16241d; --muted:#5d6b62;
+    --cream:#faf7f2; --line:#e7e0d5; --gold:#cf9b3a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:"Manrope",system-ui,sans-serif; color:var(--ink); background:#d9d3c8;}
+  .deck{display:flex; flex-direction:column; align-items:center; gap:22px; padding:28px;}
+  .slide{position:relative; width:1280px; height:720px; background:var(--cream); overflow:hidden;
+    border-radius:18px; box-shadow:0 10px 40px rgba(0,0,0,.18);}
+  .pad{position:absolute; inset:0; padding:64px 72px; display:flex; flex-direction:column;}
+  .eyebrow{font-size:15px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--green);}
+  h1{font-size:62px; font-weight:800; line-height:1.04; letter-spacing:-.02em;}
+  h2{font-size:44px; font-weight:800; line-height:1.08; letter-spacing:-.02em; margin-top:10px;}
+  .lead{font-size:21px; color:var(--muted); line-height:1.5; max-width:48ch;}
+  ul.bul{list-style:none; display:flex; flex-direction:column; gap:16px; margin-top:8px;}
+  ul.bul li{font-size:20px; line-height:1.4; padding-left:34px; position:relative;}
+  ul.bul li b{font-weight:700;}
+  ul.bul li::before{content:"✓"; position:absolute; left:0; top:-1px; width:24px; height:24px;
+    background:var(--green); color:#fff; border-radius:50%; font-size:14px; font-weight:800;
+    display:flex; align-items:center; justify-content:center;}
+  .split{flex:1; display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center;}
+  .split.wide{grid-template-columns:1.05fr .95fr;}
+  .copy{display:flex; flex-direction:column; gap:18px;}
+  .num{position:absolute; right:60px; bottom:40px; font-size:15px; color:#aeb6ae; font-weight:600;}
+  .brandtag{position:absolute; left:72px; bottom:40px; font-size:15px; color:#aeb6ae; font-weight:700; letter-spacing:.04em;}
+  /* phone + browser frames */
+  .stage{display:flex; align-items:center; justify-content:center; height:100%;}
+  .phone{width:266px; border:10px solid #14201b; border-radius:34px; overflow:hidden; background:#14201b;
+    box-shadow:0 16px 40px rgba(0,0,0,.28);}
+  .phone img{display:block; width:100%;}
+  .phones{display:flex; gap:22px; align-items:center; justify-content:center;}
+  .phones .phone{width:228px;}
+  .phones .phone img{height:438px; object-fit:cover; object-position:top center;}
+  .phones .phone.bottom img{object-position:bottom center;}
+  .browser{width:100%; border-radius:14px; overflow:hidden; border:1px solid var(--line); background:#fff;
+    box-shadow:0 16px 44px rgba(0,0,0,.20);}
+  .bar{height:34px; background:#eee9e1; display:flex; align-items:center; gap:7px; padding:0 14px; border-bottom:1px solid var(--line);}
+  .bar i{width:11px; height:11px; border-radius:50%; background:#cfc8bb; display:block;}
+  .browser img{display:block; width:100%; object-fit:cover; object-position:top center;}
+  .full .browser img{height:360px;}
+  .split .browser img{height:330px;}
+  .full{flex:1; display:flex; flex-direction:column; gap:26px;}
+  /* cover + dark slides */
+  .dark{background:var(--green-d); color:#fff;}
+  .dark .lead{color:#bcd6c9;}
+  .dark .eyebrow{color:#7fd6ad;}
+  .logo{display:flex; align-items:center; gap:14px; font-size:26px; font-weight:800; letter-spacing:-.01em;}
+  .logo .mk{width:44px; height:44px; border-radius:12px; background:var(--green); display:flex; align-items:center; justify-content:center; font-size:24px;}
+  .chips{display:flex; gap:12px; flex-wrap:wrap; margin-top:6px;}
+  .chip{font-size:15px; font-weight:600; padding:8px 16px; border-radius:999px; background:#fff; border:1px solid var(--line); color:var(--ink);}
+  .dark .chip{background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.18); color:#dff0e7;}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:8px;}
+  .card{background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px;}
+  .card h3{font-size:22px; font-weight:700; margin-bottom:8px;}
+  .card p{font-size:17px; color:var(--muted); line-height:1.45;}
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:18px;}
+  .kpi{background:#fff; border:1px solid var(--line); border-radius:16px; padding:22px;}
+  .kpi .v{font-size:34px; font-weight:800; color:var(--green);}
+  .kpi .l{font-size:15px; color:var(--muted); margin-top:4px;}
+  .price{display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:6px;}
+  .plan{background:#fff; border:1px solid var(--line); border-radius:18px; padding:26px; text-align:center;}
+  .plan.hot{border:2px solid var(--green);}
+  .plan .pn{font-size:20px; font-weight:700;}
+  .plan .pp{font-size:40px; font-weight:800; color:var(--green); margin:8px 0;}
+  .plan .pp small{font-size:16px; color:var(--muted); font-weight:600;}
+  .plan ul{list-style:none; font-size:16px; color:var(--muted); display:flex; flex-direction:column; gap:7px; margin-top:8px;}
+  @media print{
+    @page{ size:1280px 720px; margin:0; }
+    body{background:#fff;}
+    .deck{gap:0; padding:0;}
+    .slide{border-radius:0; box-shadow:none; break-after:page; page-break-after:always;}
+  }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- 1 · COVER -->
+  <section class="slide dark">
+    <div class="pad" style="justify-content:space-between;">
+      <div class="logo"><span class="mk">🍽️</span> MenuFlow</div>
+      <div>
+        <div class="eyebrow">Menu digitale · Ordini · Gestione</div>
+        <h1 style="margin-top:14px; max-width:20ch;">Il menu che<br/>vende per te.</h1>
+        <p class="lead" style="margin-top:22px;">Una sola piattaforma per il menu digitale, gli ordini al tavolo, la cucina e le prenotazioni. Il cliente scansiona un QR e ordina; tu gestisci tutto da un pannello.</p>
+        <div class="chips" style="margin-top:28px;">
+          <span class="chip">Ordini al tavolo</span>
+          <span class="chip">Cucina digitale</span>
+          <span class="chip">Prenotazioni</span>
+          <span class="chip">Pagamenti online</span>
+          <span class="chip">Multi-locale</span>
+        </div>
+      </div>
+      <div style="font-size:16px; color:#9fc4b3;">Demo reale · ristorante “Caterina”, Sala Consilina</div>
+    </div>
+  </section>
+
+  <!-- 2 · PROBLEMA -->
+  <section class="slide">
+    <div class="pad">
+      <div class="eyebrow">Il problema</div>
+      <h2 style="max-width:24ch;">Il ristoratore perde tempo, ordini e dati.</h2>
+      <div class="grid3" style="margin-top:40px;">
+        <div class="card"><h3>📋 Menu fermi</h3><p>Menu cartacei o QR che mostrano solo un PDF: cambiare un prezzo o segnalare un “esaurito” è impossibile in tempo reale.</p></div>
+        <div class="card"><h3>📞 Ordini caotici</h3><p>Comande urlate, telefonate per prenotare, errori in cucina, code alla cassa. Tutto manuale, niente tracciamento.</p></div>
+        <div class="card"><h3>📉 Zero dati</h3><p>Nessuna idea di cosa vende, quando, a chi. Niente leve di upsell, niente statistiche per decidere.</p></div>
+      </div>
+      <p class="lead" style="margin-top:38px;">E chi gestisce <b>più locali</b> moltiplica il caos: un sito (e un costo) per ognuno.</p>
+    </div>
+    <div class="brandtag">MenuFlow</div><div class="num">02</div>
+  </section>
+
+  <!-- 3 · SOLUZIONE -->
+  <section class="slide dark">
+    <div class="pad">
+      <div class="eyebrow">La soluzione</div>
+      <h2 style="max-width:26ch;">Un’unica app: il cliente ordina, tu gestisci.</h2>
+      <div class="grid3" style="margin-top:42px;">
+        <div class="card" style="background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.16); color:#eaf4ee;"><h3 style="color:#fff;">Per il cliente</h3><p style="color:#bcd6c9;">Menu bello con foto, allergeni e calorie, ordine in pochi tap, prenotazione del tavolo.</p></div>
+        <div class="card" style="background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.16);"><h3 style="color:#fff;">Per il ristoratore</h3><p style="color:#bcd6c9;">Cucina digitale, ordini e conti in tempo reale, statistiche, menu modificabile in autonomia.</p></div>
+        <div class="card" style="background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.16);"><h3 style="color:#fff;">Per la scala</h3><p style="color:#bcd6c9;">Un solo software, tutti i locali. Aggiungere un cliente = una riga nel database, non un nuovo sito.</p></div>
+      </div>
+      <p class="lead" style="margin-top:40px;">Stesso prodotto, due esperienze: <b style="color:#fff;">wow per il cliente, controllo per il locale.</b></p>
+    </div>
+    <div class="num" style="color:#5f8a76;">03</div>
+  </section>
+
+  <!-- 4 · ESPERIENZA CLIENTE -->
+  <section class="slide">
+    <div class="pad">
+      <div class="split wide">
+        <div class="copy">
+          <div class="eyebrow">Esperienza cliente</div>
+          <h2>Scansiona. Sfoglia. Ordina.</h2>
+          <ul class="bul">
+            <li><b>Menu con foto reali</b>, descrizioni, allergeni e calorie per piatto.</li>
+            <li><b>Vetrina</b> in homepage: i piatti del giorno in evidenza, con i colori del brand.</li>
+            <li>Navigazione per <b>categorie</b> e ricerca istantanea.</li>
+            <li>Tutto <b>brandizzato</b> sul singolo locale: logo, colori, tema.</li>
+          </ul>
+        </div>
+        <div class="stage"><div class="phone"><img src="screenshots/02-menu-top.png" alt="Menu" /></div></div>
+      </div>
+    </div>
+    <div class="brandtag">MenuFlow</div><div class="num">04</div>
+  </section>
+
+  <!-- 5 · COMPONIBILI / UPSELL -->
+  <section class="slide">
+    <div class="pad">
+      <div class="split">
+        <div class="stage"><div class="phone"><img src="screenshots/07-poke-builder.png" alt="Poke builder" /></div></div>
+        <div class="copy">
+          <div class="eyebrow">Leva commerciale</div>
+          <h2>Prodotti componibili e upsell.</h2>
+          <ul class="bul">
+            <li><b>Poke, bowl, panini su misura</b>: il cliente compone con regole min/max.</li>
+            <li><b>Peso e calorie</b> per ingrediente, calcolati in automatico.</li>
+            <li>Aggiunte ed extra a pagamento: <b>scontrino medio più alto</b>, senza staff.</li>
+            <li>Lo stock limita le scelte: niente ordini di ciò che è finito.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="brandtag">MenuFlow</div><div class="num">05</div>
+  </section>
+
+  <!-- 6 · ORDINE / CHECKOUT -->
+  <section class="slide">
+    <div class="pad">
+      <div class="split wide">
+        <div class="copy">
+          <div class="eyebrow">Ordine in pochi tap</div>
+          <h2>Al tavolo, asporto o delivery.</h2>
+          <ul class="bul">
+            <li>Un flusso, tre modalità: <b>tavolo, asporto, delivery</b> (con indirizzo e posizione).</li>
+            <li><b>Allergie del tavolo</b> segnalate al volo, ben visibili in cucina.</li>
+            <li>Coperto, mancia e <b>pagamento online</b> opzionale (Stripe).</li>
+            <li>Totale ricalcolato sul server: <b>prezzi sempre corretti</b>.</li>
+          </ul>
+        </div>
+        <div class="stage"><div class="phone"><img src="screenshots/08-checkout.png" alt="Checkout" /></div></div>
+      </div>
+    </div>
+    <div class="brandtag">MenuFlow</div><div class="num">06</div>
+  </section>
+
+  <!-- 7 · PRENOTAZIONI -->
+  <section class="slide">
+    <div class="pad">
+      <div class="split">
+        <div class="stage"><div class="phone"><img src="screenshots/04-reservation.png" alt="Prenotazione" /></div></div>
+        <div class="copy">
+          <div class="eyebrow">Prenotazioni</div>
+          <h2>Riempi i tavoli, senza telefonate.</h2>
+          <ul class="bul">
+            <li>Il cliente <b>prenota dal menu</b>: nome, telefono, data, ora, persone.</li>
+            <li>Tu <b>confermi o rifiuti</b> dal pannello; notifica istantanea su Telegram.</li>
+            <li>Attivabile o disattivabile per ogni locale.</li>
+            <li>Meno chiamate perse, più coperti.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="brandtag">MenuFlow</div><div class="num">07</div>
+  </section>
+
+  <!-- 8 · CUCINA / KDS -->
+  <section class="slide">
+    <div class="pad">
+      <div class="eyebrow">Cucina digitale (KDS)</div>
+      <h2>La cucina che non sbaglia un ordine.</h2>
+      <div class="full" style="margin-top:26px;">
+        <div class="browser"><div class="bar"><i></i><i></i><i></i></div><img src="screenshots/11-cucina-kds.png" alt="Kitchen Display" /></div>
+        <div style="display:flex; gap:40px;">
+          <p class="lead" style="max-width:30ch;"><b>Comande digitali</b> in tempo reale, divise per reparto (Cucina, Bar, Pokeria…).</p>
+          <p class="lead" style="max-width:30ch;"><b>Timer e priorità</b>: ogni piatto col suo tempo, allerta se è in ritardo.</p>
+          <p class="lead" style="max-width:30ch;"><b>Stati chiari</b>: da preparare → in preparazione → pronto → servito.</p>
+        </div>
+      </div>
+    </div>
+    <div class="brandtag">MenuFlow</div><div class="num">08</div>
+  </section>
+
+  <!-- 9 · DASHBOARD + STATISTICHE -->
+  <section class="slide">
+    <div class="pad">
+      <div class="eyebrow">Tutto sotto controllo</div>
+      <h2>Incassi, ordini e statistiche in tempo reale.</h2>
+      <div class="split" style="margin-top:26px;">
+        <div class="browser"><div class="bar"><i></i><i></i><i></i></div><img src="screenshots/09-dashboard.png" alt="Dashboard" /></div>
+        <div class="browser"><div class="bar"><i></i><i></i><i></i></div><img src="screenshots/13-statistiche.png" alt="Statistiche" /></div>
+      </div>
+      <p class="lead" style="margin-top:26px;">Incasso del giorno, ordini, conti aperti, stato del servizio e alert sui ritardi — più analytics su piatti, orari e tempi di cucina.</p>
+    </div>
+    <div class="brandtag">MenuFlow</div><div class="num">09</div>
+  </section>
+
+  <!-- 10 · GESTIONE MENU -->
+  <section class="slide">
+    <div class="pad">
+      <div class="eyebrow">Autonomia totale</div>
+      <h2>Il menu lo gestisci tu, in tempo reale.</h2>
+      <div class="full" style="margin-top:26px;">
+        <div class="browser"><div class="bar"><i></i><i></i><i></i></div><img src="screenshots/12-menu-manager.png" alt="Gestione menu" /></div>
+        <div style="display:flex; gap:40px;">
+          <p class="lead" style="max-width:30ch;">Aggiungi piatti, <b>foto, prezzi, allergeni, calorie</b> e disponibilità in pochi clic.</p>
+          <p class="lead" style="max-width:30ch;">Riordina <b>categorie e piatti</b>, varianti ed extra; “esaurito” aggiornato all’istante.</p>
+          <p class="lead" style="max-width:30ch;">Nessun tecnico, nessuna attesa: <b>il menu cambia subito</b> per il cliente.</p>
+        </div>
+      </div>
+    </div>
+    <div class="brandtag">MenuFlow</div><div class="num">10</div>
+  </section>
+
+  <!-- 11 · GDPR / CONFORMITÀ -->
+  <section class="slide">
+    <div class="pad">
+      <div class="split wide">
+        <div class="copy">
+          <div class="eyebrow">Conformità & fiducia</div>
+          <h2>A norma di legge, per ogni locale.</h2>
+          <ul class="bul">
+            <li><b>Banner cookie</b> con consenso granulare (consent mode), accetta/rifiuta/personalizza.</li>
+            <li>Pagine <b>Cookie & Privacy Policy</b> generate per ogni locale, con i suoi dati.</li>
+            <li>Niente scontrino “finto”: lo <b>scontrino fiscale</b> resta al registratore telematico del locale.</li>
+            <li>Dati al sicuro, accessi separati per ogni ristoratore.</li>
+          </ul>
+        </div>
+        <div class="phones">
+          <div class="phone bottom"><img src="screenshots/01-menu-cookie-banner.png" alt="Banner cookie" /></div>
+          <div class="phone"><img src="screenshots/06-privacy-policy.png" alt="Privacy policy" /></div>
+        </div>
+      </div>
+    </div>
+    <div class="brandtag">MenuFlow</div><div class="num">11</div>
+  </section>
+
+  <!-- 12 · MULTI-TENANT / SCALABILITÀ -->
+  <section class="slide dark">
+    <div class="pad">
+      <div class="eyebrow">Scalabilità</div>
+      <h2 style="max-width:24ch;">Un codice. Un deploy. Locali infiniti.</h2>
+      <div class="full" style="margin-top:24px;">
+        <div class="browser"><div class="bar"><i></i><i></i><i></i></div><img src="screenshots/17-admin.png" alt="Pannello admin" /></div>
+        <div style="display:flex; gap:40px;">
+          <p class="lead" style="max-width:30ch; color:#bcd6c9;">Architettura <b style="color:#fff;">multi-tenant</b>: ogni locale ha il suo sottodominio o dominio personalizzato.</p>
+          <p class="lead" style="max-width:30ch; color:#bcd6c9;">Aggiungere un cliente costa <b style="color:#fff;">una riga nel database</b>, non un progetto nuovo.</p>
+          <p class="lead" style="max-width:30ch; color:#bcd6c9;">Pannello admin per attivare piani, funzioni e gestire tutti i locali.</p>
+        </div>
+      </div>
+    </div>
+    <div class="num" style="color:#5f8a76;">12</div>
+  </section>
+
+  <!-- 13 · MODELLO / PIANI -->
+  <section class="slide">
+    <div class="pad">
+      <div class="eyebrow">Modello di ricavo</div>
+      <h2>SaaS in abbonamento, margini ricorrenti.</h2>
+      <div class="price">
+        <div class="plan"><div class="pn">Base</div><div class="pp">29€<small>/mese</small></div><ul><li>Menu digitale + ordini</li><li>Cucina & dashboard</li><li>Notifiche Telegram</li></ul></div>
+        <div class="plan hot"><div class="pn">Plus</div><div class="pp">39€<small>/mese</small></div><ul><li>Tutto di Base +</li><li>Sala & funzioni avanzate</li><li>Pagamenti online</li></ul></div>
+        <div class="plan"><div class="pn">Pro</div><div class="pp">59€<small>/mese</small></div><ul><li>Tutto di Plus +</li><li>Statistiche complete</li><li>Tutte le funzioni</li></ul></div>
+      </div>
+      <p class="lead" style="margin-top:30px;">Add-on <b>Multilingua +10€</b>. Prezzi parametrici, un costo marginale quasi nullo per ogni nuovo locale → <b>margine che cresce con la scala</b>.</p>
+    </div>
+    <div class="brandtag">MenuFlow</div><div class="num">13</div>
+  </section>
+
+  <!-- 14 · CHIUSURA / ASK -->
+  <section class="slide dark">
+    <div class="pad" style="justify-content:center; align-items:flex-start;">
+      <div class="eyebrow">Perché ora</div>
+      <h1 style="max-width:18ch; margin-top:10px;">Il tavolo è digitale. Conviene esserci primi.</h1>
+      <div class="kpis" style="margin-top:44px; width:100%;">
+        <div class="kpi" style="background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.16);"><div class="v" style="color:#7fd6ad;">1 deploy</div><div class="l" style="color:#bcd6c9;">tutti i locali</div></div>
+        <div class="kpi" style="background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.16);"><div class="v" style="color:#7fd6ad;">~0€</div><div class="l" style="color:#bcd6c9;">costo per nuovo cliente</div></div>
+        <div class="kpi" style="background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.16);"><div class="v" style="color:#7fd6ad;">29–59€</div><div class="l" style="color:#bcd6c9;">ricavo ricorrente/mese</div></div>
+        <div class="kpi" style="background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.16);"><div class="v" style="color:#7fd6ad;">100%</div><div class="l" style="color:#bcd6c9;">prodotto già funzionante</div></div>
+      </div>
+      <p class="lead" style="margin-top:40px; color:#dff0e7;">Pronto, in produzione, multi-locale. <b style="color:#fff;">Parliamone.</b></p>
+      <div class="logo" style="margin-top:30px;"><span class="mk">🍽️</span> MenuFlow</div>
+    </div>
+    <div class="num" style="color:#5f8a76;">14</div>
+  </section>
+
+</div>
+</body>
+</html>
