@@ -17,7 +17,12 @@ type Params = { params: Promise<{ domain: string }> };
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { domain } = await params;
   const tenant = await resolveTenant(domain);
-  return { title: tenant ? `${tenant.nome} — Menu` : "Menu" };
+  return {
+    title: tenant ? `${tenant.nome} — Menu` : "Menu",
+    // Use the tenant's own logo as the page favicon (falls back to the app
+    // default when the restaurant hasn't uploaded a logo).
+    icons: tenant?.logo_url ? { icon: tenant.logo_url } : undefined,
+  };
 }
 
 export default async function TenantMenuPage({ params }: Params) {
