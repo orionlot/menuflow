@@ -19,6 +19,14 @@ export default function PolicyShell({
   aggiornatoIl: string | null;
   children: ReactNode;
 }) {
+  // Format YYYY-MM-DD as a readable Italian date (falls back to the raw value).
+  let aggiornato: string | null = null;
+  if (aggiornatoIl) {
+    const d = new Date(`${aggiornatoIl}T00:00:00`);
+    aggiornato = Number.isNaN(d.getTime())
+      ? aggiornatoIl
+      : d.toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" });
+  }
   return (
     <main className="min-h-screen bg-white text-neutral-800">
       <div className="mx-auto max-w-3xl px-5 py-10">
@@ -28,7 +36,7 @@ export default function PolicyShell({
         <h1 className="mt-4 font-display text-3xl font-bold text-neutral-900">{titolo}</h1>
         <p className="mt-1 text-sm text-neutral-500">
           {nome}
-          {aggiornatoIl ? ` · Ultimo aggiornamento: ${aggiornatoIl}` : ""}
+          {aggiornato ? ` · Ultimo aggiornamento: ${aggiornato}` : ""}
         </p>
         <div className="legal-prose mt-8 space-y-6 text-[15px] leading-relaxed text-neutral-700">
           {children}

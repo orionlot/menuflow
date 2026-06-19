@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { funzioniAttive } from "@/lib/config/features";
 import { normalizeRicetta } from "@/lib/menu";
 import type {
+  DatiLegali,
   MenuItem,
   PlanId,
   PublicIngredient,
@@ -11,7 +12,7 @@ import type {
 } from "@/types/db";
 
 const SAFE_RESTAURANT_COLUMNS =
-  "id, slug, nome, sottotitolo, logo_url, colore_primario, colore_secondario, tema, layout, piano, multilingua, lingue, pagamenti_attivi, coperto, coperto_modalita, coperto_label, accetta_mancia, aggiunte, composizione, composizione_taglie, funzionalita, funzionalita_admin, google_review_url, orari, aperto_override, chiusure, annuncio, note_config, etichette, sale, categoria_tempi, categorie_ordine, dati_legali, capienza_default, reparti, attivo";
+  "id, slug, nome, sottotitolo, logo_url, colore_primario, colore_secondario, tema, layout, piano, multilingua, lingue, pagamenti_attivi, coperto, coperto_modalita, coperto_label, accetta_mancia, aggiunte, composizione, composizione_taglie, funzionalita, funzionalita_admin, google_review_url, orari, aperto_override, chiusure, annuncio, note_config, etichette, sale, categoria_tempi, categorie_ordine, capienza_default, reparti, attivo";
 
 /**
  * Resolve a tenant from the `[domain]` route param, which is either:
@@ -65,6 +66,19 @@ export const resolveTenant = cache(
 );
 
 /** Available + sold-out menu items for the public page (safe columns only). */
+/** Legal/privacy data for the policy pages only. Kept OUT of the public tenant
+ *  projection so the owner's contact details don't ship in every menu payload —
+ *  fetched separately, on the cookie/privacy pages, where it's meant to appear. */
+export async function getDatiLegali(restaurantId: string): Promise<DatiLegali> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("restaurants")
+    .select("dati_legali")
+    .eq("id", restaurantId)
+    .maybeSingle();
+  return (data as { dati_legali?: DatiLegali } | null)?.dati_legali ?? {};
+}
+
 export async function getMenuItems(restaurantId: string): Promise<MenuItem[]> {
   const admin = createAdminClient();
   const { data } = await admin

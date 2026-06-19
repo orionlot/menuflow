@@ -40,9 +40,16 @@ export default function LegalDataForm({
   action: (formData: FormData) => Promise<void>;
   restaurantId?: string;
 }) {
+  const incompleto = !initial.titolare || !initial.email;
   return (
     <form action={action} className="space-y-3">
       {restaurantId && <input type="hidden" name="id" value={restaurantId} />}
+      {incompleto && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+          ⚠️ Compila almeno <strong>Titolare</strong> ed <strong>Email</strong>: senza questi dati
+          l&apos;informativa pubblica non indica un titolare e un contatto validi.
+        </p>
+      )}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {FIELDS.map((f) => (
           <label key={f.name} className={`block text-sm ${f.full ? "sm:col-span-2" : ""}`}>

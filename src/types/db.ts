@@ -202,7 +202,6 @@ export type PublicRestaurant = Pick<
   | "sale"
   | "categoria_tempi"
   | "categorie_ordine"
-  | "dati_legali"
   | "capienza_default"
   | "reparti"
   | "attivo"

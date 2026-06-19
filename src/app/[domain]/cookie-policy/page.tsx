@@ -3,8 +3,7 @@
    <a> navigation is required (a <Link> would match the [domain] dynamic root). */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { headers } from "next/headers";
-import { resolveTenant } from "@/lib/tenant";
+import { resolveTenant, getDatiLegali } from "@/lib/tenant";
 import { resolveDatiLegali } from "@/lib/legal";
 import { publicCookiesFor, CONSENT_CATEGORIES } from "@/lib/cookies";
 import PolicyShell, { Sec, Row } from "../PolicyShell";
@@ -22,8 +21,7 @@ export default async function CookiePolicyPage({ params }: Params) {
   const tenant = await resolveTenant(domain);
   if (!tenant) notFound();
 
-  const host = (await headers()).get("host");
-  const legali = resolveDatiLegali(tenant, host);
+  const legali = resolveDatiLegali({ nome: tenant.nome, dati_legali: await getDatiLegali(tenant.id) });
   const cookies = publicCookiesFor({
     funzioni: tenant.funzioni_attive,
     pagamenti: tenant.pagamenti_attivi,
