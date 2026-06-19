@@ -953,7 +953,7 @@ export default function MenuClient({
               )}
 
               {ingNames && (
-                <p className="mt-1.5 text-sm leading-snug" style={{ color: p.textMuted }}>
+                <p className="mt-1.5 mb-2.5 text-sm leading-snug" style={{ color: p.textMuted }}>
                   {ingNames}
                 </p>
               )}
