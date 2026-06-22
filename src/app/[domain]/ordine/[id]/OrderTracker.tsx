@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { brandPalette } from "@/lib/brand";
+
+export type ItemFase = "in_attesa" | "in_preparazione" | "pronto" | "servito";
 
 export type TrackedOrder = {
   id: string;
@@ -16,7 +18,34 @@ export type TrackedOrder = {
   asporto: boolean;
   tavolo: string | null;
   totale: number;
-  items: { nome: string; qta: number }[];
+  items: { nome: string; qta: number; fase: ItemFase }[];
+};
+
+/** Per-dish status chip styling (theme-safe fixed accents). */
+const ITEM_STATUS: Record<
+  ItemFase,
+  { label: string; dot: string; pill: (m: { textMuted: string; surfaceBorder: string }) => CSSProperties }
+> = {
+  in_attesa: {
+    label: "In attesa",
+    dot: "#9ca3af",
+    pill: (m) => ({ background: "transparent", color: m.textMuted, border: `1px solid ${m.surfaceBorder}` }),
+  },
+  in_preparazione: {
+    label: "In preparazione",
+    dot: "#f59e0b",
+    pill: () => ({ background: "#f59e0b", color: "#3a2a00" }),
+  },
+  pronto: {
+    label: "Pronto",
+    dot: "#16a34a",
+    pill: () => ({ background: "#16a34a", color: "#ffffff" }),
+  },
+  servito: {
+    label: "Servito",
+    dot: "#16a34a",
+    pill: (m) => ({ background: "transparent", color: m.textMuted, border: `1px solid ${m.surfaceBorder}` }),
+  },
 };
 
 const STEPS: { fase: TrackedOrder["fase"]; label: string; icon: string }[] = [
@@ -64,7 +93,16 @@ export default function OrderTracker({
         const r = await fetch(`/api/ordine/${initial.id}`, { cache: "no-store" });
         const d = await r.json();
         if (!alive || !d.ok) return;
-        setO((prev) => ({ ...prev, ...d }));
+        setO((prev) => {
+          const merged = { ...prev, ...d } as TrackedOrder;
+          // Fold the per-dish phases (by line index) into the items we already hold.
+          if (Array.isArray(d.itemFasi)) {
+            merged.items = prev.items.map((it, i) => ({ ...it, fase: (d.itemFasi[i] as ItemFase) ?? it.fase }));
+          } else {
+            merged.items = prev.items;
+          }
+          return merged;
+        });
       } catch {
         /* keep last state */
       }
@@ -102,6 +140,10 @@ export default function OrderTracker({
   }
 
   const dest = o.asporto ? `Ritiro · ${o.tavolo ?? "—"}` : `Tavolo ${o.tavolo ?? "—"}`;
+
+  const readyCount = o.items.filter((it) => it.fase === "pronto" || it.fase === "servito").length;
+  const pctReady = o.items.length ? Math.round((readyCount / o.items.length) * 100) : 0;
+  const showPerDish = o.items.length > 1 && o.fase !== "attesa_pagamento" && o.fase !== "fallito";
 
   return (
     <main className="min-h-screen px-4 py-8" style={{ background: p.pageBg, color: p.text }}>
@@ -143,6 +185,9 @@ export default function OrderTracker({
               {countdown && (
                 <p className="mt-1 text-sm opacity-90">⏱ {countdown}</p>
               )}
+              {showPerDish && o.fase === "in_preparazione" && (
+                <p className="mt-1 text-sm opacity-90">{readyCount} di {o.items.length} piatti pronti</p>
+              )}
               {o.fase === "pronto" && <p className="mt-1 text-sm opacity-90">Il tuo ordine è pronto!</p>}
             </div>
 
@@ -176,20 +221,46 @@ export default function OrderTracker({
           </>
         )}
 
-        {/* Order summary */}
+        {/* Per-dish live status */}
         {o.items.length > 0 && (
           <div className="mt-6 rounded-2xl border p-4" style={{ background: p.surface, borderColor: p.surfaceBorder }}>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: p.textMuted }}>
-              Il tuo ordine
-            </p>
-            <ul className="space-y-1">
-              {o.items.map((it, i) => (
-                <li key={i} className="flex justify-between text-sm">
-                  <span style={{ color: p.text }}>
-                    <span className="font-bold">{it.qta}×</span> {it.nome}
-                  </span>
-                </li>
-              ))}
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: p.textMuted }}>
+                Il tuo ordine
+              </p>
+              {showPerDish && (
+                <span className="text-xs font-semibold tabular-nums" style={{ color: p.textMuted }}>
+                  {readyCount}/{o.items.length} pronti
+                </span>
+              )}
+            </div>
+
+            {showPerDish && (
+              <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full" style={{ background: p.surfaceBorder }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${pctReady}%`, background: p.brand }} />
+              </div>
+            )}
+
+            <ul className="space-y-2">
+              {o.items.map((it, i) => {
+                const s = ITEM_STATUS[it.fase];
+                return (
+                  <li key={i} className="flex items-center justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-2 text-sm" style={{ color: p.text }}>
+                      <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.dot }} />
+                      <span className="truncate">
+                        <span className="font-bold">{it.qta}×</span> {it.nome}
+                      </span>
+                    </span>
+                    <span
+                      className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold"
+                      style={s.pill({ textMuted: p.textMuted, surfaceBorder: p.surfaceBorder })}
+                    >
+                      {s.label}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}

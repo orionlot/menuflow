@@ -22,6 +22,17 @@ function faseOf(o: {
   return "ricevuto";
 }
 
+function itemFaseOf(it: {
+  preparazione_at?: string | null;
+  pronto_at?: string | null;
+  servito_at?: string | null;
+}): TrackedOrder["items"][number]["fase"] {
+  if (it.servito_at) return "servito";
+  if (it.pronto_at) return "pronto";
+  if (it.preparazione_at) return "in_preparazione";
+  return "in_attesa";
+}
+
 export default async function OrdineTrackingPage({ params }: Params) {
   const { domain, id } = await params;
   const tenant = await resolveTenant(domain);
@@ -63,7 +74,7 @@ export default async function OrdineTrackingPage({ params }: Params) {
     asporto: boolean;
     tavolo: string | null;
     totale: number;
-    items: { nome: string; qta: number }[];
+    items: { nome: string; qta: number; preparazione_at?: string | null; pronto_at?: string | null; servito_at?: string | null }[];
   };
 
   const initial: TrackedOrder = {
@@ -78,7 +89,9 @@ export default async function OrdineTrackingPage({ params }: Params) {
     asporto: o.asporto,
     tavolo: o.tavolo,
     totale: Number(o.totale),
-    items: Array.isArray(o.items) ? o.items.map((it) => ({ nome: it.nome, qta: it.qta })) : [],
+    items: Array.isArray(o.items)
+      ? o.items.map((it) => ({ nome: it.nome, qta: it.qta, fase: itemFaseOf(it) }))
+      : [],
   };
 
   return (

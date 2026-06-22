@@ -23,6 +23,16 @@ function faseOf(o: Lifecycle): string {
   return "ricevuto";
 }
 
+type ItemStamps = { preparazione_at?: string | null; pronto_at?: string | null; servito_at?: string | null };
+
+/** Per-dish phase for the customer tracker, derived from the line's own stamps. */
+function itemFaseOf(it: ItemStamps): "in_attesa" | "in_preparazione" | "pronto" | "servito" {
+  if (it.servito_at) return "servito";
+  if (it.pronto_at) return "pronto";
+  if (it.preparazione_at) return "in_preparazione";
+  return "in_attesa";
+}
+
 /**
  * Public order-status poll by id (unguessable UUID). Returns ONLY the
  * payment/kitchen lifecycle — no order contents — so the customer at the table
@@ -42,11 +52,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const admin = createAdminClient();
     const { data } = await admin
       .from("orders")
-      .select("stato, preparazione_at, pronto_at, servito_at")
+      .select("stato, preparazione_at, pronto_at, servito_at, items")
       .eq("id", id)
       .maybeSingle();
     if (!data) return NextResponse.json({ ok: false }, { status: 404 });
-    const o = data as Lifecycle;
+    const o = data as Lifecycle & { items: ItemStamps[] | null };
+    // Per-dish phases by line index (stages only — no names/prices), so the
+    // tracker can update each dish live without re-exposing order contents.
+    const itemFasi = Array.isArray(o.items) ? o.items.map(itemFaseOf) : [];
     return NextResponse.json({
       ok: true,
       stato: o.stato,
@@ -54,6 +67,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       pronto_at: o.pronto_at,
       servito_at: o.servito_at,
       fase: faseOf(o),
+      itemFasi,
     });
   } catch {
     return NextResponse.json({ ok: false }, { status: 503 });
