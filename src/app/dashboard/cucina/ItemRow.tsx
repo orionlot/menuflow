@@ -100,18 +100,18 @@ export default function ItemRow({
       {next ? (
         <button
           onClick={() => onStage(lineIndex, next.stage)}
-          className={`shrink-0 rounded-md px-2.5 py-1 text-sm font-bold ${
+          className={`shrink-0 rounded-md px-3 py-1.5 text-sm font-bold transition active:scale-95 ${
             ready
-              ? "bg-green-600 text-white"
+              ? "bg-green-600 text-white hover:bg-green-700"
               : stage === "in_preparazione"
-              ? "bg-amber-500 text-black"
-              : "bg-white/15 text-white"
+              ? "bg-amber-500 text-black hover:bg-amber-400"
+              : "bg-sky-700 text-white hover:bg-sky-600"
           }`}
         >
           {next.label}
         </button>
       ) : (
-        <span className="shrink-0 text-green-400">✓</span>
+        <span className="shrink-0 text-lg font-bold text-green-600">✓</span>
       )}
     </li>
   );
