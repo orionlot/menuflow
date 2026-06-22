@@ -105,9 +105,18 @@ export default function KitchenClient({
   const [pulseIds, setPulseIds] = useState<Set<string>>(new Set());
   // Collapsed state for each OrderCard (by order id).
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const toggleCollapse = useCallback((id: string) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
   const ac = useRef<AudioContext | null>(null);
   const seen = useRef<Set<string>>(new Set());
+  const seenCollapse = useRef<Set<string>>(new Set());
   const firstLoad = useRef(true);
   const audioOnRef = useRef(false);
   const autoStampaOnRef = useRef(autoStampaOn);
@@ -235,6 +244,17 @@ export default function KitchenClient({
       incoming.forEach((o) => seen.current.add(o.id));
       firstLoad.current = false;
       setOrders(incoming);
+      // Auto-collapse served orders once — do not fight the user if they re-expand.
+      setCollapsedIds((prev) => {
+        const out = new Set(prev);
+        for (const o of incoming) {
+          if (o.servito_at && !seenCollapse.current.has(o.id)) {
+            out.add(o.id);
+            seenCollapse.current.add(o.id);
+          }
+        }
+        return out;
+      });
     } catch {
       /* keep last state on transient errors */
     }
@@ -558,14 +578,7 @@ export default function KitchenClient({
                 clock={clock}
                 pulseIds={pulseIds}
                 collapsed={collapsedIds}
-                onToggle={(id) =>
-                  setCollapsedIds((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(id)) next.delete(id);
-                    else next.add(id);
-                    return next;
-                  })
-                }
+                onToggle={toggleCollapse}
                 onItemStage={onItemStage}
                 onOrderStage={(orderId, stage) => {
                   const o = orders.find((x) => x.id === orderId);
@@ -604,14 +617,7 @@ export default function KitchenClient({
                       now={now}
                       collapsed={collapsedIds.has(o.id)}
                       clock={clock}
-                      onToggleCollapse={() =>
-                        setCollapsedIds((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(o.id)) next.delete(o.id);
-                          else next.add(o.id);
-                          return next;
-                        })
-                      }
+                      onToggleCollapse={() => toggleCollapse(o.id)}
                       onItemStage={(li, stage) => onItemStage(o.id, li, stage)}
                       onOrderStage={(stage) => moveTo(o, stage)}
                       onPriorita={() => cyclePriorita(o.id)}
