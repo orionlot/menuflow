@@ -197,7 +197,7 @@ export default function OrderCard({
               e.stopPropagation();
               onToggleCollapse();
             }}
-            className="text-sm opacity-70 hover:opacity-100"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/20 text-3xl leading-none transition hover:bg-white/30"
             aria-label={collapsed ? "Espandi ordine" : "Comprimi ordine"}
           >
             {collapsed ? "▸" : "▾"}

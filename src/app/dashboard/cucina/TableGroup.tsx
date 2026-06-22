@@ -129,8 +129,17 @@ export default function TableGroup({
       style={{ borderLeft: `6px solid ${accent}` }}
     >
       <header className={`flex items-center justify-between gap-2 px-3 py-2 text-white ${headBg}`}>
-        <button onClick={() => onToggle(group.key)} className="flex min-w-0 items-center gap-2 text-left">
-          <span aria-hidden className="text-sm opacity-70">{groupCollapsed ? "▸" : "▾"}</span>
+        <button
+          onClick={() => onToggle(group.key)}
+          className="flex min-w-0 items-center gap-2.5 text-left"
+          aria-label={groupCollapsed ? "Espandi tavolo" : "Comprimi tavolo"}
+        >
+          <span
+            aria-hidden
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/20 text-3xl leading-none transition hover:bg-white/30"
+          >
+            {groupCollapsed ? "▸" : "▾"}
+          </span>
           <span className="truncate text-lg font-extrabold">{title}</span>
           {group.sala ? <span className="truncate text-sm opacity-70">· {group.sala}</span> : null}
           {allergeni.length > 0 ? (
