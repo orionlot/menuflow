@@ -709,34 +709,30 @@ export async function setOrderStage(orderId: string, stage: KitchenStage) {
   // Server actions are public endpoints: never trust the (type-erased) argument.
   if (!KITCHEN_STAGES.includes(stage)) throw new Error("Stato cucina non valido.");
   const supabase = await createSupabaseServerClient();
-  const { data: cur, error: rErr } = await supabase
-    .from("orders")
-    .select("preparazione_at, pronto_at")
-    .eq("id", orderId)
-    .maybeSingle();
-  if (rErr) throw new Error(rErr.message);
-  const now = new Date().toISOString();
-  const prep = (cur?.preparazione_at as string | null) ?? null;
-  const ready = (cur?.pronto_at as string | null) ?? null;
+  // p_line null ⇒ apply the stage to every line of the order (the "move all"
+  // shortcut used by the kanban drag and the order-wide footer buttons).
+  const { error } = await supabase.rpc("set_kds_stage", {
+    p_order_id: orderId,
+    p_line: null,
+    p_stage: stage,
+  });
+  if (error) throw new Error(error.message);
+}
 
-  let patch: Record<string, string | null>;
-  switch (stage) {
-    case "da_preparare":
-      patch = { preparazione_at: null, pronto_at: null, servito_at: null };
-      break;
-    case "in_preparazione":
-      patch = { preparazione_at: prep ?? now, pronto_at: null, servito_at: null };
-      break;
-    case "pronti":
-      patch = { preparazione_at: prep ?? now, pronto_at: ready ?? now, servito_at: null };
-      break;
-    case "serviti":
-      patch = { servito_at: now };
-      break;
-    default:
-      throw new Error("Stato cucina non valido.");
-  }
-  const { error } = await supabase.from("orders").update(patch).eq("id", orderId);
+/**
+ * Kitchen: advance a SINGLE dish (line) of an order. The DB function recomputes
+ * the order-level rollup atomically, so two stations advancing different dishes
+ * of the same order never clobber each other (row lock). RLS-scoped.
+ */
+export async function setItemStage(orderId: string, lineIndex: number, stage: KitchenStage) {
+  if (!KITCHEN_STAGES.includes(stage)) throw new Error("Stato cucina non valido.");
+  if (!Number.isInteger(lineIndex) || lineIndex < 0) throw new Error("Riga non valida.");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("set_kds_stage", {
+    p_order_id: orderId,
+    p_line: lineIndex,
+    p_stage: stage,
+  });
   if (error) throw new Error(error.message);
 }
 
