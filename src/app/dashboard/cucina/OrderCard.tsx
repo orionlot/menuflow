@@ -241,15 +241,13 @@ export default function OrderCard({
         </span>
       </div>
 
-      {/* Allergen banner */}
+      {/* Allergen strip (compact, one line) */}
       {order.allergeni && order.allergeni.length > 0 && (
-        <div className="mx-3 mt-2 rounded-lg border-2 border-red-500 bg-red-600 px-2.5 py-1.5 text-white">
-          <div className="text-[11px] font-extrabold uppercase tracking-wide">
-            ⚠️ Allergie al tavolo
-          </div>
-          <div className="text-sm font-bold leading-tight">
+        <div className="mx-3 mt-2 flex items-center gap-1.5 rounded-lg bg-red-600 px-2.5 py-1 text-white">
+          <span className="shrink-0 text-[11px] font-extrabold uppercase tracking-wide">⚠️ Allergie</span>
+          <span className="text-sm font-bold leading-tight">
             {order.allergeni.map((a) => allergeneLabel(a)).join(", ")}
-          </div>
+          </span>
         </div>
       )}
 

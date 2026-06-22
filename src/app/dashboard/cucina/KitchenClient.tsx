@@ -371,7 +371,15 @@ export default function KitchenClient({
     return m;
   }, [visible]);
 
-  const tableGroups = useMemo(() => groupByTable(visible), [visible]);
+  const tableGroups = useMemo(() => {
+    const groups = groupByTable(visible);
+    // Fully-served tables sink to the end so the cook sees outstanding work first.
+    const allServed = (g: { orders: KOrder[] }) => {
+      const items = g.orders.flatMap((o) => o.items);
+      return items.length > 0 && items.every((i) => i.servito_at);
+    };
+    return [...groups].sort((a, b) => Number(allServed(a)) - Number(allServed(b)));
+  }, [visible]);
 
   function onDragEnd(e: DragEndEvent) {
     const overId = e.over?.id as KitchenStage | undefined;
@@ -565,7 +573,10 @@ export default function KitchenClient({
             </div>
           </div>
         ) : view === "tavolo" ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div
+            className="grid gap-4"
+            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))", alignItems: "start" }}
+          >
             {tableGroups.map((group) => (
               <TableGroup
                 key={group.key}
