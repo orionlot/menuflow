@@ -54,23 +54,27 @@ export async function GET() {
         ),
       ),
     ];
-    const repartoById = new Map<string, string>();
+    const metaById = new Map<string, { reparto: string | null; tempo_preparazione: number | null }>();
     if (orderedIds.length) {
       const { data: rows } = await supabase
         .from("menu_items")
-        .select("id, reparto")
+        .select("id, reparto, tempo_preparazione")
         .eq("restaurant_id", restaurant.id)
         .in("id", orderedIds);
-      for (const r of (rows ?? []) as { id: string; reparto: string | null }[]) {
-        if (r.reparto) repartoById.set(r.id, r.reparto);
+      for (const r of (rows ?? []) as {
+        id: string;
+        reparto: string | null;
+        tempo_preparazione: number | null;
+      }[]) {
+        metaById.set(r.id, { reparto: r.reparto ?? null, tempo_preparazione: r.tempo_preparazione ?? null });
       }
     }
     orders = orders.map((o) => ({
       ...o,
-      items: (Array.isArray(o.items) ? (o.items as { item_id?: string }[]) : []).map((it) => ({
-        ...it,
-        reparto: it.item_id ? repartoById.get(it.item_id) ?? null : null,
-      })),
+      items: (Array.isArray(o.items) ? (o.items as { item_id?: string }[]) : []).map((it) => {
+        const meta = it.item_id ? metaById.get(it.item_id) : undefined;
+        return { ...it, reparto: meta?.reparto ?? null, tempo_preparazione: meta?.tempo_preparazione ?? null };
+      }),
     }));
   }
 

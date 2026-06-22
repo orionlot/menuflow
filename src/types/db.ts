@@ -346,6 +346,13 @@ export interface OrderItem {
   composizione?: OrderComposizione[];
   taglia?: string; // chosen size name (e.g. "Large"), display only
   nota?: string; // free-text customer note for this line (does not affect price)
+  // KDS per-item kitchen state (stored in orders.items; rolled up to the order).
+  preparazione_at?: string | null;
+  pronto_at?: string | null;
+  servito_at?: string | null;
+  // Resolved at feed time from menu_items (not persisted on the line).
+  reparto?: string | null;
+  tempo_preparazione?: number | null;
 }
 
 export interface Order {
