@@ -65,6 +65,7 @@ describe("funzioniAttive", () => {
         "etichette",
         "fasce_orarie",
         "feedback",
+        "gestione_portate",
         "ingredienti",
         "kcal",
         "orari",

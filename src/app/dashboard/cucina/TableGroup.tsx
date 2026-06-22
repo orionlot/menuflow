@@ -59,6 +59,8 @@ export default function TableGroup({
   collapsed,
   onToggle,
   onItemStage,
+  onItemHold,
+  portateOn = false,
   onOrderStage,
   onPriorita,
   onRistampa,
@@ -74,6 +76,8 @@ export default function TableGroup({
   collapsed: Set<string>;
   onToggle: (id: string) => void;
   onItemStage: (orderId: string, lineIndex: number, stage: KitchenStage) => void;
+  onItemHold?: (orderId: string, lineIndex: number, held: boolean) => void;
+  portateOn?: boolean;
   onOrderStage: (orderId: string, stage: KitchenStage) => void;
   onPriorita: (orderId: string) => void;
   onRistampa: (orderId: string) => void;
@@ -279,6 +283,8 @@ export default function TableGroup({
                           tempoStimatoOn={tempoStimatoOn}
                           now={now}
                           onStage={(li, s) => onItemStage(o.id, li, s)}
+                          portateOn={portateOn}
+                          onHold={onItemHold ? (li, h) => onItemHold(o.id, li, h) : undefined}
                         />
                       ))}
                     </ul>

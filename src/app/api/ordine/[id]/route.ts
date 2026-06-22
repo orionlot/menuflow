@@ -23,13 +23,19 @@ function faseOf(o: Lifecycle): string {
   return "ricevuto";
 }
 
-type ItemStamps = { preparazione_at?: string | null; pronto_at?: string | null; servito_at?: string | null };
+type ItemStamps = {
+  preparazione_at?: string | null;
+  pronto_at?: string | null;
+  servito_at?: string | null;
+  a_seguire?: boolean;
+};
 
 /** Per-dish phase for the customer tracker, derived from the line's own stamps. */
-function itemFaseOf(it: ItemStamps): "in_attesa" | "in_preparazione" | "pronto" | "servito" {
+function itemFaseOf(it: ItemStamps): "in_attesa" | "a_seguire" | "in_preparazione" | "pronto" | "servito" {
   if (it.servito_at) return "servito";
   if (it.pronto_at) return "pronto";
   if (it.preparazione_at) return "in_preparazione";
+  if (it.a_seguire) return "a_seguire";
   return "in_attesa";
 }
 

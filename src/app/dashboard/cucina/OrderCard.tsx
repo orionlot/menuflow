@@ -82,6 +82,8 @@ export default function OrderCard({
   clock,
   onToggleCollapse,
   onItemStage,
+  onItemHold,
+  portateOn = false,
   onOrderStage,
   onPriorita,
   onRistampa,
@@ -98,6 +100,8 @@ export default function OrderCard({
   clock: (iso: string) => string;
   onToggleCollapse: () => void;
   onItemStage: (lineIndex: number, stage: KitchenStage) => void;
+  onItemHold?: (lineIndex: number, held: boolean) => void;
+  portateOn?: boolean;
   onOrderStage: (stage: KitchenStage) => void;
   onPriorita: () => void;
   onRistampa: () => void;
@@ -284,6 +288,8 @@ export default function OrderCard({
                   tempoStimatoOn={tempoStimatoOn}
                   now={now}
                   onStage={onItemStage}
+                  portateOn={portateOn}
+                  onHold={onItemHold}
                 />
               ))}
             </ul>

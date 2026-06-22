@@ -350,6 +350,9 @@ export interface OrderItem {
   preparazione_at?: string | null;
   pronto_at?: string | null;
   servito_at?: string | null;
+  // Course coordination: held ("a seguire") until the waiter releases it with
+  // "Manda ora" (feature: gestione_portate).
+  a_seguire?: boolean;
   // Resolved at feed time from menu_items (not persisted on the line).
   reparto?: string | null;
   tempo_preparazione?: number | null;

@@ -39,6 +39,8 @@ export default function ItemRow({
   tempoStimatoOn,
   now,
   onStage,
+  portateOn = false,
+  onHold,
 }: {
   item: KItem;
   lineIndex: number;
@@ -47,6 +49,8 @@ export default function ItemRow({
   tempoStimatoOn: boolean;
   now: number;
   onStage: (lineIndex: number, stage: KitchenStage) => void;
+  portateOn?: boolean;
+  onHold?: (lineIndex: number, held: boolean) => void;
 }) {
   const stage = itemStageOf(item);
   const rep = repartoOn && item.reparto ? repartoById.get(item.reparto) : null;
@@ -55,11 +59,16 @@ export default function ItemRow({
   const next = NEXT[stage];
   const done = stage === "serviti";
   const ready = stage === "pronti";
+  // Held ("a seguire") only matters while the dish hasn't started yet.
+  const held = portateOn && Boolean(item.a_seguire) && stage === "da_preparare";
+  const canHold = portateOn && !held && stage === "da_preparare";
 
   return (
     <li
       className={`flex items-start gap-2 rounded-lg px-2 py-1.5 ${
-        done
+        held
+          ? "bg-violet-50 opacity-80"
+          : done
           ? "opacity-50"
           : ready
           ? "bg-green-500/10"
@@ -72,47 +81,61 @@ export default function ItemRow({
         <div className="flex items-center gap-2">
           <span className="font-semibold tabular-nums">{item.qta}×</span>
           <span className="truncate">{item.nome}</span>
-          {item.taglia ? (
-            <span className="text-sm opacity-70">· {item.taglia}</span>
-          ) : null}
+          {item.taglia ? <span className="text-sm opacity-70">· {item.taglia}</span> : null}
           {rep ? (
-            <span
-              className="rounded px-1.5 text-[11px] font-bold"
-              style={{ background: rep.colore ?? "#3338", color: "#fff" }}
-            >
+            <span className="rounded px-1.5 text-[11px] font-bold" style={{ background: rep.colore ?? "#3338", color: "#fff" }}>
               {rep.nome}
             </span>
           ) : null}
         </div>
-        {details.length ? (
-          <p className="text-sm opacity-70">{details.join(" · ")}</p>
-        ) : null}
+        {details.length ? <p className="text-sm opacity-70">{details.join(" · ")}</p> : null}
       </div>
-      {cd ? (
-        <span
-          className={`shrink-0 tabular-nums text-sm font-bold ${
-            cd.late ? "text-red-400" : "text-sky-300"
-          }`}
-        >
-          ⏱ {cd.text}
-        </span>
-      ) : null}
-      {next ? (
-        <button
-          onClick={() => onStage(lineIndex, next.stage)}
-          className={`shrink-0 rounded-md px-3 py-1.5 text-sm font-bold transition active:scale-95 ${
-            ready
-              ? "bg-green-600 text-white hover:bg-green-700"
-              : stage === "in_preparazione"
-              ? "bg-amber-500 text-black hover:bg-amber-400"
-              : "bg-sky-700 text-white hover:bg-sky-600"
-          }`}
-        >
-          {next.label}
-        </button>
-      ) : (
-        <span className="shrink-0 text-lg font-bold text-green-600">✓</span>
-      )}
+
+      <div className="flex shrink-0 items-center gap-1.5">
+        {held ? (
+          <>
+            <span className="rounded-md bg-violet-100 px-2 py-1 text-[11px] font-bold text-violet-800">A seguire</span>
+            <button
+              onClick={() => onHold?.(lineIndex, false)}
+              className="rounded-md bg-violet-700 px-3 py-1.5 text-sm font-bold text-white transition hover:bg-violet-600 active:scale-95"
+            >
+              Manda ora
+            </button>
+          </>
+        ) : (
+          <>
+            {cd ? (
+              <span className={`tabular-nums text-sm font-bold ${cd.late ? "text-red-400" : "text-sky-300"}`}>⏱ {cd.text}</span>
+            ) : null}
+            {canHold ? (
+              <button
+                onClick={() => onHold?.(lineIndex, true)}
+                aria-label="Tieni a seguire"
+                title="Tieni a seguire (manda dopo)"
+                className="grid h-8 w-8 place-items-center rounded-md border border-neutral-200 text-neutral-400 transition hover:bg-neutral-50 hover:text-violet-700"
+              >
+                ⏸
+              </button>
+            ) : null}
+            {next ? (
+              <button
+                onClick={() => onStage(lineIndex, next.stage)}
+                className={`rounded-md px-3 py-1.5 text-sm font-bold transition active:scale-95 ${
+                  ready
+                    ? "bg-green-600 text-white hover:bg-green-700"
+                    : stage === "in_preparazione"
+                    ? "bg-amber-500 text-black hover:bg-amber-400"
+                    : "bg-sky-700 text-white hover:bg-sky-600"
+                }`}
+              >
+                {next.label}
+              </button>
+            ) : (
+              <span className="text-lg font-bold text-green-600">✓</span>
+            )}
+          </>
+        )}
+      </div>
     </li>
   );
 }

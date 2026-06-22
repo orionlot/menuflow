@@ -12,7 +12,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { setOrderStage, setOrderPriorita, setItemStage, claimComandaStampa, type KitchenStage } from "@/app/dashboard/actions";
+import { setOrderStage, setOrderPriorita, setItemStage, setItemHold, claimComandaStampa, type KitchenStage } from "@/app/dashboard/actions";
 import { orderStageOf, applyItemStageLocal, rollupTimestamps, groupByTable } from "./derive";
 import OrderCard from "./OrderCard";
 import TableGroup from "./TableGroup";
@@ -30,6 +30,7 @@ export interface KItem {
   reparto?: string | null;
   opzioni?: { gruppo: string; scelta: string; prezzo: number }[];
   composizione?: { ingredient_id: string; nome: string; qta: number; prezzo: number; unita?: string | null }[];
+  a_seguire?: boolean;
   // Per-item kitchen stamps (added in derive.ts Task 4)
   preparazione_at?: string | null;
   pronto_at?: string | null;
@@ -86,6 +87,7 @@ export default function KitchenClient({
   reparti = [],
   tempoStimatoOn = true,
   autoStampaOn = false,
+  portateOn = false,
 }: {
   restaurantName: string;
   restaurantId: string;
@@ -93,6 +95,7 @@ export default function KitchenClient({
   reparti?: Reparto[];
   tempoStimatoOn?: boolean;
   autoStampaOn?: boolean;
+  portateOn?: boolean;
 }) {
   const [orders, setOrders] = useState<KOrder[]>([]);
   const [audioOn, setAudioOn] = useState(false);
@@ -329,6 +332,21 @@ export default function KitchenClient({
         }),
       );
       void setItemStage(orderId, lineIndex, stage).catch(() => load());
+    },
+    [load],
+  );
+
+  // Course coordination: hold a dish ("a seguire") or release it ("Manda ora").
+  const onItemHold = useCallback(
+    (orderId: string, lineIndex: number, held: boolean) => {
+      setOrders((prev) =>
+        prev.map((o) => {
+          if (o.id !== orderId) return o;
+          const items = o.items.map((it, i) => (i === lineIndex ? { ...it, a_seguire: held } : it));
+          return { ...o, items };
+        }),
+      );
+      void setItemHold(orderId, lineIndex, held).catch(() => load());
     },
     [load],
   );
@@ -591,6 +609,8 @@ export default function KitchenClient({
                 collapsed={collapsedIds}
                 onToggle={toggleCollapse}
                 onItemStage={onItemStage}
+                onItemHold={onItemHold}
+                portateOn={portateOn}
                 onOrderStage={(orderId, stage) => {
                   const o = orders.find((x) => x.id === orderId);
                   if (o) moveTo(o, stage);
@@ -630,6 +650,8 @@ export default function KitchenClient({
                       clock={clock}
                       onToggleCollapse={() => toggleCollapse(o.id)}
                       onItemStage={(li, stage) => onItemStage(o.id, li, stage)}
+                      onItemHold={(li, held) => onItemHold(o.id, li, held)}
+                      portateOn={portateOn}
                       onOrderStage={(stage) => moveTo(o, stage)}
                       onPriorita={() => cyclePriorita(o.id)}
                       onRistampa={() => ristampa(o.id)}

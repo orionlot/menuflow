@@ -27,6 +27,7 @@ export type FeatureId =
   | "tracking_ordine"
   | "tracking_piatti"
   | "tracking_countdown"
+  | "gestione_portate"
   | "richiesta_servizio"
   | "delivery"
   | "ordine_manuale"
@@ -210,6 +211,14 @@ export const FEATURES: FeatureDef[] = [
     nome: "Tempo stimato al cliente",
     descrizione:
       "Sulla pagina “Segui il tuo ordine” mostra il tempo stimato per la preparazione. Tienilo spento se i tempi del locale sono variabili. Richiede “Segui il tuo ordine” e i “Tempi di preparazione”.",
+    pianoMinimo: "base",
+    defaultOn: false,
+  },
+  {
+    id: "gestione_portate",
+    nome: "Portate (servi a seguire)",
+    descrizione:
+      "Il cameriere può trattenere un piatto e mandarlo in cucina più tardi (“Manda ora”), così i secondi arrivano a seguire. Al cliente il piatto compare come “A seguire”.",
     pianoMinimo: "base",
     defaultOn: false,
   },

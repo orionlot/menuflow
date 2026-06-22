@@ -26,10 +26,12 @@ function itemFaseOf(it: {
   preparazione_at?: string | null;
   pronto_at?: string | null;
   servito_at?: string | null;
+  a_seguire?: boolean;
 }): TrackedOrder["items"][number]["fase"] {
   if (it.servito_at) return "servito";
   if (it.pronto_at) return "pronto";
   if (it.preparazione_at) return "in_preparazione";
+  if (it.a_seguire) return "a_seguire";
   return "in_attesa";
 }
 
@@ -74,7 +76,7 @@ export default async function OrdineTrackingPage({ params }: Params) {
     asporto: boolean;
     tavolo: string | null;
     totale: number;
-    items: { nome: string; qta: number; preparazione_at?: string | null; pronto_at?: string | null; servito_at?: string | null }[];
+    items: { nome: string; qta: number; preparazione_at?: string | null; pronto_at?: string | null; servito_at?: string | null; a_seguire?: boolean }[];
   };
 
   const initial: TrackedOrder = {

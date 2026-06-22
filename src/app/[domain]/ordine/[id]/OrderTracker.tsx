@@ -4,7 +4,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { brandPalette } from "@/lib/brand";
 
-export type ItemFase = "in_attesa" | "in_preparazione" | "pronto" | "servito";
+export type ItemFase = "in_attesa" | "a_seguire" | "in_preparazione" | "pronto" | "servito";
 
 export type TrackedOrder = {
   id: string;
@@ -30,6 +30,11 @@ const ITEM_STATUS: Record<
     label: "In attesa",
     dot: "#9ca3af",
     pill: (m) => ({ background: "transparent", color: m.textMuted, border: `1px solid ${m.surfaceBorder}` }),
+  },
+  a_seguire: {
+    label: "A seguire",
+    dot: "#7c3aed",
+    pill: () => ({ background: "#7c3aed", color: "#ffffff" }),
   },
   in_preparazione: {
     label: "In preparazione",

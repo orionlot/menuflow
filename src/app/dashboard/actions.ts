@@ -736,6 +736,22 @@ export async function setItemStage(orderId: string, lineIndex: number, stage: Ki
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Course coordination ("servi a seguire"): hold a dish so the kitchen doesn't
+ * start it, or release it ("Manda ora"). Sets the `a_seguire` flag on the line
+ * atomically. RLS-scoped via the DB function.
+ */
+export async function setItemHold(orderId: string, lineIndex: number, held: boolean) {
+  if (!Number.isInteger(lineIndex) || lineIndex < 0) throw new Error("Riga non valida.");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("set_item_hold", {
+    p_order_id: orderId,
+    p_line: lineIndex,
+    p_held: held,
+  });
+  if (error) throw new Error(error.message);
+}
+
 /** Kitchen: set (or clear) an order's priority flag. RLS-scoped. The value is
  *  validated against the allow-list — an out-of-contract string is coerced to
  *  null rather than persisted (it would otherwise crash the board render). */
