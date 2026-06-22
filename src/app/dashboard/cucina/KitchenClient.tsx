@@ -7,19 +7,19 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  useDraggable,
   useDroppable,
   pointerWithin,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { setOrderStage, setOrderPriorita, claimComandaStampa, type KitchenStage } from "@/app/dashboard/actions";
+import { setOrderStage, setOrderPriorita, setItemStage, claimComandaStampa, type KitchenStage } from "@/app/dashboard/actions";
+import { orderStageOf, applyItemStageLocal, rollupTimestamps } from "./derive";
+import OrderCard from "./OrderCard";
 import { formatEUR } from "@/lib/config/plans";
-import { allergeneLabel } from "@/lib/config/allergeni";
 import { printComandaSilently } from "@/lib/print-comanda";
 import type { Reparto, Priorita } from "@/types/db";
 
-interface KItem {
+export interface KItem {
   item_id?: string;
   nome: string;
   qta: number;
@@ -29,18 +29,14 @@ interface KItem {
   reparto?: string | null;
   opzioni?: { gruppo: string; scelta: string; prezzo: number }[];
   composizione?: { ingredient_id: string; nome: string; qta: number; prezzo: number; unita?: string | null }[];
+  // Per-item kitchen stamps (added in derive.ts Task 4)
+  preparazione_at?: string | null;
+  pronto_at?: string | null;
+  servito_at?: string | null;
+  tempo_preparazione?: number | null;
 }
 
-/** Chosen options + composition + customer note for one order line, for the cook to read. */
-function itemDetails(it: KItem): string[] {
-  return [
-    ...(it.opzioni ?? []).map((x) => x.scelta),
-    ...(it.composizione ?? []).map((c) => `${c.qta}× ${c.nome}`),
-    ...(it.nota ? [`📝 ${it.nota}`] : []),
-  ];
-}
-
-interface KOrder {
+export interface KOrder {
   id: string;
   tavolo: string | null;
   sala?: string | null;
@@ -66,22 +62,6 @@ const STAGES: { id: KitchenStage; label: string; head: string; tint: string }[] 
 ];
 
 const PRIO_CYCLE: (Priorita | null)[] = [null, "alta", "media", "bassa"];
-const PRIO_META: Record<Priorita, { label: string; cls: string }> = {
-  alta: { label: "ALTA", cls: "bg-red-600 text-white" },
-  media: { label: "MEDIA", cls: "bg-amber-500 text-black" },
-  bassa: { label: "BASSA", cls: "bg-neutral-500 text-white" },
-};
-
-// Wait-time thresholds (minutes) for the age colour of a "da preparare" card.
-const WARN_MIN = 8;
-const LATE_MIN = 15;
-
-function stageOf(o: KOrder): KitchenStage {
-  if (o.servito_at) return "serviti";
-  if (o.pronto_at) return "pronti";
-  if (o.preparazione_at) return "in_preparazione";
-  return "da_preparare";
-}
 
 /** Local optimistic timestamp patch so the board re-derives the new stage at once. */
 function applyStageLocal(o: KOrder, stage: KitchenStage): KOrder {
@@ -121,6 +101,8 @@ export default function KitchenClient({
   const [fullscreen, setFullscreen] = useState(false);
   // Ids of just-arrived orders — drives a brief visual pulse on the card accent.
   const [pulseIds, setPulseIds] = useState<Set<string>>(new Set());
+  // Collapsed state for each OrderCard (by order id).
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
 
   const ac = useRef<AudioContext | null>(null);
   const seen = useRef<Set<string>>(new Set());
@@ -299,10 +281,35 @@ export default function KitchenClient({
 
   // ── Actions (optimistic) ───────────────────────────────────────────
   const moveTo = useCallback((o: KOrder, stage: KitchenStage) => {
-    if (stage === "pronti" && stageOf(o) !== "pronti") ringBell();
-    setOrders((prev) => prev.map((x) => (x.id === o.id ? applyStageLocal(x, stage) : x)));
+    if (stage === "pronti" && orderStageOf(o.items) !== "pronti") ringBell();
+    const nowIso = new Date().toISOString();
+    setOrders((prev) =>
+      prev.map((x) => {
+        if (x.id !== o.id) return x;
+        // Patch all items optimistically to match the new order-level stage.
+        const items = x.items.map((it) => applyItemStageLocal(it, stage, nowIso));
+        return { ...applyStageLocal(x, stage), items };
+      }),
+    );
     void setOrderStage(o.id, stage).then(load);
   }, [load, ringBell]);
+
+  const onItemStage = useCallback(
+    (orderId: string, lineIndex: number, stage: KitchenStage) => {
+      const nowIso = new Date().toISOString();
+      setOrders((prev) =>
+        prev.map((o) => {
+          if (o.id !== orderId) return o;
+          const items = o.items.map((it, i) =>
+            i === lineIndex ? applyItemStageLocal(it, stage, nowIso) : it,
+          );
+          return { ...o, items, ...rollupTimestamps(items) };
+        }),
+      );
+      void setItemStage(orderId, lineIndex, stage).catch(() => load());
+    },
+    [load],
+  );
 
   function cyclePriorita(o: KOrder) {
     const idx = PRIO_CYCLE.indexOf(o.priorita ?? null);
@@ -332,7 +339,7 @@ export default function KitchenClient({
       pronti: [],
       serviti: [],
     };
-    for (const o of visible) m[stageOf(o)].push(o);
+    for (const o of visible) m[orderStageOf(o.items)].push(o);
     for (const k of Object.keys(m) as KitchenStage[]) {
       if (k === "serviti") m[k].sort((a, b) => (b.servito_at ?? "").localeCompare(a.servito_at ?? ""));
       else m[k].sort((a, b) => prioRank(a.priorita) - prioRank(b.priorita) || a.created_at.localeCompare(b.created_at));
@@ -344,7 +351,7 @@ export default function KitchenClient({
     const overId = e.over?.id as KitchenStage | undefined;
     if (!overId) return;
     const o = orders.find((x) => x.id === e.active.id);
-    if (!o || stageOf(o) === overId) return;
+    if (!o || orderStageOf(o.items) === overId) return;
     moveTo(o, overId);
   }
 
@@ -526,19 +533,30 @@ export default function KitchenClient({
                   approx={tempoStimatoOn && (s.id === "da_preparare" || s.id === "in_preparazione") && colAgg[s.id].missing > 0}
                 >
                   {byColumn[s.id].map((o) => (
-                    <Card
+                    <OrderCard
                       key={o.id}
-                      o={o}
-                      stage={s.id}
-                      now={now}
+                      order={o}
+                      stage={orderStageOf(o.items)}
                       isNew={pulseIds.has(o.id)}
                       repartoOn={repartoOn}
                       repartoById={repartoById}
+                      repFilter={repFilter}
                       tempoStimatoOn={tempoStimatoOn}
+                      now={now}
+                      collapsed={collapsedIds.has(o.id)}
                       clock={clock}
-                      onMove={moveTo}
-                      onCyclePriorita={cyclePriorita}
-                      onRistampa={ristampa}
+                      onToggleCollapse={() =>
+                        setCollapsedIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(o.id)) next.delete(o.id);
+                          else next.add(o.id);
+                          return next;
+                        })
+                      }
+                      onItemStage={(li, stage) => onItemStage(o.id, li, stage)}
+                      onOrderStage={(stage) => moveTo(o, stage)}
+                      onPriorita={() => cyclePriorita(o)}
+                      onRistampa={() => ristampa(o)}
                     />
                   ))}
                   {byColumn[s.id].length === 0 && (
@@ -631,241 +649,5 @@ function Column({
       )}
       <div className="flex flex-col gap-3">{children}</div>
     </section>
-  );
-}
-
-function Card({
-  o,
-  stage,
-  now,
-  isNew,
-  repartoOn,
-  repartoById,
-  tempoStimatoOn,
-  clock,
-  onMove,
-  onCyclePriorita,
-  onRistampa,
-}: {
-  o: KOrder;
-  stage: KitchenStage;
-  now: number;
-  isNew: boolean;
-  repartoOn: boolean;
-  repartoById: Map<string, Reparto>;
-  tempoStimatoOn: boolean;
-  clock: (iso: string) => string;
-  onMove: (o: KOrder, stage: KitchenStage) => void;
-  onCyclePriorita: (o: KOrder) => void;
-  onRistampa: (o: KOrder) => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: o.id });
-  const dragStyle: React.CSSProperties | undefined = transform
-    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, zIndex: 50, opacity: 0.9 }
-    : undefined;
-
-  const m = Math.max(0, Math.floor((now - new Date(o.created_at).getTime()) / 60000));
-  const ageColor = m >= LATE_MIN ? "#dc2626" : m >= WARN_MIN ? "#d97706" : "#16a34a";
-
-  // Countdown (in preparazione, with an estimate). Hidden when the prep-time
-  // feature is off.
-  let countdown: { text: string; late: boolean } | null = null;
-  if (tempoStimatoOn && stage === "in_preparazione" && o.preparazione_at && o.tempo_stimato) {
-    const remaining = new Date(o.preparazione_at).getTime() + o.tempo_stimato * 60000 - now;
-    const late = remaining < 0;
-    const abs = Math.abs(remaining);
-    const mm = Math.floor(abs / 60000);
-    const ss = Math.floor((abs % 60000) / 1000);
-    countdown = { text: `${late ? "+" : ""}${mm}:${String(ss).padStart(2, "0")}`, late };
-  }
-
-  const dest = o.asporto
-    ? `🛍 ${o.tavolo ?? "—"}`
-    : `Tav. ${o.tavolo ?? "—"}${o.sala ? ` · ${o.sala}` : ""}`;
-  const served = stage === "serviti";
-  // No prep estimate available for a pending order → the queue ETA is approximate.
-  const noEstimate =
-    tempoStimatoOn && (stage === "da_preparare" || stage === "in_preparazione") && !o.tempo_stimato;
-
-  // Distinct departments present in this order (for the reparto chips).
-  const reps = repartoOn
-    ? [...new Set((o.items ?? []).map((it) => it.reparto).filter(Boolean) as string[])]
-    : [];
-
-  const headBg =
-    stage === "pronti" ? "bg-green-600" : stage === "in_preparazione" ? "bg-sky-700" : served ? "bg-neutral-700" : "bg-neutral-900";
-  const prioColor =
-    o.priorita === "alta" ? "#dc2626" : o.priorita === "media" ? "#d97706" : o.priorita === "bassa" ? "#525252" : null;
-
-  return (
-    <article
-      ref={setNodeRef}
-      className={`relative flex flex-col overflow-hidden rounded-2xl shadow-lg transition ${
-        served ? "bg-neutral-200 text-neutral-700" : "bg-white text-neutral-900"
-      } ${isNew ? "ring-2 ring-amber-400 ring-offset-2 ring-offset-[#0f1115]" : ""} ${isDragging ? "shadow-2xl" : ""}`}
-      style={{ ...dragStyle, borderLeft: `6px solid ${stage === "da_preparare" ? ageColor : "transparent"}` }}
-    >
-      {/* Header doubles as the drag handle */}
-      <div
-        {...attributes}
-        {...listeners}
-        className={`flex cursor-grab touch-none items-center justify-between gap-2 px-3 py-2 text-white active:cursor-grabbing ${headBg}`}
-      >
-        <span className="flex items-center gap-2 text-xl font-extrabold">
-          {dest}
-          {o.priorita && PRIO_META[o.priorita] && (
-            <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${PRIO_META[o.priorita].cls}`}>
-              {PRIO_META[o.priorita].label}
-            </span>
-          )}
-        </span>
-        <span className="text-right text-xs leading-tight">
-          {countdown ? (
-            <span className={`block text-sm font-bold ${countdown.late ? "text-red-300" : "text-sky-100"}`}>
-              ⏱ {countdown.text}
-            </span>
-          ) : stage === "da_preparare" ? (
-            <span className="block text-sm font-bold" style={{ color: ageColor }}>
-              {m === 0 ? "adesso" : `${m}′`}
-            </span>
-          ) : (
-            <span className="block text-sm font-bold">{stage === "pronti" ? "PRONTO 🔔" : served ? "✓" : ""}</span>
-          )}
-          {noEstimate && <span className="block text-[10px] font-medium text-amber-200/90" title="Tempo di preparazione non impostato">stima n/d</span>}
-          <span className="text-neutral-300">{clock(o.created_at)}</span>
-        </span>
-      </div>
-
-      {o.allergeni && o.allergeni.length > 0 && (
-        <div className="mx-3 mt-2 rounded-lg border-2 border-red-500 bg-red-600 px-2.5 py-1.5 text-white">
-          <div className="text-[11px] font-extrabold uppercase tracking-wide">⚠️ Allergie al tavolo</div>
-          <div className="text-sm font-bold leading-tight">
-            {o.allergeni.map((a) => allergeneLabel(a)).join(", ")}
-          </div>
-        </div>
-      )}
-
-      {reps.length > 0 && (
-        <div className="flex flex-wrap gap-1 px-3 pt-2">
-          {reps.map((id) => {
-            const r = repartoById.get(id);
-            return (
-              <span
-                key={id}
-                className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-white"
-                style={{ backgroundColor: r?.colore ?? "#525252" }}
-              >
-                {r?.nome ?? id}
-              </span>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Body: order lines on the left, large action icons on the right */}
-      <div className="flex flex-1 items-stretch">
-        <ul className="min-w-0 flex-1 space-y-1.5 px-3 py-2">
-          {o.items.map((it, i) => {
-            const det = itemDetails(it);
-            return (
-              <li key={`${o.id}-${i}`} className={served ? "text-base" : "text-lg"}>
-                <span className="font-extrabold">{it.qta}×</span> {it.nome}
-                {it.taglia && <span className="font-bold text-neutral-500"> · {it.taglia}</span>}
-                {det.length > 0 && (
-                  <span className="block pl-5 text-sm font-medium text-neutral-600">{det.join(", ")}</span>
-                )}
-              </li>
-            );
-          })}
-          {o.note && (
-            <li className="mt-1 rounded-lg bg-amber-100 px-2.5 py-1.5 text-base font-semibold text-amber-900">📝 {o.note}</li>
-          )}
-        </ul>
-
-        {/* Large icon controls — priorità (flag) + ristampa (printer) */}
-        <div className="flex shrink-0 flex-col items-center justify-center gap-2 px-3 py-2">
-          <button
-            onClick={() => onCyclePriorita(o)}
-            title={`Priorità${o.priorita ? `: ${o.priorita}` : ""} (tocca per cambiare)`}
-            aria-label="Cambia priorità ordine"
-            className="grid h-12 w-12 place-items-center rounded-xl border-2 transition hover:bg-neutral-50 active:scale-95"
-            style={prioColor ? { borderColor: prioColor, color: prioColor } : { borderColor: "#e5e5e5", color: "#9ca3af" }}
-          >
-            <FlagIcon filled={Boolean(o.priorita)} />
-          </button>
-          <button
-            onClick={() => onRistampa(o)}
-            title="Ristampa comanda"
-            aria-label="Ristampa comanda"
-            className="grid h-12 w-12 place-items-center rounded-xl border-2 border-neutral-200 text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-800 active:scale-95"
-          >
-            <PrinterIcon />
-          </button>
-        </div>
-      </div>
-
-      {/* Primary action(s) by stage */}
-      {stage === "da_preparare" && (
-        <button
-          onClick={() => onMove(o, "in_preparazione")}
-          className="min-h-[48px] bg-sky-700 py-3 text-lg font-bold text-white transition hover:bg-sky-600 active:scale-[0.99]"
-        >
-          ▶ Inizia
-        </button>
-      )}
-      {stage === "in_preparazione" && (
-        <button
-          onClick={() => onMove(o, "pronti")}
-          className="min-h-[48px] bg-green-600 py-3 text-lg font-bold text-white transition hover:bg-green-700 active:scale-[0.99]"
-        >
-          ✓ Pronto
-        </button>
-      )}
-      {stage === "pronti" && (
-        <div className="flex">
-          <button
-            onClick={() => onMove(o, "in_preparazione")}
-            className="min-h-[44px] w-1/3 border-r border-green-200 bg-white py-2 text-sm font-medium text-neutral-500 transition hover:bg-neutral-50"
-          >
-            ↶
-          </button>
-          <button
-            onClick={() => onMove(o, "serviti")}
-            className="min-h-[44px] w-2/3 bg-neutral-900 py-2 text-base font-bold text-white transition hover:bg-neutral-700 active:scale-[0.99]"
-          >
-            Ritirato
-          </button>
-        </div>
-      )}
-      {served && (
-        <button
-          onClick={() => onMove(o, "pronti")}
-          className="min-h-[40px] bg-neutral-300 py-2 text-sm font-medium text-neutral-600 transition hover:bg-neutral-400/70"
-        >
-          ↶ Annulla
-        </button>
-      )}
-    </article>
-  );
-}
-
-/** Priority flag — outline when none, filled when a priority is set. */
-function FlagIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V4s-1 1-4 1-5-2-8-2-4 1-4 1z" fill={filled ? "currentColor" : "none"} />
-      <line x1="4" y1="22" x2="4" y2="15" />
-    </svg>
-  );
-}
-
-/** Thermal-printer (ristampa comanda). */
-function PrinterIcon() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <polyline points="6 9 6 2 18 2 18 9" />
-      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-      <rect x="6" y="14" width="12" height="8" />
-    </svg>
   );
 }
