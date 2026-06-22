@@ -80,6 +80,8 @@ export default function PresentazionePage() {
                 <span>Al tavolo · Asporto · Delivery</span>
                 <span>Pagamento online</span>
                 <span>Cucina digitale</span>
+                <span>Prodotti componibili</span>
+                <span>Chiama il cameriere</span>
                 <span>Prenotazioni</span>
               </div>
             </Reveal>
@@ -167,6 +169,29 @@ export default function PresentazionePage() {
         </div>
       </section>
 
+      {/* ── Magazzino & prodotti componibili ── */}
+      <section className="band band-alt">
+        <div className="wrap split">
+          <Reveal className="split-art">
+            <Phone src={`${IMG}/07-poke-builder.png`} alt="Prodotto componibile con scelta degli ingredienti" w={250} />
+          </Reveal>
+          <Reveal delay={100} className="split-copy">
+            <Eyebrow>Magazzino & componibili</Eyebrow>
+            <h2 className="ff h2">Le scorte parlano col menu.</h2>
+            <p className="lead-sm">
+              Imposti la scorta di ogni ingrediente una volta sola. A ogni ordine le quantità si
+              scalano da sole e, quando un ingrediente finisce, il piatto che lo usa non è più ordinabile.
+            </p>
+            <ul className="ticks">
+              <li><b>Prodotti componibili</b> — poke, bowl e piatti su misura: il cliente sceglie gli ingredienti entro le regole min/max che imposti tu.</li>
+              <li><b>«Esaurito» automatico</b> — finita la scorta di un ingrediente, sparisce dalle scelte e il piatto si blocca. Niente «mi dispiace, è finito» al tavolo.</li>
+              <li><b>Conti sempre giusti</b> — le scorte si scalano a ogni ordine in modo sicuro, anche con tanti ordini insieme; il totale è ricalcolato dal server sui prezzi reali.</li>
+            </ul>
+            <p className="note">Vale anche per i singoli piatti: imposti la scorta del prodotto e, quando arriva a zero, non è più ordinabile.</p>
+          </Reveal>
+        </div>
+      </section>
+
       {/* ── Cucina digitale (KDS) — dark spotlight ── */}
       <section className="band band-dark">
         <div className="wrap">
@@ -179,6 +204,30 @@ export default function PresentazionePage() {
             <Reveal delay={100}><p><b className="on-dark">Timer & ritardi</b><br />Ogni piatto col suo tempo; alert automatico se va oltre.</p></Reveal>
             <Reveal delay={200}><p><b className="on-dark">Stati chiari</b><br />Da preparare → in preparazione → pronto → servito.</p></Reveal>
           </div>
+        </div>
+      </section>
+
+      {/* ── Tempi di preparazione & attesa ── */}
+      <section className="band">
+        <div className="wrap split reverse">
+          <Reveal className="split-art">
+            <Phone src={`${IMG}/20-tracking.png`} alt="Tempo stimato e avanzamento dell’ordine sul telefono del cliente" w={250} />
+          </Reveal>
+          <Reveal delay={100} className="split-copy">
+            <Eyebrow>Tempi di preparazione</Eyebrow>
+            <h2 className="ff h2">Tempi di cucina, sotto controllo.</h2>
+            <p className="lead-sm">
+              Imposti il tempo di preparazione di ogni piatto — oppure un tempo medio per categoria,
+              usato quando un piatto non ne ha uno. Da lì, l’app fa il resto.
+            </p>
+            <ul className="ticks">
+              <li><b>Countdown in cucina</b> — parte da solo quando il piatto passa «in preparazione»; se va oltre, diventa rosso. La cucina vede subito cosa è in ritardo.</li>
+              <li><b>Coda sotto controllo</b> — per ogni colonna l’app stima il tempo per smaltire i piatti in attesa.</li>
+              <li><b>Attesa stimata al cliente</b> — se vuoi, il cliente vede sul menu e nel carrello il tempo stimato per il servizio, calcolato sulla coda reale in cucina.</li>
+              <li><b>Onestà</b> — se manca qualche tempo, la stima è segnalata come «approssimativa». Attivi o disattivi tutto quando vuoi.</li>
+            </ul>
+            <p className="note">Al cliente è sempre chiaro che è «una stima indicativa… soggetta a variazioni in base all’affluenza e ad altri fattori».</p>
+          </Reveal>
         </div>
       </section>
 
@@ -197,6 +246,21 @@ export default function PresentazionePage() {
             </ol>
             <p className="note">Notifiche istantanee su <b>Telegram</b> a ogni nuovo ordine e prenotazione.</p>
           </Reveal>
+        </div>
+      </section>
+
+      {/* ── Servizio al tavolo: chiama il cameriere / chiedi il conto ── */}
+      <section className="band band-dark">
+        <div className="wrap">
+          <Reveal><Eyebrow className="on-dark">Servizio al tavolo</Eyebrow>
+            <h2 className="ff h2">«Serve aiuto?» a portata di tocco.</h2>
+            <p className="lead on-dark-muted">Dal menu il cliente chiama il cameriere o chiede il conto con un tocco. Tu ricevi la richiesta all’istante — su Telegram e in un avviso ben visibile in dashboard.</p></Reveal>
+          <div className="trio on-dark-muted">
+            <Reveal delay={0}><p><b className="on-dark">🔔 Chiama cameriere</b><br />Il cliente indica il tavolo, lo staff è avvisato subito. Meno mani alzate, meno giri a vuoto.</p></Reveal>
+            <Reveal delay={100}><p><b className="on-dark">🧾 Chiedi il conto</b><br />La richiesta arriva in tempo reale: si paga prima e i tavoli girano più in fretta.</p></Reveal>
+            <Reveal delay={200}><p><b className="on-dark">🛎 Richieste dai tavoli</b><br />Le vedi raggruppate in dashboard, con un suono, e le chiudi con un tocco su «Gestita».</p></Reveal>
+          </div>
+          <Reveal delay={120}><p className="note on-dark-muted center">Attivabile o disattivabile quando vuoi, su tutti i piani.</p></Reveal>
         </div>
       </section>
 
@@ -225,16 +289,18 @@ export default function PresentazionePage() {
         <div className="wrap split">
           <Reveal className="split-art"><Browser src={`${IMG}/18-sala.png`} alt="Disposizione della sala" /></Reveal>
           <Reveal delay={100} className="split-copy">
-            <Eyebrow>Sala</Eyebrow>
+            <Eyebrow>Sala & ordine manuale</Eyebrow>
             <h2 className="ff h2">Disegna la tua sala come la vivi.</h2>
             <p className="lead-sm">
-              Crei la planimetria con i tuoi tavoli e le tue sale. Il cliente può indicare in quale
-              sala si trova e in cucina compare accanto al numero del tavolo.
+              Crei la planimetria con le tue sale e i tuoi tavoli. Il cliente indica dov’è seduto e
+              la cucina lo vede accanto al numero del tavolo — e il cameriere può inserire gli ordini
+              a mano, tavolo per tavolo.
             </p>
             <ul className="ticks">
-              <li>Più sale (interno, dehors, privé…) con i loro tavoli.</li>
-              <li>Capienza e stima dei tempi di servizio.</li>
-              <li>Attivabile quando ti serve.</li>
+              <li><b>Più sale</b> — interno, dehors, privé… ognuna con i suoi tavoli e la sua capienza.</li>
+              <li><b>Il cliente sceglie la sala</b> — la indica al momento dell’ordine e compare in cucina vicino al tavolo.</li>
+              <li><b>Ordine manuale del cameriere</b> — crei un ordine dalla dashboard, o tocchi un tavolo sulla mappa, scegliendo tavolo e sala: comodo per la cassa e il servizio al banco.</li>
+              <li><b>Attivabile</b> quando ti serve.</li>
             </ul>
           </Reveal>
         </div>
