@@ -685,7 +685,14 @@ export default function MenuClient({
           note,
           coperti: !asporto && cMode === "persona" ? coperti : undefined,
           mancia: tipEligible ? manciaCents / 100 : undefined,
-          allergeni: allergeniOrdineOn && allergeniSel.length ? allergeniSel : undefined,
+          // Allergeni inviati alla cucina: quelli scelti dal cliente nel pannello
+          // "Allergeni e preferenze" (vicino alle categorie) + quelli del checkout.
+          allergeni: (() => {
+            const a = new Set<string>();
+            if (allergyOn) myAllergens.forEach((x) => a.add(x));
+            if (allergeniOrdineOn) allergeniSel.forEach((x) => a.add(x));
+            return a.size ? [...a] : undefined;
+          })(),
           items: lines.map((l) => ({
             item_id: l.item_id,
             qta: l.qta,
@@ -897,6 +904,7 @@ export default function MenuClient({
                 width={480}
                 height={240}
                 sizes="(max-width: 768px) 100vw, 480px"
+                priority={idx === 0}
                 className="h-44 w-full object-cover"
               />
             ) : (
@@ -917,6 +925,7 @@ export default function MenuClient({
                   width={140}
                   height={140}
                   sizes="112px"
+                  priority={idx === 0}
                   className="shrink-0 self-start object-cover"
                   style={{ width: 112, height: 112, borderRadius: photoRadius }}
                 />
@@ -1107,6 +1116,7 @@ export default function MenuClient({
                   width={48}
                   height={48}
                   sizes="48px"
+                  priority
                   className={`h-11 w-11 shrink-0 object-cover ${dark ? "rounded-xl" : "rounded-full"}`}
                   style={dark ? { border: `2px solid ${p.brand}` } : undefined}
                 />

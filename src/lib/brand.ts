@@ -100,7 +100,9 @@ export function brandPalette(
     headerSub:
       onBrand === "#ffffff" ? "rgba(255,255,255,0.82)" : "rgba(26,18,6,0.7)",
     text: "#211b15",
-    textMuted: "#8c8279",
+    // Darkened from #8c8279 to meet WCAG AA (≥4.5:1) on both white and the cream
+    // page background — fixes the Lighthouse contrast finding on secondary text.
+    textMuted: "#6b625a",
     price: accentHex,
     chipActiveBg: accentHex,
     chipActiveText: onAccent,

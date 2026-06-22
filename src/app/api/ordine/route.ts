@@ -289,10 +289,13 @@ export async function POST(req: Request) {
     const totaleCents = itemsTotaleCents + copertoCents + manciaCents;
     const totale = totaleCents / 100;
 
-    // Allergens the customer declared (only when the feature is on); keep known ids.
-    const allergeni = isFeatureOn(restaurant, "allergeni_ordine")
-      ? [...new Set((body.allergeni ?? []).filter((a) => ALLERGENI_BY_ID.has(a)))].slice(0, 14)
-      : [];
+    // Allergens the customer declared — at checkout ("allergeni_ordine") and/or
+    // in the menu's allergy panel ("profilo_allergie"). Saved when either is on,
+    // so the kitchen always sees what the customer flagged. Keep known ids only.
+    const allergeni =
+      isFeatureOn(restaurant, "allergeni_ordine") || isFeatureOn(restaurant, "profilo_allergie")
+        ? [...new Set((body.allergeni ?? []).filter((a) => ALLERGENI_BY_ID.has(a)))].slice(0, 14)
+        : [];
 
     // Sala chosen by the customer (only when the feature is on + it's a real room).
     const sala =
