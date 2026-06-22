@@ -84,7 +84,9 @@ describe("funzioniAttive", () => {
         "stampa",
         "stampa_automatica",
         "tempo_stimato",
+        "tracking_countdown",
         "tracking_ordine",
+        "tracking_piatti",
         "vetrina",
       ].sort(),
     );

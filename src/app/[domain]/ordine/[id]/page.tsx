@@ -102,6 +102,8 @@ export default async function OrdineTrackingPage({ params }: Params) {
       coloreSecondario={tenant.colore_secondario}
       tema={tenant.tema}
       reviewUrl={tenant.funzioni_attive?.recensioni ? tenant.google_review_url : null}
+      countdownOn={tenant.funzioni_attive?.tracking_countdown ?? false}
+      perDishOn={tenant.funzioni_attive?.tracking_piatti ?? true}
     />
   );
 }

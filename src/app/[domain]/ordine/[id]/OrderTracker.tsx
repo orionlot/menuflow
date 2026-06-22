@@ -67,6 +67,8 @@ export default function OrderTracker({
   coloreSecondario,
   tema,
   reviewUrl,
+  countdownOn = false,
+  perDishOn = true,
 }: {
   initial: TrackedOrder;
   nome: string;
@@ -74,6 +76,8 @@ export default function OrderTracker({
   coloreSecondario?: string | null;
   tema: "light" | "dark";
   reviewUrl?: string | null;
+  countdownOn?: boolean;
+  perDishOn?: boolean;
 }) {
   const p = brandPalette(colorePrimario, tema, coloreSecondario);
   const [o, setO] = useState<TrackedOrder>(initial);
@@ -120,18 +124,18 @@ export default function OrderTracker({
     };
   }, [initial.id, o.fase]);
 
-  // 1s countdown tick only while a dish is actually being prepared.
+  // 1s countdown tick only while a dish is being prepared AND the countdown is shown.
   useEffect(() => {
-    if (o.fase !== "in_preparazione") return;
+    if (!countdownOn || o.fase !== "in_preparazione") return;
     const c = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(c);
-  }, [o.fase]);
+  }, [countdownOn, o.fase]);
 
   const currentIdx = STEP_ORDER.indexOf(o.fase === "attesa_pagamento" ? "ricevuto" : o.fase);
 
   // Countdown while in preparation.
   let countdown: string | null = null;
-  if (o.fase === "in_preparazione" && o.preparazione_at && o.tempo_stimato) {
+  if (countdownOn && o.fase === "in_preparazione" && o.preparazione_at && o.tempo_stimato) {
     const remaining = new Date(o.preparazione_at).getTime() + o.tempo_stimato * 60000 - now;
     const late = remaining < 0;
     const abs = Math.abs(remaining);
@@ -143,7 +147,9 @@ export default function OrderTracker({
 
   const readyCount = o.items.filter((it) => it.fase === "pronto" || it.fase === "servito").length;
   const pctReady = o.items.length ? Math.round((readyCount / o.items.length) * 100) : 0;
-  const showPerDish = o.items.length > 1 && o.fase !== "attesa_pagamento" && o.fase !== "fallito";
+  // Per-dish chips (gated by the owner toggle); the progress count/bar only when it adds info.
+  const perDish = perDishOn && o.fase !== "attesa_pagamento" && o.fase !== "fallito";
+  const showProgress = perDish && o.items.length > 1;
 
   return (
     <main className="min-h-screen px-4 py-8" style={{ background: p.pageBg, color: p.text }}>
@@ -185,7 +191,7 @@ export default function OrderTracker({
               {countdown && (
                 <p className="mt-1 text-sm opacity-90">⏱ {countdown}</p>
               )}
-              {showPerDish && o.fase === "in_preparazione" && (
+              {showProgress && o.fase === "in_preparazione" && (
                 <p className="mt-1 text-sm opacity-90">{readyCount} di {o.items.length} piatti pronti</p>
               )}
               {o.fase === "pronto" && <p className="mt-1 text-sm opacity-90">Il tuo ordine è pronto!</p>}
@@ -228,36 +234,40 @@ export default function OrderTracker({
               <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: p.textMuted }}>
                 Il tuo ordine
               </p>
-              {showPerDish && (
+              {showProgress && (
                 <span className="text-xs font-semibold tabular-nums" style={{ color: p.textMuted }}>
                   {readyCount}/{o.items.length} pronti
                 </span>
               )}
             </div>
 
-            {showPerDish && (
+            {showProgress && (
               <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full" style={{ background: p.surfaceBorder }}>
                 <div className="h-full rounded-full transition-all" style={{ width: `${pctReady}%`, background: p.brand }} />
               </div>
             )}
 
-            <ul className="space-y-2">
+            <ul className={perDish ? "space-y-2" : "space-y-1"}>
               {o.items.map((it, i) => {
                 const s = ITEM_STATUS[it.fase];
                 return (
-                  <li key={i} className="flex items-center justify-between gap-2">
-                    <span className="flex min-w-0 items-center gap-2 text-sm" style={{ color: p.text }}>
-                      <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.dot }} />
+                  <li key={i} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="flex min-w-0 items-center gap-2" style={{ color: p.text }}>
+                      {perDish && (
+                        <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.dot }} />
+                      )}
                       <span className="truncate">
                         <span className="font-bold">{it.qta}×</span> {it.nome}
                       </span>
                     </span>
-                    <span
-                      className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold"
-                      style={s.pill({ textMuted: p.textMuted, surfaceBorder: p.surfaceBorder })}
-                    >
-                      {s.label}
-                    </span>
+                    {perDish && (
+                      <span
+                        className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold"
+                        style={s.pill({ textMuted: p.textMuted, surfaceBorder: p.surfaceBorder })}
+                      >
+                        {s.label}
+                      </span>
+                    )}
                   </li>
                 );
               })}

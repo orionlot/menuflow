@@ -25,6 +25,8 @@ export type FeatureId =
   | "etichette"
   | "fasce_orarie"
   | "tracking_ordine"
+  | "tracking_piatti"
+  | "tracking_countdown"
   | "richiesta_servizio"
   | "delivery"
   | "ordine_manuale"
@@ -194,6 +196,22 @@ export const FEATURES: FeatureDef[] = [
       "Il cliente segue lo stato del suo ordine (ricevuto → in preparazione → pronto → servito).",
     pianoMinimo: "base",
     defaultOn: true,
+  },
+  {
+    id: "tracking_piatti",
+    nome: "Avanzamento piatto per piatto",
+    descrizione:
+      "Sulla pagina “Segui il tuo ordine” il cliente vede lo stato di ogni singolo piatto (in attesa / in preparazione / pronto). Richiede “Segui il tuo ordine”.",
+    pianoMinimo: "base",
+    defaultOn: true,
+  },
+  {
+    id: "tracking_countdown",
+    nome: "Tempo stimato al cliente",
+    descrizione:
+      "Sulla pagina “Segui il tuo ordine” mostra il tempo stimato per la preparazione. Tienilo spento se i tempi del locale sono variabili. Richiede “Segui il tuo ordine” e i “Tempi di preparazione”.",
+    pianoMinimo: "base",
+    defaultOn: false,
   },
   {
     id: "richiesta_servizio",
