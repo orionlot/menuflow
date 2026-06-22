@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Fraunces, Manrope } from "next/font/google";
 import Reveal from "./Reveal";
+import Lightbox from "./Lightbox";
 
 const display = Fraunces({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-display" });
 const body = Manrope({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-body" });
@@ -19,18 +20,18 @@ const IMG = "/pitch";
 /* ---- small building blocks (server components) ---- */
 function Phone({ src, alt, w = 250 }: { src: string; alt: string; w?: number }) {
   return (
-    <div className="phone" style={{ width: w }}>
-      <img src={src} alt={alt} width={430} height={932} loading="lazy" />
+    <div className="phone zoomable" style={{ width: w }}>
+      <img src={src} alt={alt} width={430} height={932} loading="lazy" data-zoom style={{ cursor: "zoom-in" }} />
     </div>
   );
 }
 function Browser({ src, alt }: { src: string; alt: string }) {
   return (
-    <div className="browser">
+    <div className="browser zoomable">
       <div className="bbar">
         <i /><i /><i />
       </div>
-      <img src={src} alt={alt} width={1440} height={900} loading="lazy" />
+      <img src={src} alt={alt} width={1440} height={900} loading="lazy" data-zoom style={{ cursor: "zoom-in" }} />
     </div>
   );
 }
@@ -387,6 +388,8 @@ export default function PresentazionePage() {
           </Reveal>
         </div>
       </section>
+
+      <Lightbox />
     </main>
   );
 }
@@ -478,6 +481,9 @@ const CSS = `
 .bbar{height:30px;background:#ece6da;display:flex;align-items:center;gap:6px;padding:0 12px;}
 .bbar i{width:10px;height:10px;border-radius:50%;background:#cfc7b8;}
 .browser img{width:100%;height:auto;}
+/* click-to-zoom affordance */
+.phone,.browser{position:relative;}
+.zoomable::after{content:"⤢";position:absolute;bottom:10px;right:10px;z-index:3;width:30px;height:30px;border-radius:50%;background:rgba(8,20,15,.5);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;pointer-events:none;}
 
 /* trio / duo */
 .trio{display:grid;grid-template-columns:1fr;gap:20px;margin-top:30px;font-size:16px;line-height:1.5;}
