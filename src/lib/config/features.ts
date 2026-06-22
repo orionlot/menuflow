@@ -28,6 +28,7 @@ export type FeatureId =
   | "tracking_piatti"
   | "tracking_countdown"
   | "gestione_portate"
+  | "portate_cliente"
   | "richiesta_servizio"
   | "delivery"
   | "ordine_manuale"
@@ -219,6 +220,14 @@ export const FEATURES: FeatureDef[] = [
     nome: "Portate (servi a seguire)",
     descrizione:
       "Il cameriere può trattenere un piatto e mandarlo in cucina più tardi (“Manda ora”), così i secondi arrivano a seguire. Al cliente il piatto compare come “A seguire”.",
+    pianoMinimo: "base",
+    defaultOn: false,
+  },
+  {
+    id: "portate_cliente",
+    nome: "«A seguire» scelto dal cliente",
+    descrizione:
+      "Nel riepilogo dell’ordine il cliente può segnare da sé i piatti da servire “a seguire”. Perché la cucina li gestisca, tieni acceso anche “Portate (servi a seguire)”.",
     pianoMinimo: "base",
     defaultOn: false,
   },

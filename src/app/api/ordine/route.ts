@@ -228,6 +228,16 @@ export async function POST(req: Request) {
     }
     const { lines, itemsTotaleCents } = priced;
 
+    // Course coordination chosen by the customer ("a seguire"), feature-gated.
+    // priceLines is 1:1 with body.items, so the held flag carries over by index.
+    const finalLines = isFeatureOn(restaurant, "portate_cliente")
+      ? lines.map((l, i) =>
+          (Array.isArray(body.items) ? (body.items[i] as { a_seguire?: boolean }) : undefined)?.a_seguire
+            ? { ...l, a_seguire: true }
+            : l,
+        )
+      : lines;
+
     // Estimated prep time = longest EFFECTIVE prep among the ordered dishes,
     // where effective = the item's own tempo_preparazione, or (fallback) the
     // restaurant's average for that item's category. Anchors the kitchen
@@ -315,7 +325,7 @@ export async function POST(req: Request) {
         tipo,
         indirizzo,
         posizione,
-        items: lines,
+        items: finalLines,
         totale,
         mancia: manciaCents / 100,
         coperti,

@@ -228,6 +228,7 @@ export default function MenuClient({
   const kcalOn = Boolean(tenant.funzioni_attive?.kcal);
   const allergeniOrdineOn = Boolean(tenant.funzioni_attive?.allergeni_ordine);
   const salaOrdineOn = Boolean(tenant.funzioni_attive?.sala_ordine);
+  const portateClienteOn = Boolean(tenant.funzioni_attive?.portate_cliente);
   const attesaOn =
     Boolean(tenant.funzioni_attive?.attesa_stimata) && Boolean(tenant.funzioni_attive?.tempo_stimato);
   const saleList = tenant.sale ?? [];
@@ -272,6 +273,15 @@ export default function MenuClient({
 
   const [lang, setLang] = useState<string>(tenant.lingue?.[0] ?? "it");
   const [cart, setCart] = useState<Record<string, CartLine>>({});
+  // Cart lines the customer flagged "a seguire" (feature: portate_cliente).
+  const [heldKeys, setHeldKeys] = useState<Set<string>>(new Set());
+  const toggleHeld = (key: string) =>
+    setHeldKeys((s) => {
+      const next = new Set(s);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   const [tavolo, setTavolo] = useState("");
   const [sala, setSala] = useState("");
   const [allergeniSel, setAllergeniSel] = useState<string[]>([]);
@@ -703,6 +713,7 @@ export default function MenuClient({
             })),
             taglia_id: l.taglia?.id,
             nota: l.nota,
+            a_seguire: heldKeys.has(l.key) || undefined,
           })),
         }),
       });
@@ -1760,6 +1771,21 @@ export default function MenuClient({
                         <span className="block text-xs italic" style={{ color: p.textMuted }}>
                           📝 {l.nota}
                         </span>
+                      )}
+                      {portateClienteOn && (
+                        <button
+                          type="button"
+                          onClick={() => toggleHeld(l.key)}
+                          aria-pressed={heldKeys.has(l.key)}
+                          className="mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold"
+                          style={
+                            heldKeys.has(l.key)
+                              ? { background: "#7c3aed", color: "#fff" }
+                              : { background: p.tint, color: p.textMuted, border: `1px solid ${p.surfaceBorder}` }
+                          }
+                        >
+                          {heldKeys.has(l.key) ? "✓ A seguire" : "A seguire"}
+                        </button>
                       )}
                     </div>
                     <span className="font-semibold">{formatEUR(effUnit(l) * l.qta)}</span>

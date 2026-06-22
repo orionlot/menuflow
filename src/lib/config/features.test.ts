@@ -72,6 +72,7 @@ describe("funzioniAttive", () => {
         "ordine_manuale",
         "peso",
         "piatto_consigliato",
+        "portate_cliente",
         "prenotazioni",
         "prezzo_asporto",
         "profilo_allergie",
