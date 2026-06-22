@@ -11,6 +11,7 @@ export default function ManualOrderModal({
   asportoOn,
   deliveryOn,
   copertoModalita,
+  portateOn = false,
   initialTavolo,
   initialSala,
   onClose,
@@ -20,6 +21,7 @@ export default function ManualOrderModal({
   asportoOn: boolean;
   deliveryOn: boolean;
   copertoModalita: string;
+  portateOn?: boolean;
   initialTavolo?: string;
   initialSala?: string;
   onClose: () => void;
@@ -30,10 +32,11 @@ export default function ManualOrderModal({
     indirizzo?: string;
     coperti?: number;
     note?: string;
-    items: { item_id: string; qta: number }[];
+    items: { item_id: string; qta: number; a_seguire?: boolean }[];
   }) => Promise<void>;
 }) {
   const [cart, setCart] = useState<Record<string, number>>({});
+  const [aSeguire, setASeguire] = useState<Set<string>>(new Set());
   const [tipo, setTipo] = useState<Tipo>("tavolo");
   const [tavolo, setTavolo] = useState(initialTavolo ?? "");
   const [sala, setSala] = useState(initialSala ?? "");
@@ -68,6 +71,15 @@ export default function ManualOrderModal({
     });
   }
 
+  function toggleSeguire(id: string) {
+    setASeguire((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   async function submit() {
     setError(null);
     if (!lineCount) {
@@ -95,7 +107,11 @@ export default function ManualOrderModal({
         indirizzo: tipo === "delivery" ? indirizzo.trim() : undefined,
         coperti: coperti || undefined,
         note: note.trim() || undefined,
-        items: Object.entries(cart).map(([item_id, qta]) => ({ item_id, qta })),
+        items: Object.entries(cart).map(([item_id, qta]) => ({
+          item_id,
+          qta,
+          a_seguire: aSeguire.has(item_id) || undefined,
+        })),
       });
       onClose();
     } catch (e) {
@@ -190,6 +206,20 @@ export default function ManualOrderModal({
                           <span className="shrink-0 text-sm text-neutral-500">
                             {formatEUR(Math.round(i.prezzo * 100))}
                           </span>
+                          {portateOn && q > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleSeguire(i.id)}
+                              title="Servi a seguire (il cuoco lo terrà per dopo)"
+                              className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-bold ${
+                                aSeguire.has(i.id)
+                                  ? "bg-violet-600 text-white"
+                                  : "border border-neutral-300 text-neutral-500 hover:bg-neutral-50"
+                              }`}
+                            >
+                              A seguire
+                            </button>
+                          )}
                           <div className="flex shrink-0 items-center gap-1.5">
                             <button
                               onClick={() => addQty(i.id, -1)}

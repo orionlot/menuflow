@@ -23,7 +23,7 @@ type OrdiniActions = {
     indirizzo?: string;
     coperti?: number;
     note?: string;
-    items: { item_id: string; qta: number }[];
+    items: { item_id: string; qta: number; a_seguire?: boolean }[];
   }) => Promise<{ orderId: string }>;
 };
 
@@ -119,6 +119,7 @@ export default function OrdiniClient({
   richiestaServizioOn,
   autoStampaOn = false,
   copertoModalita,
+  portateOn,
   actions,
 }: {
   initialOrders: Order[];
@@ -134,6 +135,7 @@ export default function OrdiniClient({
   richiestaServizioOn: boolean;
   autoStampaOn?: boolean;
   copertoModalita: string;
+  portateOn: boolean;
   actions: OrdiniActions;
 }) {
   const router = useRouter();
@@ -473,6 +475,7 @@ export default function OrdiniClient({
           asportoOn={asportoOn}
           deliveryOn={deliveryOn}
           copertoModalita={copertoModalita}
+          portateOn={portateOn}
           onClose={() => setManualOpen(false)}
           onCreate={async (input) => {
             await actions.createManualOrder(input);

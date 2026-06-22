@@ -862,7 +862,7 @@ export async function createManualOrder(input: {
   indirizzo?: string;
   coperti?: number;
   note?: string;
-  items?: { item_id: string; qta: number; opzioni?: { gruppo: string; scelta: string }[] }[];
+  items?: { item_id: string; qta: number; a_seguire?: boolean; opzioni?: { gruppo: string; scelta: string }[] }[];
 }): Promise<{ orderId: string }> {
   const restaurantId = await ownerRestaurantId();
   const admin = createAdminClient();
@@ -899,6 +899,16 @@ export async function createManualOrder(input: {
   );
   if (!lines.length) throw new Error("Aggiungi almeno un prodotto.");
 
+  // Course coordination ("a seguire"): tag the held lines so the kitchen holds
+  // them until the waiter releases them with "Manda ora" (feature-gated).
+  const portateOn = isFeatureOn(restaurant, "gestione_portate");
+  const heldIds = new Set(
+    portateOn ? (input.items ?? []).filter((it) => it.a_seguire).map((it) => it.item_id) : [],
+  );
+  const finalLines = heldIds.size
+    ? lines.map((l) => (heldIds.has(l.item_id) ? { ...l, a_seguire: true } : l))
+    : lines;
+
   // Coperto applies to table orders per the restaurant's configured mode. Like
   // the public flow, a per-person cover charge requires a valid covers count.
   let coperti: number | null = null;
@@ -921,7 +931,7 @@ export async function createManualOrder(input: {
       tipo,
       sala: String(input.sala ?? "").trim().slice(0, 60) || null,
       indirizzo: tipo === "delivery" ? String(input.indirizzo ?? "").trim().slice(0, 200) || null : null,
-      items: lines,
+      items: finalLines,
       totale: totaleCents / 100,
       coperti,
       coperto_tot: copertoCents / 100,
