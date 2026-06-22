@@ -114,6 +114,13 @@ export default function PresentazionePage() {
               <p>Sceglie tavolo, asporto o delivery, segnala le allergie e — se vuoi — paga subito online. Tu ricevi l’ordine all’istante.</p>
             </Reveal>
           </div>
+          <Reveal delay={120} className="trackrow">
+            <Phone src={`${IMG}/20-tracking.png`} alt="Segui il tuo ordine in tempo reale" w={208} />
+            <div className="trackrow-copy">
+              <h3 className="ff h3">…e poi segue l’ordine in tempo reale.</h3>
+              <p>Appena invia, il cliente vede l’avanzamento dal telefono — Ricevuto → In preparazione → Pronto → Servito. Meno «è pronto?» al personale, più serenità in sala.</p>
+            </div>
+          </Reveal>
         </div>
       </section>
 
@@ -121,7 +128,7 @@ export default function PresentazionePage() {
       <section className="band band-alt">
         <div className="wrap split">
           <Reveal className="split-art">
-            <Phone src={`${IMG}/08-checkout.png`} alt="Modalità di ordine e pagamento" w={250} />
+            <Phone src={`${IMG}/19-checkout-pay.png`} alt="Modalità di ordine e pagamento, mancia e pagamento online" w={250} />
           </Reveal>
           <Reveal delay={100} className="split-copy">
             <Eyebrow>Ritiro & pagamento</Eyebrow>
@@ -215,17 +222,7 @@ export default function PresentazionePage() {
       {/* ── Sala ── */}
       <section className="band band-alt">
         <div className="wrap split">
-          <Reveal className="split-art">
-            <div className="floor" aria-label="Disposizione sala (anteprima)">
-              <span className="room-label">Sala principale</span>
-              <span className="tbl" style={{ left: "10%", top: "26%" }}>2</span>
-              <span className="tbl" style={{ left: "38%", top: "20%" }}>4</span>
-              <span className="tbl" style={{ left: "68%", top: "30%" }}>4</span>
-              <span className="tbl round" style={{ left: "22%", top: "62%" }}>6</span>
-              <span className="tbl" style={{ left: "55%", top: "66%" }}>2</span>
-              <span className="tbl" style={{ left: "80%", top: "62%" }}>2</span>
-            </div>
-          </Reveal>
+          <Reveal className="split-art"><Browser src={`${IMG}/18-sala.png`} alt="Disposizione della sala" /></Reveal>
           <Reveal delay={100} className="split-copy">
             <Eyebrow>Sala</Eyebrow>
             <h2 className="ff h2">Disegna la tua sala come la vivi.</h2>
@@ -487,11 +484,10 @@ const CSS = `
 .trio b{font-weight:700;}
 .duo{display:grid;grid-template-columns:1fr;gap:22px;margin-top:30px;}
 
-/* floor plan illustration */
-.floor{position:relative;width:100%;max-width:430px;aspect-ratio:4/3;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 44px rgba(10,30,22,.12);overflow:hidden;}
-.room-label{position:absolute;top:14px;left:16px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
-.tbl{position:absolute;width:60px;height:46px;border-radius:9px;background:var(--cream);border:1.5px solid var(--emerald);color:var(--emerald-d);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(21,136,91,.12);}
-.tbl.round{border-radius:50%;width:58px;height:58px;}
+/* order-tracking strip */
+.trackrow{display:flex;flex-direction:column;align-items:center;text-align:center;gap:22px;margin-top:42px;}
+.trackrow-copy{max-width:46ch;}
+.trackrow-copy p{color:var(--muted);font-size:16.5px;line-height:1.5;margin-top:6px;}
 
 /* callout */
 .callout-wrap{display:flex;justify-content:center;}
@@ -530,5 +526,6 @@ const CSS = `
   .duo{grid-template-columns:1fr 1fr;}
   .plans{grid-template-columns:repeat(3,1fr);}
   .phones2{gap:18px;}
+  .trackrow{flex-direction:row;text-align:left;gap:44px;justify-content:center;align-items:center;}
 }
 `;
