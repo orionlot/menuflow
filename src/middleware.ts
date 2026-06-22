@@ -46,8 +46,8 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/onboarding")) {
     return NextResponse.next();
   }
-  // Static marketing/pitch deck (public/presentazione.html) — never rewrite.
-  if (pathname === "/presentazione" || pathname === "/presentazione.html") {
+  // Marketing/pitch page (app/presentazione) — never rewrite to a tenant.
+  if (pathname === "/presentazione") {
     return NextResponse.next();
   }
 
