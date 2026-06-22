@@ -13,8 +13,9 @@ import {
 } from "@dnd-kit/core";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { setOrderStage, setOrderPriorita, setItemStage, claimComandaStampa, type KitchenStage } from "@/app/dashboard/actions";
-import { orderStageOf, applyItemStageLocal, rollupTimestamps } from "./derive";
+import { orderStageOf, applyItemStageLocal, rollupTimestamps, groupByTable } from "./derive";
 import OrderCard from "./OrderCard";
+import TableGroup from "./TableGroup";
 import { formatEUR } from "@/lib/config/plans";
 import { printComandaSilently } from "@/lib/print-comanda";
 import type { Reparto, Priorita } from "@/types/db";
@@ -99,6 +100,7 @@ export default function KitchenClient({
   const [now, setNow] = useState(() => Date.now());
   const [repFilter, setRepFilter] = useState<string | null>(null); // reparto id, null = all
   const [fullscreen, setFullscreen] = useState(false);
+  const [view, setView] = useState<"stato" | "tavolo">("stato");
   // Ids of just-arrived orders — drives a brief visual pulse on the card accent.
   const [pulseIds, setPulseIds] = useState<Set<string>>(new Set());
   // Collapsed state for each OrderCard (by order id).
@@ -311,15 +313,17 @@ export default function KitchenClient({
     [load],
   );
 
-  function cyclePriorita(o: KOrder) {
+  function cyclePriorita(orderId: string) {
+    const o = orders.find((x) => x.id === orderId);
+    if (!o) return;
     const idx = PRIO_CYCLE.indexOf(o.priorita ?? null);
     const next = PRIO_CYCLE[(idx + 1) % PRIO_CYCLE.length];
-    setOrders((prev) => prev.map((x) => (x.id === o.id ? { ...x, priorita: next } : x)));
-    void setOrderPriorita(o.id, next).then(load);
+    setOrders((prev) => prev.map((x) => (x.id === orderId ? { ...x, priorita: next } : x)));
+    void setOrderPriorita(orderId, next).then(load);
   }
 
-  function ristampa(o: KOrder) {
-    window.open(`/dashboard/stampa/${o.id}`, "_blank", "noopener");
+  function ristampa(orderId: string) {
+    window.open(`/dashboard/stampa/${orderId}`, "_blank", "noopener");
   }
 
   // ── Derived board state ─────────────────────────────────────────────
@@ -346,6 +350,8 @@ export default function KitchenClient({
     }
     return m;
   }, [visible]);
+
+  const tableGroups = useMemo(() => groupByTable(visible), [visible]);
 
   function onDragEnd(e: DragEndEvent) {
     const overId = e.over?.id as KitchenStage | undefined;
@@ -456,6 +462,27 @@ export default function KitchenClient({
         </div>
       </header>
 
+      {/* Vista toggle (Per stato / Per tavolo) */}
+      <div className="flex items-center gap-2 border-b border-neutral-800/60 px-4 py-2 sm:px-6">
+        <span className="text-xs uppercase tracking-wider text-neutral-500">Vista</span>
+        <button
+          onClick={() => setView("stato")}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+            view === "stato" ? "bg-white text-neutral-900" : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+          }`}
+        >
+          Per stato
+        </button>
+        <button
+          onClick={() => setView("tavolo")}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+            view === "tavolo" ? "bg-white text-neutral-900" : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+          }`}
+        >
+          Per tavolo
+        </button>
+      </div>
+
       {/* Reparti filter (gated) */}
       {repartoOn && reparti.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-b border-neutral-800/60 px-4 py-2 sm:px-6">
@@ -503,7 +530,7 @@ export default function KitchenClient({
         </div>
       )}
 
-      {/* Board: 4 columns */}
+      {/* Board */}
       <main className="flex-1 px-4 py-4 sm:px-6">
         {orders.length === 0 ? (
           <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center text-neutral-400">
@@ -516,6 +543,38 @@ export default function KitchenClient({
                 In ascolto
               </span>
             </div>
+          </div>
+        ) : view === "tavolo" ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {tableGroups.map((group) => (
+              <TableGroup
+                key={group.key}
+                group={group}
+                repartoOn={repartoOn}
+                repartoById={repartoById}
+                repFilter={repFilter}
+                tempoStimatoOn={tempoStimatoOn}
+                now={now}
+                clock={clock}
+                pulseIds={pulseIds}
+                collapsed={collapsedIds}
+                onToggle={(id) =>
+                  setCollapsedIds((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(id)) next.delete(id);
+                    else next.add(id);
+                    return next;
+                  })
+                }
+                onItemStage={onItemStage}
+                onOrderStage={(orderId, stage) => {
+                  const o = orders.find((x) => x.id === orderId);
+                  if (o) moveTo(o, stage);
+                }}
+                onPriorita={cyclePriorita}
+                onRistampa={ristampa}
+              />
+            ))}
           </div>
         ) : (
           <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
@@ -555,8 +614,8 @@ export default function KitchenClient({
                       }
                       onItemStage={(li, stage) => onItemStage(o.id, li, stage)}
                       onOrderStage={(stage) => moveTo(o, stage)}
-                      onPriorita={() => cyclePriorita(o)}
-                      onRistampa={() => ristampa(o)}
+                      onPriorita={() => cyclePriorita(o.id)}
+                      onRistampa={() => ristampa(o.id)}
                     />
                   ))}
                   {byColumn[s.id].length === 0 && (
