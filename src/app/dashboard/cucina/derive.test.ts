@@ -50,6 +50,11 @@ describe("rollupTimestamps", () => {
     expect(rollupTimestamps([{ servito_at: T0 }, { pronto_at: T1 }]).servito_at).toBeNull();
     expect(rollupTimestamps([{ servito_at: T0 }, { servito_at: T2 }]).servito_at).toBe(T2);
   });
+  it("serve-without-pronto: pronto_at falls back to servito_at when all items are served", () => {
+    const result = rollupTimestamps([{ servito_at: T2 }, { servito_at: T1 }]);
+    expect(result.servito_at).toBe(T2);
+    expect(result.pronto_at).toBe(T2);
+  });
 });
 
 describe("applyItemStageLocal", () => {
@@ -60,6 +65,13 @@ describe("applyItemStageLocal", () => {
     const b = applyItemStageLocal(a, "da_preparare", T2);
     expect(b.preparazione_at).toBeNull();
     expect(b.pronto_at).toBeNull();
+  });
+  it("serviti branch sets servito_at and preserves earlier stamps", () => {
+    const base = { nome: "y", preparazione_at: T0, pronto_at: T1 };
+    const result = applyItemStageLocal(base, "serviti", T2);
+    expect(result.servito_at).toBe(T2);
+    expect(result.preparazione_at).toBe(T0);
+    expect(result.pronto_at).toBe(T1);
   });
 });
 

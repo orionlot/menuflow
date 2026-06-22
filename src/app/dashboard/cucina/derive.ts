@@ -28,8 +28,8 @@ export function orderStageOf(items: ItemState[]): KitchenStage {
   return "da_preparare";
 }
 
-const min = (xs: string[]) => xs.reduce((a, b) => (a < b ? a : b));
-const max = (xs: string[]) => xs.reduce((a, b) => (a > b ? a : b));
+const min = (xs: string[]) => xs.reduce((a, b) => (Date.parse(a) <= Date.parse(b) ? a : b));
+const max = (xs: string[]) => xs.reduce((a, b) => (Date.parse(a) >= Date.parse(b) ? a : b));
 
 /** Roll the per-item stamps up to order-level (mirror of the SQL in 0043). */
 export function rollupTimestamps(items: ItemState[]): {

@@ -25,8 +25,11 @@ begin
   end if;
 
   select items into v_items from public.orders where id = p_order_id for update;
-  if v_items is null or jsonb_typeof(v_items) <> 'array' then
+  if v_items is null then
     raise exception 'Ordine non trovato';
+  end if;
+  if jsonb_typeof(v_items) <> 'array' then
+    raise exception 'Ordine non valido: items non è un array';
   end if;
   v_len := jsonb_array_length(v_items);
 

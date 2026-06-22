@@ -41,7 +41,7 @@ export default function TableGroup({
 }) {
   const title = group.asporto
     ? `Asporto · ${(group.tavolo ?? group.orders[0].tavolo ?? "").trim()}`
-    : `Tavolo ${group.tavolo ?? "—"}`;
+    : `Tav. ${group.tavolo ?? "—"}`;
   const groupCollapsed = collapsed.has(group.key);
   const totalItems = group.orders.reduce((n, o) => n + o.items.length, 0);
   const done = group.orders

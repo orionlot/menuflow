@@ -41,10 +41,12 @@ export async function GET() {
 
   let orders = data ?? [];
 
-  // Reparti: resolve each line's department from the current menu so the cook
-  // can filter the board by station. Only when the feature is enabled, and only
-  // for the dishes actually present in the returned orders.
-  if (isFeatureOn(restaurant, "reparto")) {
+  // Reparti / per-item prep time: resolve each line's department and prep time
+  // from the current menu. Run when either feature is on — tempo_preparazione is
+  // needed for the per-dish countdown even when reparto filtering is off.
+  const repartoOn = isFeatureOn(restaurant, "reparto");
+  const tempoOn = isFeatureOn(restaurant, "tempo_stimato");
+  if (repartoOn || tempoOn) {
     const orderedIds = [
       ...new Set(
         orders.flatMap((o) =>
@@ -61,12 +63,8 @@ export async function GET() {
         .select("id, reparto, tempo_preparazione")
         .eq("restaurant_id", restaurant.id)
         .in("id", orderedIds);
-      for (const r of (rows ?? []) as {
-        id: string;
-        reparto: string | null;
-        tempo_preparazione: number | null;
-      }[]) {
-        metaById.set(r.id, { reparto: r.reparto ?? null, tempo_preparazione: r.tempo_preparazione ?? null });
+      for (const r of (rows ?? []) as { id: string; reparto: string | null; tempo_preparazione: number | null }[]) {
+        metaById.set(r.id, { reparto: r.reparto, tempo_preparazione: r.tempo_preparazione });
       }
     }
     orders = orders.map((o) => ({
