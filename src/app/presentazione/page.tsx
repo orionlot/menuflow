@@ -211,7 +211,7 @@ export default function PresentazionePage() {
       <section className="band">
         <div className="wrap split reverse">
           <Reveal className="split-art">
-            <Phone src={`${IMG}/20-tracking.png`} alt="Tempo stimato e avanzamento dell’ordine sul telefono del cliente" w={250} />
+            <Phone src={`${IMG}/21-attesa.png`} alt="Tempo stimato per il servizio mostrato al cliente sul menu" w={250} />
           </Reveal>
           <Reveal delay={100} className="split-copy">
             <Eyebrow>Tempi di preparazione</Eyebrow>
@@ -251,16 +251,21 @@ export default function PresentazionePage() {
 
       {/* ── Servizio al tavolo: chiama il cameriere / chiedi il conto ── */}
       <section className="band band-dark">
-        <div className="wrap">
-          <Reveal><Eyebrow className="on-dark">Servizio al tavolo</Eyebrow>
+        <div className="wrap split">
+          <Reveal className="split-art">
+            <Phone src={`${IMG}/22-serve-aiuto.png`} alt="Il cliente chiama il cameriere o chiede il conto dal menu" w={250} />
+          </Reveal>
+          <Reveal delay={100} className="split-copy">
+            <Eyebrow className="on-dark">Servizio al tavolo</Eyebrow>
             <h2 className="ff h2">«Serve aiuto?» a portata di tocco.</h2>
-            <p className="lead on-dark-muted">Dal menu il cliente chiama il cameriere o chiede il conto con un tocco. Tu ricevi la richiesta all’istante — su Telegram e in un avviso ben visibile in dashboard.</p></Reveal>
-          <div className="trio on-dark-muted">
-            <Reveal delay={0}><p><b className="on-dark">🔔 Chiama cameriere</b><br />Il cliente indica il tavolo, lo staff è avvisato subito. Meno mani alzate, meno giri a vuoto.</p></Reveal>
-            <Reveal delay={100}><p><b className="on-dark">🧾 Chiedi il conto</b><br />La richiesta arriva in tempo reale: si paga prima e i tavoli girano più in fretta.</p></Reveal>
-            <Reveal delay={200}><p><b className="on-dark">🛎 Richieste dai tavoli</b><br />Le vedi raggruppate in dashboard, con un suono, e le chiudi con un tocco su «Gestita».</p></Reveal>
-          </div>
-          <Reveal delay={120}><p className="note on-dark-muted center">Attivabile o disattivabile quando vuoi, su tutti i piani.</p></Reveal>
+            <p className="lead on-dark-muted">Dal menu il cliente chiama il cameriere o chiede il conto con un tocco. Tu ricevi la richiesta all’istante — su Telegram e in un avviso ben visibile in dashboard.</p>
+            <ul className="ticks">
+              <li><b>🔔 Chiama cameriere</b> — il cliente indica il tavolo, lo staff è avvisato subito. Meno mani alzate, meno giri a vuoto.</li>
+              <li><b>🧾 Chiedi il conto</b> — la richiesta arriva in tempo reale: si paga prima e i tavoli girano più in fretta.</li>
+              <li><b>🛎 Richieste dai tavoli</b> — le vedi raggruppate in dashboard, con un suono, e le chiudi con un tocco su «Gestita».</li>
+            </ul>
+            <p className="note on-dark-muted">Attivabile o disattivabile quando vuoi, su tutti i piani.</p>
+          </Reveal>
         </div>
       </section>
 
@@ -287,7 +292,10 @@ export default function PresentazionePage() {
       {/* ── Sala ── */}
       <section className="band band-alt">
         <div className="wrap split">
-          <Reveal className="split-art"><Browser src={`${IMG}/18-sala.png`} alt="Disposizione della sala" /></Reveal>
+          <Reveal className="split-art artstack">
+            <Browser src={`${IMG}/18-sala.png`} alt="Disposizione della sala con i tavoli" />
+            <Browser src={`${IMG}/23-ordine-manuale.png`} alt="Ordine manuale del cameriere dalla dashboard" />
+          </Reveal>
           <Reveal delay={100} className="split-copy">
             <Eyebrow>Sala & ordine manuale</Eyebrow>
             <h2 className="ff h2">Disegna la tua sala come la vivi.</h2>
@@ -526,6 +534,7 @@ const CSS = `
 /* split */
 .split{display:grid;grid-template-columns:1fr;gap:34px;align-items:center;}
 .split-art{display:flex;justify-content:center;}
+.artstack{flex-direction:column;gap:16px;width:100%;align-items:center;}
 .split-copy{max-width:560px;}
 .ticks{list-style:none;display:flex;flex-direction:column;gap:13px;margin-top:18px;}
 .ticks li{position:relative;padding-left:32px;font-size:16.5px;line-height:1.45;color:var(--ink);}
