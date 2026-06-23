@@ -6,7 +6,7 @@ import {
   updateOrari,
   updateAperturaStato,
   updateChiusure,
-  connectStripe,
+  createStripeConnectOnboardingLink,
   disconnectStripe,
   updateTelegram,
   testTelegram,
@@ -101,7 +101,7 @@ export default async function FunzionalitaPage() {
           stripeConnectId={restaurant.stripe_connect_id}
           pagamentiAttivi={restaurant.pagamenti_attivi}
           pagamentiTest={restaurant.pagamenti_test}
-          connect={connectStripe}
+          onboard={createStripeConnectOnboardingLink}
           disconnect={disconnectStripe}
         />
       </section>
