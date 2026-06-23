@@ -39,6 +39,12 @@ export async function checkoutForOrder(
     connectedAccountId: restaurant.stripe_connect_id,
   });
 
-  await admin.from("orders").update({ stripe_checkout_session: session.id }).eq("id", order.id);
+  const { error } = await admin
+    .from("orders")
+    .update({ stripe_checkout_session: session.id })
+    .eq("id", order.id);
+  // Must surface: if this persist fails, a later "Paga ora" retry can't expire
+  // this session and would create a second completable one (double-charge risk).
+  if (error) throw new Error(`checkoutForOrder: persist session failed: ${error.message}`);
   return session.url;
 }

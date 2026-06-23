@@ -379,6 +379,14 @@ export async function POST(req: Request) {
         restaurant,
         origin: await appOrigin(),
       });
+      if (!checkoutUrl) {
+        // Order exists as in_attesa_pagamento; the customer can retry via the
+        // tracker's "Paga ora". Never return ok:true without a payable URL.
+        return NextResponse.json(
+          { ok: false, error: "Pagamento non disponibile al momento. Riprova o rivolgiti allo staff." },
+          { status: 503 },
+        );
+      }
       return NextResponse.json({ ok: true, mode: "payment", orderId: order.id, checkoutUrl });
     }
 
