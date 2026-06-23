@@ -124,6 +124,12 @@ export interface Restaurant {
   pagamenti_test: boolean;
   stripe_connect_id: string | null;
   stripe_customer_id: string | null;
+  /** Stripe Billing subscription id (the restaurateur's plan subscription). */
+  stripe_subscription_id: string | null;
+  /** Subscription status mirrored from Stripe (active|past_due|unpaid|canceled|incomplete|trialing). */
+  abbonamento_stato: string | null;
+  /** Subscription current period end (renewal date), ISO string. */
+  abbonamento_rinnovo: string | null;
   telegram_chat_ordini: string | null;
   telegram_chat_pagamenti: string | null;
   telegram_topic_ordini: number | null;

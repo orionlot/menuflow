@@ -16,3 +16,14 @@ export const BILLING_WEBHOOK_SECRET =
 export function priceIdForPlan(plan: PlanId): string | undefined {
   return process.env[PLANS[plan].stripePriceEnv];
 }
+
+/** Reverse of priceIdForPlan: map a Stripe Price ID back to a PlanId (or null).
+ *  Used by the billing webhook to sync restaurants.piano on a Customer-Portal plan
+ *  change. Ignores the Multilingua add-on price (returns null for it). */
+export function planForPriceId(priceId: string | null | undefined): PlanId | null {
+  if (!priceId) return null;
+  for (const id of Object.keys(PLANS) as PlanId[]) {
+    if (process.env[PLANS[id].stripePriceEnv] === priceId) return id;
+  }
+  return null;
+}
