@@ -373,6 +373,9 @@ export interface Order {
   pagato_at: string | null;
   scontrino_registrato: boolean;
   stripe_payment_intent: string | null;
+  /** Latest open Stripe Checkout Session id (hosted customer payment). Used to
+   *  expire a stale session on a "Paga ora" retry so an order is never double-charged. */
+  stripe_checkout_session: string | null;
   /** Cook's first click → state "in preparazione" + KDS countdown anchor. */
   preparazione_at: string | null;
   pronto_at: string | null;
