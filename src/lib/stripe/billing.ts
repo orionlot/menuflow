@@ -64,6 +64,7 @@ export async function createSubscriptionCheckout(input: {
   if (!planPrice) throw new Error("Prezzo del piano non configurato.");
   const line_items: { price: string; quantity: number }[] = [{ price: planPrice, quantity: 1 }];
   const addon = process.env[MULTILINGUA_ADDON.stripePriceEnv];
+  if (input.multilingua && !addon) throw new Error("Prezzo Multilingua non configurato.");
   if (input.multilingua && addon) line_items.push({ price: addon, quantity: 1 });
   const session = await getStripe().checkout.sessions.create({
     mode: "subscription",

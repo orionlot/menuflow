@@ -4,11 +4,13 @@ import { useState, useTransition } from "react";
 
 export default function AbbonamentoCTA({
   attivo,
+  hasLiveSub,
   stripeOn,
   startCheckout,
   openPortal,
 }: {
   attivo: boolean;
+  hasLiveSub: boolean;
   stripeOn: boolean;
   startCheckout: () => Promise<{ url: string } | { error: string }>;
   openPortal: () => Promise<{ url: string } | { error: string }>;
@@ -35,11 +37,11 @@ export default function AbbonamentoCTA({
         </div>
       )}
       <button
-        onClick={() => go(attivo ? openPortal : startCheckout)}
+        onClick={() => go(hasLiveSub ? openPortal : startCheckout)}
         disabled={pending}
         className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
-        {pending ? "…" : attivo ? "Gestisci abbonamento" : "Completa l'abbonamento"}
+        {pending ? "…" : hasLiveSub ? "Gestisci abbonamento" : "Completa l'abbonamento"}
       </button>
       {msg && <p className="mt-2 text-sm text-red-500">{msg}</p>}
     </div>

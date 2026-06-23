@@ -639,11 +639,14 @@ export async function createBillingCheckoutSession(): Promise<{ url: string } | 
   if (!user) return { error: "Non autenticato." };
   const { data: r } = await supabase
     .from("restaurants")
-    .select("id, piano, multilingua, attivo, stripe_customer_id")
+    .select("id, piano, multilingua, attivo, stripe_customer_id, stripe_subscription_id, abbonamento_stato")
     .eq("owner_id", user.id)
     .maybeSingle();
   if (!r) return { error: "Nessun ristorante associato." };
-  if (r.attivo) return { error: "Abbonamento già attivo." };
+  // A tenant that already has a live (non-canceled) subscription must manage it
+  // via the Customer Portal — never create a second subscription (double billing).
+  if (r.stripe_subscription_id && r.abbonamento_stato !== "canceled")
+    return { error: "Hai già un abbonamento: gestiscilo dal portale." };
   try {
     const admin = createAdminClient();
     const origin = await appOrigin();

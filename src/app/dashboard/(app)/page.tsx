@@ -185,6 +185,7 @@ export default async function DashboardHome() {
         </p>
         <AbbonamentoCTA
           attivo={restaurant.attivo}
+          hasLiveSub={Boolean(restaurant.stripe_subscription_id) && restaurant.abbonamento_stato !== "canceled"}
           stripeOn={isStripeConfigured()}
           startCheckout={createBillingCheckoutSession}
           openPortal={createBillingPortalSession}
