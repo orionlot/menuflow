@@ -8,6 +8,9 @@ import { contoGroupKey } from "@/lib/conto";
 import { OrdersTimeline } from "./DashboardCharts";
 import { PLANS, MULTILINGUA_ADDON, formatEUR } from "@/lib/config/plans";
 import type { Order } from "@/types/db";
+import AbbonamentoCTA from "./AbbonamentoCTA";
+import { createBillingCheckoutSession, createBillingPortalSession } from "@/app/dashboard/actions";
+import { isStripeConfigured } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -180,6 +183,12 @@ export default async function DashboardHome() {
             : "Add-on Multilingua non attivo."}{" "}
           Rinnovo e fatturazione gestiti via Stripe Billing.
         </p>
+        <AbbonamentoCTA
+          attivo={restaurant.attivo}
+          stripeOn={isStripeConfigured()}
+          startCheckout={createBillingCheckoutSession}
+          openPortal={createBillingPortalSession}
+        />
       </section>
 
       <section className="rounded-xl border border-neutral-200 bg-white p-5">

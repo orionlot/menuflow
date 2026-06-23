@@ -33,6 +33,9 @@ import {
 import { parseCsv, rowsToItemPatches } from "@/lib/csv";
 import { sanitizeDatiLegali, datiLegaliFromForm } from "@/lib/legal";
 import { MAX_CONTO_ORDERS } from "@/lib/conto";
+import { appOrigin } from "@/lib/origin";
+import { getOrCreateBillingCustomer, createSubscriptionCheckout, createBillingPortal } from "@/lib/stripe/billing";
+import type { PlanId } from "@/lib/config/plans";
 import type {
   BrandingPatch,
   CategoryAddon,
@@ -593,6 +596,59 @@ export async function disconnectStripe() {
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/funzionalita");
   revalidatePath("/[domain]", "page");
+}
+
+/** Start (or resume) the plan subscription for an inactive tenant. */
+export async function createBillingCheckoutSession(): Promise<{ url: string } | { error: string }> {
+  if (!isStripeConfigured()) return { error: "Pagamenti non configurati." };
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Non autenticato." };
+  const { data: r } = await supabase
+    .from("restaurants")
+    .select("id, piano, multilingua, attivo, stripe_customer_id")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!r) return { error: "Nessun ristorante associato." };
+  if (r.attivo) return { error: "Abbonamento già attivo." };
+  try {
+    const admin = createAdminClient();
+    const origin = await appOrigin();
+    const customerId = await getOrCreateBillingCustomer(
+      admin,
+      { id: r.id as string, stripe_customer_id: r.stripe_customer_id as string | null },
+      user.email ?? "",
+    );
+    const url = await createSubscriptionCheckout({
+      customerId,
+      restaurantId: r.id as string,
+      piano: r.piano as PlanId,
+      multilingua: Boolean(r.multilingua),
+      successUrl: `${origin}/dashboard?abbonato=1`,
+      cancelUrl: `${origin}/dashboard?abbonamento=incompleto`,
+    });
+    return url ? { url } : { error: "Impossibile avviare il pagamento. Riprova." };
+  } catch {
+    return { error: "Impossibile avviare il pagamento. Riprova." };
+  }
+}
+
+/** Open the Stripe Customer Portal to manage the subscription. */
+export async function createBillingPortalSession(): Promise<{ url: string } | { error: string }> {
+  if (!isStripeConfigured()) return { error: "Pagamenti non configurati." };
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Non autenticato." };
+  const { data: r } = await supabase
+    .from("restaurants").select("stripe_customer_id").eq("owner_id", user.id).maybeSingle();
+  if (!r?.stripe_customer_id) return { error: "Nessun abbonamento da gestire." };
+  try {
+    const origin = await appOrigin();
+    const url = await createBillingPortal(r.stripe_customer_id as string, `${origin}/dashboard`);
+    return { url };
+  } catch {
+    return { error: "Portale non disponibile. Riprova." };
+  }
 }
 
 /** Restaurateur sets their own Telegram chat ids (autonomous). */
