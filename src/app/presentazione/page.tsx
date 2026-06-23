@@ -120,8 +120,8 @@ export default function PresentazionePage() {
           <Reveal delay={120} className="trackrow">
             <Phone src={`${IMG}/20-tracking.png`} alt="Segui il tuo ordine in tempo reale" w={208} />
             <div className="trackrow-copy">
-              <h3 className="ff h3">…e poi segue l’ordine in tempo reale.</h3>
-              <p>Appena invia, il cliente vede l’avanzamento dal telefono — Ricevuto → In preparazione → Pronto → Servito. Meno «è pronto?» al personale, più serenità in sala.</p>
+              <h3 className="ff h3">…e poi segue l’ordine, piatto per piatto.</h3>
+              <p>Appena invia, il cliente vede l’avanzamento dal telefono — non solo «in preparazione», ma lo stato di <b>ogni piatto</b>: in attesa, in preparazione, pronto, servito. Meno «è pronto?» al personale, più serenità in sala.</p>
             </div>
           </Reveal>
         </div>
@@ -197,13 +197,36 @@ export default function PresentazionePage() {
         <div className="wrap">
           <Reveal><Eyebrow className="on-dark">La cucina</Eyebrow>
             <h2 className="ff h2">La cucina che non sbaglia un ordine.</h2>
-            <p className="lead on-dark-muted">Comande digitali in tempo reale, divise per reparto, con timer e priorità. Addio comande di carta.</p></Reveal>
-          <Reveal delay={120}><Browser src={`${IMG}/11-cucina-kds.png`} alt="Kitchen Display System" /></Reveal>
+            <p className="lead on-dark-muted">Comande digitali in tempo reale: due viste (per stato e per tavolo), avvio per singolo piatto, smistamento per reparto, timer e priorità. Addio comande di carta.</p></Reveal>
+          <Reveal delay={120}><Browser src={`${IMG}/11-cucina-kds.png`} alt="Kitchen Display: vista per tavolo, avvio per piatto, portate «a seguire»" /></Reveal>
           <div className="trio on-dark-muted">
-            <Reveal delay={0}><p><b className="on-dark">Per reparto</b><br />Cucina, Bar, Pokeria, Rosticceria: ognuno vede solo i suoi piatti.</p></Reveal>
-            <Reveal delay={100}><p><b className="on-dark">Timer & ritardi</b><br />Ogni piatto col suo tempo; alert automatico se va oltre.</p></Reveal>
-            <Reveal delay={200}><p><b className="on-dark">Stati chiari</b><br />Da preparare → in preparazione → pronto → servito.</p></Reveal>
+            <Reveal delay={0}><p><b className="on-dark">Avvio per piatto</b><br />Ogni piatto parte e si segna pronto da solo, smistato al suo reparto (Cucina, Bar, Pokeria…).</p></Reveal>
+            <Reveal delay={100}><p><b className="on-dark">Per tavolo o per stato</b><br />Due viste della stessa cucina, con timer e alert sui ritardi: scegli come lavorare.</p></Reveal>
+            <Reveal delay={200}><p><b className="on-dark">Portate «a seguire»</b><br />Trattieni un piatto e lo mandi al momento giusto con «Manda ora».</p></Reveal>
           </div>
+        </div>
+      </section>
+
+      {/* ── Portate / «a seguire» — efficienza 360° ── */}
+      <section className="band band-alt">
+        <div className="wrap split">
+          <Reveal className="split-art">
+            <Phone src={`${IMG}/25-a-seguire.png`} alt="Il cliente segna un piatto «a seguire» nel riepilogo dell’ordine" w={250} />
+          </Reveal>
+          <Reveal delay={100} className="split-copy">
+            <Eyebrow>Portate · servi a seguire</Eyebrow>
+            <h2 className="ff h2">I secondi quando è il momento, non tutto insieme.</h2>
+            <p className="lead-sm">
+              Pasta adesso, tagliata a seguire: una catena che fila da sola, dal tavolo alla cucina e ritorno.
+            </p>
+            <ul className="ticks">
+              <li><b>Il cliente sceglie</b> — nel riepilogo dell’ordine segna i piatti «a seguire» (se lo abiliti).</li>
+              <li><b>La cucina trattiene</b> — il piatto resta in attesa sul monitor, senza partire.</li>
+              <li><b>Il cameriere manda</b> — al momento giusto, un tocco su «Manda ora» e parte la preparazione.</li>
+              <li><b>Il cliente segue</b> — vede il piatto «a seguire» finché non lo mandi: sa che arriva dopo, di proposito.</li>
+            </ul>
+            <p className="note">Ogni passaggio è attivabile in modo indipendente — efficienza a 360°, in sala, in cucina e al tavolo.</p>
+          </Reveal>
         </div>
       </section>
 
