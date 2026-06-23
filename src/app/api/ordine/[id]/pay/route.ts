@@ -30,18 +30,24 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ ok: false, maintenance: true }, { status: 503 });
   }
 
-  const { data: orderRow } = await admin.from("orders").select("*").eq("id", id).maybeSingle();
+  const { data: orderRow, error: orderErr } = await admin
+    .from("orders")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (orderErr) return NextResponse.json({ ok: false, error: "Errore interno." }, { status: 503 });
   const order = orderRow as Order | null;
   if (!order) return NextResponse.json({ ok: false, error: "Ordine non trovato." }, { status: 404 });
   if (order.stato !== "in_attesa_pagamento" && order.stato !== "fallito") {
     return NextResponse.json({ ok: false, error: "Ordine non pagabile." }, { status: 409 });
   }
 
-  const { data: restRow } = await admin
+  const { data: restRow, error: restErr } = await admin
     .from("restaurants")
     .select("*")
     .eq("id", order.restaurant_id)
     .maybeSingle();
+  if (restErr) return NextResponse.json({ ok: false, error: "Errore interno." }, { status: 503 });
   const restaurant = restRow as Restaurant | null;
   if (!restaurant || !restaurant.pagamenti_attivi) {
     return NextResponse.json({ ok: false, error: "Pagamenti non disponibili." }, { status: 409 });
