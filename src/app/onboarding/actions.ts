@@ -5,6 +5,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PLANS, type PlanId } from "@/lib/config/plans";
 import { hitRateLimit, clientIp } from "@/lib/ratelimit";
+import { isStripeConfigured } from "@/lib/env";
+import { appOrigin } from "@/lib/origin";
+import { getOrCreateBillingCustomer, createSubscriptionCheckout } from "@/lib/stripe/billing";
 
 const RESERVED = new Set([
   "admin",
@@ -28,7 +31,7 @@ export interface RegistraInput {
 }
 
 export type RegistraResult =
-  | { ok: true; slug: string }
+  | { ok: true; slug: string; checkoutUrl?: string }
   | { ok: false; error: string };
 
 // A small starter menu so a new restaurant isn't a blank page.
@@ -104,7 +107,7 @@ export async function registraLocale(input: RegistraInput): Promise<RegistraResu
       multilingua,
       lingue: multilingua ? ["it", "en"] : ["it"],
       pagamenti_attivi: false,
-      attivo: true,
+      attivo: !isStripeConfigured(),
       owner_id: created.user.id,
     })
     .select("id")
@@ -134,5 +137,31 @@ export async function registraLocale(input: RegistraInput): Promise<RegistraResu
     /* ignore — credentials still work on the login page */
   }
 
+  // Billing: when Stripe is configured, the tenant pays the first month before
+  // going live (attivo flips to true only on invoice.paid). Create the customer +
+  // a subscription Checkout and return its URL for the client to redirect to.
+  if (isStripeConfigured()) {
+    try {
+      const origin = await appOrigin();
+      const customerId = await getOrCreateBillingCustomer(
+        admin,
+        { id: rest.id, stripe_customer_id: null },
+        email,
+      );
+      const checkoutUrl = await createSubscriptionCheckout({
+        customerId,
+        restaurantId: rest.id,
+        piano,
+        multilingua,
+        successUrl: `${origin}/dashboard?abbonato=1`,
+        cancelUrl: `${origin}/dashboard?abbonamento=incompleto`,
+      });
+      if (checkoutUrl) return { ok: true, slug, checkoutUrl };
+    } catch (err) {
+      // Don't block account creation on a Stripe hiccup; the tenant exists as
+      // attivo:false and can complete payment from the dashboard banner.
+      console.error("[registraLocale] billing checkout failed:", err);
+    }
+  }
   return { ok: true, slug };
 }

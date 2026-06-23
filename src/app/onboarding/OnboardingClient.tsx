@@ -46,8 +46,13 @@ export default function OnboardingClient({ origin }: { origin: string }) {
     setSubmitting(true);
     try {
       const res = await registraLocale({ nome, slug, email, password, piano, multilingua });
-      if (res.ok) setDone({ slug: res.slug });
-      else setError(res.error);
+      if (res.ok) {
+        if (res.checkoutUrl) {
+          window.location.href = res.checkoutUrl;
+          return;
+        }
+        setDone({ slug: res.slug });
+      } else setError(res.error);
     } catch {
       setError("Errore imprevisto. Riprova.");
     } finally {
