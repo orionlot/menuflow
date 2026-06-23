@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/connect";
-import { BILLING_WEBHOOK_SECRET } from "@/lib/stripe/billing";
+import { BILLING_WEBHOOK_SECRET, planForPriceId } from "@/lib/stripe/billing";
+import type { PlanId } from "@/lib/config/plans";
 import { isStripeConfigured } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,34 @@ async function setActiveByCustomer(customerId: string, attivo: boolean) {
     .update({ attivo })
     .eq("stripe_customer_id", customerId);
   if (error) throw new Error(`setActiveByCustomer: ${error.message}`);
+}
+
+/** Mirror a subscription's full state onto the restaurant (status, renewal,
+ *  subscription id) and sync `piano` from the plan line item (ignoring the
+ *  multilingua add-on). `attivo` is true only for active/trialing. */
+async function syncSubscription(customerId: string, sub: Stripe.Subscription) {
+  const admin = createAdminClient();
+  const active = sub.status === "active" || sub.status === "trialing";
+  let piano: PlanId | null = null;
+  for (const it of sub.items.data) {
+    const p = planForPriceId(it.price.id);
+    if (p) { piano = p; break; }
+  }
+  // current_period_end is unix seconds; read defensively in case the API version
+  // surfaces it on the item rather than the subscription root.
+  const periodEnd =
+    (sub as { current_period_end?: number }).current_period_end ??
+    (sub.items.data[0] as { current_period_end?: number } | undefined)?.current_period_end ??
+    null;
+  const patch: Record<string, unknown> = {
+    attivo: active,
+    stripe_subscription_id: sub.id,
+    abbonamento_stato: sub.status,
+    abbonamento_rinnovo: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+  };
+  if (piano) patch.piano = piano;
+  const { error } = await admin.from("restaurants").update(patch).eq("stripe_customer_id", customerId);
+  if (error) throw new Error(`syncSubscription: ${error.message}`);
 }
 
 export async function POST(req: Request) {
@@ -64,15 +93,11 @@ export async function POST(req: Request) {
         if (inv.customer) await setActiveByCustomer(String(inv.customer), false);
         break;
       }
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        if (sub.customer) await setActiveByCustomer(String(sub.customer), false);
-        break;
-      }
-      case "customer.subscription.updated": {
-        const sub = event.data.object as Stripe.Subscription;
-        const active = sub.status === "active" || sub.status === "trialing";
-        if (sub.customer) await setActiveByCustomer(String(sub.customer), active);
+        if (sub.customer) await syncSubscription(String(sub.customer), sub);
         break;
       }
       default:
