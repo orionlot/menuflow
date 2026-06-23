@@ -130,8 +130,15 @@ export async function expireConnectCheckoutSession(
 ): Promise<void> {
   try {
     await getStripe().checkout.sessions.expire(sessionId, {}, { stripeAccount: connectedAccountId });
-  } catch {
-    /* a completed/expired session can't be expired again — not an error here */
+  } catch (err) {
+    // Best-effort cleanup: an already-completed/expired session can't be expired
+    // again, and a transient failure here must never block creating the new
+    // payment session (a real misconfig surfaces loudly on the create call that
+    // follows). Log for visibility rather than swallow silently.
+    console.error(
+      "[stripe] expireConnectCheckoutSession failed:",
+      err instanceof Error ? err.message : err,
+    );
   }
 }
 
