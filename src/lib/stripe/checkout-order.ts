@@ -4,6 +4,7 @@ import type { Order, Restaurant } from "@/types/db";
 import {
   createConnectCheckoutSession,
   expireConnectCheckoutSession,
+  retrieveConnectCheckoutSession,
 } from "@/lib/stripe/connect";
 
 /**
@@ -23,8 +24,26 @@ export async function checkoutForOrder(
   const { order, restaurant, origin } = args;
   if (!restaurant.stripe_connect_id) return null;
 
+  // If a prior session exists, inspect its real Stripe status BEFORE recreating.
+  // A session the customer already completed (the webhook may not have landed
+  // yet, so the order is still in_attesa_pagamento) must NEVER be replaced with a
+  // new payable session — that would double-charge. Fail safe: if we can't read
+  // the prior session, do NOT create a new one (a blocked retry is recoverable;
+  // a double charge is not).
   if (order.stripe_checkout_session) {
-    await expireConnectCheckoutSession(order.stripe_checkout_session, restaurant.stripe_connect_id);
+    let prior: Awaited<ReturnType<typeof retrieveConnectCheckoutSession>> | null = null;
+    try {
+      prior = await retrieveConnectCheckoutSession(order.stripe_checkout_session, restaurant.stripe_connect_id);
+    } catch {
+      return null;
+    }
+    if (prior.status === "complete" || prior.payment_status === "paid") {
+      // Already paid — the webhook will flip the order to pagato shortly.
+      return null;
+    }
+    if (prior.status === "open") {
+      await expireConnectCheckoutSession(order.stripe_checkout_session, restaurant.stripe_connect_id);
+    }
   }
 
   const base = `${origin.replace(/\/+$/, "")}/ordine/${order.id}`;

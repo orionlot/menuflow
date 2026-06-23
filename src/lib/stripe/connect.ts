@@ -94,6 +94,14 @@ export async function createConnectCheckoutSession(
   });
 }
 
+/** Retrieve a Checkout Session on the connected account (to inspect its status). */
+export async function retrieveConnectCheckoutSession(
+  sessionId: string,
+  connectedAccountId: string,
+): Promise<Stripe.Checkout.Session> {
+  return getStripe().checkout.sessions.retrieve(sessionId, undefined, { stripeAccount: connectedAccountId });
+}
+
 /** Best-effort expire a still-open session (already-completed/expired → ignored). */
 export async function expireConnectCheckoutSession(
   sessionId: string,
