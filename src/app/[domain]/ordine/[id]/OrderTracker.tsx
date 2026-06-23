@@ -74,6 +74,7 @@ export default function OrderTracker({
   reviewUrl,
   countdownOn = false,
   perDishOn = true,
+  paymentReturn = false,
 }: {
   initial: TrackedOrder;
   nome: string;
@@ -83,17 +84,42 @@ export default function OrderTracker({
   reviewUrl?: string | null;
   countdownOn?: boolean;
   perDishOn?: boolean;
+  paymentReturn?: boolean;
 }) {
   const p = brandPalette(colorePrimario, tema, coloreSecondario);
   const [o, setO] = useState<TrackedOrder>(initial);
   const [now, setNow] = useState(() => Date.now());
+  const [paying, setPaying] = useState(false);
+  async function pay() {
+    setPaying(true);
+    try {
+      const r = await fetch(`/api/ordine/${o.id}/pay`, { method: "POST" });
+      const d = await r.json();
+      if (d.ok && d.checkoutUrl) {
+        window.location.href = d.checkoutUrl;
+        return;
+      }
+      if (d.ok && d.devSimulateAvailable) {
+        await fetch(`/api/dev/simulate-payment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: o.id }),
+        });
+        window.location.reload();
+        return;
+      }
+    } catch {
+      /* keep state; user can retry */
+    }
+    setPaying(false);
+  }
 
   // Poll the public status endpoint while the order is still in progress.
   // The interval restarts on every phase change, so an actively-progressing
   // order keeps polling; a STUCK phase (e.g. an abandoned online payment) stops
   // after ~10 min so we don't poll forever.
   useEffect(() => {
-    if (o.fase === "servito" || o.fase === "fallito") return;
+    if (o.fase === "servito" || (o.fase === "fallito" && !paymentReturn)) return;
     let alive = true;
     let polls = 0;
     const MAX_POLLS = 75; // ~10 min at 8s
@@ -116,6 +142,7 @@ export default function OrderTracker({
         /* keep last state */
       }
     };
+    load();
     const t = setInterval(() => {
       if (++polls > MAX_POLLS) {
         clearInterval(t);
@@ -127,7 +154,7 @@ export default function OrderTracker({
       alive = false;
       clearInterval(t);
     };
-  }, [initial.id, o.fase]);
+  }, [initial.id, o.fase, paymentReturn]);
 
   // 1s countdown tick only while a dish is being prepared AND the countdown is shown.
   useEffect(() => {
@@ -172,17 +199,44 @@ export default function OrderTracker({
           <div className="mt-6 rounded-2xl border p-5 text-center" style={{ background: p.surface, borderColor: p.surfaceBorder }}>
             <p className="text-lg font-semibold text-red-600">Pagamento non riuscito</p>
             <p className="mt-1 text-sm" style={{ color: p.textMuted }}>
-              Rivolgiti allo staff per completare l&apos;ordine.
+              Puoi riprovare il pagamento qui sotto.
             </p>
+            <button
+              onClick={pay}
+              disabled={paying}
+              className="mt-4 w-full rounded-xl py-3 font-semibold disabled:opacity-60"
+              style={{ background: p.brand, color: p.onBrand }}
+            >
+              {paying ? "…" : "Paga ora"}
+            </button>
           </div>
         ) : o.fase === "attesa_pagamento" ? (
           <div className="mt-6 rounded-2xl border p-5 text-center" style={{ background: p.surface, borderColor: p.surfaceBorder }}>
-            <p className="text-lg font-semibold" style={{ color: p.text }}>
-              In attesa di pagamento
-            </p>
-            <p className="mt-1 text-sm" style={{ color: p.textMuted }}>
-              Completa il pagamento per inviare l&apos;ordine in cucina.
-            </p>
+            {paymentReturn ? (
+              <>
+                <p className="text-lg font-semibold" style={{ color: p.text }}>Pagamento in elaborazione…</p>
+                <p className="mt-1 text-sm" style={{ color: p.textMuted }}>
+                  Attendi qualche secondo, stiamo confermando il pagamento.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-lg font-semibold" style={{ color: p.text }}>In attesa di pagamento</p>
+                <p className="mt-1 text-sm" style={{ color: p.textMuted }}>
+                  Completa il pagamento per inviare l&apos;ordine in cucina.
+                </p>
+              </>
+            )}
+            {!paymentReturn && (
+              <button
+                onClick={pay}
+                disabled={paying}
+                className="mt-4 w-full rounded-xl py-3 font-semibold disabled:opacity-60"
+                style={{ background: p.brand, color: p.onBrand }}
+              >
+                {paying ? "…" : "Paga ora"}
+              </button>
+            )}
           </div>
         ) : (
           <>

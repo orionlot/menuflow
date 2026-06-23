@@ -726,6 +726,13 @@ export default function MenuClient({
         return;
       }
       if (data.mode === "payment") {
+        // Real Stripe → hosted Checkout: redirect the diner to pay (cards +
+        // Apple Pay + Google Pay). Truth of "paid" comes from the webhook.
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+          return;
+        }
+        // Test mode / no Stripe → keep the in-app simulator overlay.
         setSheet(false);
         setPending({ orderId: data.orderId, sim: Boolean(data.devSimulateAvailable) });
       } else {

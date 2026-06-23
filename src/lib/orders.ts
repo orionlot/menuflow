@@ -92,15 +92,16 @@ export async function markOrderPaid(
   return updated;
 }
 
-/** Transition an order to `fallito` (payment failed). Never notifies as paid. */
+/** Transition an order to `fallito` (payment failed/expired). Never notifies as
+ *  paid. Match by order id OR PaymentIntent id; never downgrades a paid order. */
 export async function markOrderFailed(
   admin: SupabaseClient,
-  paymentIntentId: string,
+  opts: { orderId?: string; paymentIntentId?: string },
 ): Promise<void> {
-  const { error } = await admin
-    .from("orders")
-    .update({ stato: "fallito" })
-    .eq("stripe_payment_intent", paymentIntentId)
-    .neq("stato", "pagato");
+  let q = admin.from("orders").update({ stato: "fallito" });
+  if (opts.orderId) q = q.eq("id", opts.orderId);
+  else if (opts.paymentIntentId) q = q.eq("stripe_payment_intent", opts.paymentIntentId);
+  else throw new Error("markOrderFailed: orderId or paymentIntentId required");
+  const { error } = await q.neq("stato", "pagato");
   if (error) throw new Error(`markOrderFailed: ${error.message}`);
 }
