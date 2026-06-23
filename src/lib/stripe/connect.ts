@@ -25,35 +25,6 @@ export function getStripe(): Stripe {
   return _stripe;
 }
 
-/**
- * Creates a PaymentIntent on the restaurateur's connected account.
- * @param amountCents authoritative amount, recomputed server-side from DB.
- * @param connectedAccountId restaurants.stripe_connect_id
- */
-export async function createConnectPaymentIntent(params: {
-  amountCents: number;
-  connectedAccountId: string;
-  orderId: string;
-  restaurantId: string;
-}) {
-  const stripe = getStripe();
-  return stripe.paymentIntents.create(
-    {
-      amount: params.amountCents,
-      currency: "eur",
-      // No platform fee: the whole amount belongs to the restaurateur.
-      application_fee_amount: 0,
-      automatic_payment_methods: { enabled: true },
-      metadata: {
-        order_id: params.orderId,
-        restaurant_id: params.restaurantId,
-        kind: "connect_table_payment",
-      },
-    },
-    { stripeAccount: params.connectedAccountId },
-  );
-}
-
 export type CheckoutParamsInput = {
   orderId: string;
   restaurantId: string;

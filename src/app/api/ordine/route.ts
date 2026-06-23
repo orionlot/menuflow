@@ -13,7 +13,8 @@ import { isMapsUrl } from "@/lib/urls";
 import { hitRateLimit, clientIp } from "@/lib/ratelimit";
 import { parseConsent, hasConsent } from "@/lib/cookies";
 import { isServiceOpen } from "@/lib/orari";
-import { createConnectPaymentIntent } from "@/lib/stripe/connect";
+import { checkoutForOrder } from "@/lib/stripe/checkout-order";
+import { appOrigin } from "@/lib/origin";
 import type { Order, Restaurant } from "@/types/db";
 
 export const dynamic = "force-dynamic";
@@ -373,26 +374,12 @@ export async function POST(req: Request) {
     // ── Case B: payments on → order NOT valid until Stripe webhook confirms ──
     // Do NOT notify here; the Payments bot fires only from the webhook.
     if (!restaurant.pagamenti_test && isStripeConfigured() && restaurant.stripe_connect_id) {
-      const pi = await createConnectPaymentIntent({
-        amountCents: Math.round(totale * 100),
-        connectedAccountId: restaurant.stripe_connect_id,
-        orderId: order.id,
-        restaurantId: restaurant.id,
+      const checkoutUrl = await checkoutForOrder(admin, {
+        order,
+        restaurant,
+        origin: await appOrigin(),
       });
-      await admin
-        .from("orders")
-        .update({ stripe_payment_intent: pi.id })
-        .eq("id", order.id);
-
-      return NextResponse.json({
-        ok: true,
-        mode: "payment",
-        orderId: order.id,
-        stripeConfigured: true,
-        clientSecret: pi.client_secret,
-        paymentIntentId: pi.id,
-        devSimulateAvailable: false,
-      });
+      return NextResponse.json({ ok: true, mode: "payment", orderId: order.id, checkoutUrl });
     }
 
     // Test mode (or no real Stripe): allow the simulated payment so the full
