@@ -626,7 +626,13 @@ export async function createStripeConnectOnboardingLink(): Promise<{ url: string
       returnUrl: `${origin}/api/stripe/connect/return`,
     });
     return { url };
-  } catch {
+  } catch (err) {
+    // Surface the real Stripe error (e.g. Connect not enabled / platform profile
+    // incomplete) in the server logs — the client still gets a generic message.
+    console.error(
+      "[connect-onboarding] createStripeConnectOnboardingLink failed:",
+      err instanceof Error ? err.message : err,
+    );
     return { error: "Onboarding non disponibile. Riprova." };
   }
 }

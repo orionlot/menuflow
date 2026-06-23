@@ -57,11 +57,15 @@ export default function PagamentiSettings({
       <span
         className="mb-3 inline-block rounded-full px-2 py-0.5 text-xs font-semibold"
         style={{
-          background: pagamentiTest ? "#fef3c7" : "#dcfce7",
-          color: pagamentiTest ? "#92400e" : "#166534",
+          background: pagamentiTest ? "#fef3c7" : stripeConnectId && pagamentiAttivi ? "#dcfce7" : "#f3f4f6",
+          color: pagamentiTest ? "#92400e" : stripeConnectId && pagamentiAttivi ? "#166534" : "#6b7280",
         }}
       >
-        {pagamentiTest ? "Modalità test — pagamenti simulati" : "Pagamenti reali attivi"}
+        {pagamentiTest
+          ? "Modalità test — pagamenti simulati"
+          : stripeConnectId && pagamentiAttivi
+            ? "Pagamenti reali attivi"
+            : "Non ancora collegato"}
       </span>
 
       {stripeConnectId && pagamentiAttivi ? (
