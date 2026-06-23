@@ -227,14 +227,16 @@ export default function OrderTracker({
                 </p>
               </>
             )}
-            <button
-              onClick={pay}
-              disabled={paying}
-              className="mt-4 w-full rounded-xl py-3 font-semibold disabled:opacity-60"
-              style={{ background: p.brand, color: p.onBrand }}
-            >
-              {paying ? "…" : "Paga ora"}
-            </button>
+            {!paymentReturn && (
+              <button
+                onClick={pay}
+                disabled={paying}
+                className="mt-4 w-full rounded-xl py-3 font-semibold disabled:opacity-60"
+                style={{ background: p.brand, color: p.onBrand }}
+              >
+                {paying ? "…" : "Paga ora"}
+              </button>
+            )}
           </div>
         ) : (
           <>
