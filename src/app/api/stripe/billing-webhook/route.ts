@@ -35,6 +35,9 @@ async function syncSubscription(customerId: string, sub: Stripe.Subscription) {
     const p = planForPriceId(it.price.id);
     if (p) { piano = p; break; }
   }
+  if (!piano) {
+    console.warn(`[billing-webhook] no known plan line item for subscription ${sub.id} (customer ${customerId}); leaving restaurants.piano unchanged`);
+  }
   // current_period_end is unix seconds; read defensively in case the API version
   // surfaces it on the item rather than the subscription root.
   const periodEnd =
