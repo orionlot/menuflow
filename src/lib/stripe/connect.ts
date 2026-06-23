@@ -54,5 +54,86 @@ export async function createConnectPaymentIntent(params: {
   );
 }
 
+export type CheckoutParamsInput = {
+  orderId: string;
+  restaurantId: string;
+  restaurantName: string;
+  tavolo?: string | null;
+  totaleCents: number;
+  successUrl: string;
+  cancelUrl: string;
+};
+
+/**
+ * Pure builder for the hosted Checkout Session params. Single aggregated line
+ * item priced at the server-recomputed total (no per-dish detail leaked, no
+ * rounding drift). No `payment_method_types` → Stripe shows the methods enabled
+ * on the connected account, incl. card wallets (Apple/Google Pay). No
+ * `application_fee_amount` → the whole amount belongs to the restaurateur.
+ */
+export function buildCheckoutParams(input: CheckoutParamsInput): Stripe.Checkout.SessionCreateParams {
+  const meta = {
+    order_id: input.orderId,
+    restaurant_id: input.restaurantId,
+    kind: "connect_table_payment",
+  };
+  const name = `Ordine — ${input.restaurantName}${input.tavolo ? ` · Tavolo ${input.tavolo}` : ""}`;
+  return {
+    mode: "payment",
+    locale: "it",
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: "eur",
+          unit_amount: input.totaleCents,
+          product_data: { name },
+        },
+      },
+    ],
+    metadata: meta,
+    payment_intent_data: { metadata: meta },
+    success_url: input.successUrl,
+    cancel_url: input.cancelUrl,
+  };
+}
+
+/** Pure: extract the args markOrderPaid needs from a completed Checkout Session. */
+export function checkoutSessionPaidArgs(session: {
+  metadata?: Record<string, string> | null;
+  amount_total?: number | null;
+  currency?: string | null;
+  payment_intent?: string | { id: string } | null;
+}): { orderId?: string; paidAmountCents?: number; currency?: string; paymentIntentId?: string } {
+  const pi = session.payment_intent;
+  return {
+    orderId: session.metadata?.order_id,
+    paidAmountCents: session.amount_total ?? undefined,
+    currency: session.currency ?? undefined,
+    paymentIntentId: typeof pi === "string" ? pi : pi?.id,
+  };
+}
+
+/** Create the hosted Checkout Session ON the connected account (direct charge). */
+export async function createConnectCheckoutSession(
+  input: CheckoutParamsInput & { connectedAccountId: string },
+): Promise<Stripe.Checkout.Session> {
+  return getStripe().checkout.sessions.create(buildCheckoutParams(input), {
+    stripeAccount: input.connectedAccountId,
+  });
+}
+
+/** Best-effort expire a still-open session (already-completed/expired → ignored). */
+export async function expireConnectCheckoutSession(
+  sessionId: string,
+  connectedAccountId: string,
+): Promise<void> {
+  try {
+    await getStripe().checkout.sessions.expire(sessionId, {}, { stripeAccount: connectedAccountId });
+  } catch {
+    /* a completed/expired session can't be expired again — not an error here */
+  }
+}
+
 export const CONNECT_WEBHOOK_SECRET =
   process.env.STRIPE_CONNECT_WEBHOOK_SECRET ?? "";
