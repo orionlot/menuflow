@@ -89,6 +89,17 @@ export async function POST(req: Request) {
         if (orderId) await markOrderFailed(admin, { orderId });
         break;
       }
+      case "account.updated": {
+        const acct = event.data.object as Stripe.Account;
+        if (acct.charges_enabled) {
+          const { error } = await admin
+            .from("restaurants")
+            .update({ pagamenti_attivi: true })
+            .eq("stripe_connect_id", acct.id);
+          if (error) throw new Error(`account.updated: ${error.message}`);
+        }
+        break;
+      }
       default:
         break;
     }
