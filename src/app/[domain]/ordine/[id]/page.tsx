@@ -6,7 +6,10 @@ import OrderTracker, { type TrackedOrder } from "./OrderTracker";
 
 export const dynamic = "force-dynamic";
 
-type Params = { params: Promise<{ domain: string; id: string }> };
+type Params = {
+  params: Promise<{ domain: string; id: string }>;
+  searchParams: Promise<{ pagato?: string }>;
+};
 
 function faseOf(o: {
   stato: string;
@@ -35,8 +38,9 @@ function itemFaseOf(it: {
   return "in_attesa";
 }
 
-export default async function OrdineTrackingPage({ params }: Params) {
+export default async function OrdineTrackingPage({ params, searchParams }: Params) {
   const { domain, id } = await params;
+  const sp = await searchParams;
   const tenant = await resolveTenant(domain);
   if (!tenant) notFound();
   if (tenant.funzioni_attive?.tracking_ordine === false) notFound(); // feature off
@@ -106,6 +110,7 @@ export default async function OrdineTrackingPage({ params }: Params) {
       reviewUrl={tenant.funzioni_attive?.recensioni ? tenant.google_review_url : null}
       countdownOn={tenant.funzioni_attive?.tracking_countdown ?? false}
       perDishOn={tenant.funzioni_attive?.tracking_piatti ?? true}
+      paymentReturn={sp?.pagato === "1"}
     />
   );
 }
