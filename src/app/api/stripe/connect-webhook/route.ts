@@ -68,10 +68,13 @@ export async function POST(req: Request) {
         // Persist the PaymentIntent id for reconciliation, then mark paid. Truth
         // of "paid" is this webhook; the amount/currency are asserted in markOrderPaid.
         if (args.paymentIntentId) {
-          await admin
+          const { error: piErr } = await admin
             .from("orders")
             .update({ stripe_payment_intent: args.paymentIntentId })
             .eq("id", args.orderId);
+          // Persist BEFORE marking paid; a failure here must surface (500 → Stripe
+          // retries) so the order isn't flipped to pagato without its PI id.
+          if (piErr) throw new Error(`connect-webhook: persist PI failed: ${piErr.message}`);
         }
         await markOrderPaid(admin, {
           orderId: args.orderId,
