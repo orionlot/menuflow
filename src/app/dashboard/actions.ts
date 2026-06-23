@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isStripeConfigured } from "@/lib/env";
-import { getStripe } from "@/lib/stripe/connect";
+import { getStripe, createExpressAccount, createAccountOnboardingLink } from "@/lib/stripe/connect";
 import { sanitizeBranding } from "@/lib/branding";
 import { sanitizeFunzionalita, isFeatureOn } from "@/lib/config/features";
 import { sanitizeUnita } from "@/lib/config/units";
@@ -596,6 +596,39 @@ export async function disconnectStripe() {
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/funzionalita");
   revalidatePath("/[domain]", "page");
+}
+
+/** Self-serve Connect onboarding: create (once) an Express account for the
+ *  owner's Plus/Pro restaurant and return a hosted onboarding link. */
+export async function createStripeConnectOnboardingLink(): Promise<{ url: string } | { error: string }> {
+  if (!isStripeConfigured()) return { error: "Pagamenti non configurati." };
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Non autenticato." };
+  const { data: r } = await supabase
+    .from("restaurants").select("id, piano, stripe_connect_id").eq("owner_id", user.id).maybeSingle();
+  if (!r) return { error: "Nessun ristorante associato." };
+  if (r.piano !== "plus" && r.piano !== "pro")
+    return { error: "I pagamenti al tavolo sono disponibili dal piano Plus." };
+  try {
+    const admin = createAdminClient();
+    let accountId = r.stripe_connect_id as string | null;
+    if (!accountId) {
+      const acct = await createExpressAccount({ email: user.email ?? "" });
+      accountId = acct.id;
+      const { error } = await admin.from("restaurants").update({ stripe_connect_id: accountId }).eq("id", r.id);
+      if (error) return { error: "Impossibile salvare l'account. Riprova." };
+    }
+    const origin = await appOrigin();
+    const url = await createAccountOnboardingLink({
+      accountId,
+      refreshUrl: `${origin}/api/stripe/connect/refresh`,
+      returnUrl: `${origin}/api/stripe/connect/return`,
+    });
+    return { url };
+  } catch {
+    return { error: "Onboarding non disponibile. Riprova." };
+  }
 }
 
 /** Start (or resume) the plan subscription for an inactive tenant. */

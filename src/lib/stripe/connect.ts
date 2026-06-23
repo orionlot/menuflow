@@ -121,5 +121,39 @@ export async function expireConnectCheckoutSession(
   }
 }
 
+/** Create an Express connected account for a restaurateur (Connect onboarding). */
+export async function createExpressAccount(params: {
+  email: string;
+  country?: string;
+}): Promise<Stripe.Account> {
+  return getStripe().accounts.create({
+    type: "express",
+    email: params.email || undefined,
+    country: params.country ?? "IT",
+    capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
+  });
+}
+
+/** Create an account-onboarding AccountLink (Stripe-hosted onboarding URL). */
+export async function createAccountOnboardingLink(params: {
+  accountId: string;
+  refreshUrl: string;
+  returnUrl: string;
+}): Promise<string> {
+  const link = await getStripe().accountLinks.create({
+    account: params.accountId,
+    type: "account_onboarding",
+    refresh_url: params.refreshUrl,
+    return_url: params.returnUrl,
+  });
+  return link.url;
+}
+
+/** True if the connected account can accept charges (onboarding complete). */
+export async function accountChargesEnabled(accountId: string): Promise<boolean> {
+  const acct = await getStripe().accounts.retrieve(accountId);
+  return Boolean(acct.charges_enabled);
+}
+
 export const CONNECT_WEBHOOK_SECRET =
   process.env.STRIPE_CONNECT_WEBHOOK_SECRET ?? "";
