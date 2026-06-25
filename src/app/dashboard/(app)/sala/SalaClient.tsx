@@ -1,9 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Sala, SalaTavolo } from "@/types/db";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import ManualOrderModal from "../ordini/ManualOrderModal";
+
+type Occupied = { tavolo: string; sala: string | null };
 
 export type PickerItem = { id: string; nome: string; prezzo: number; categoria: string; disponibile: boolean };
 
@@ -18,6 +21,7 @@ type SalaActions = {
     note?: string;
     items: { item_id: string; qta: number }[];
   }) => Promise<{ orderId: string }>;
+  tavoliOccupati: () => Promise<Occupied[]>;
 };
 
 export default function SalaClient({
@@ -26,6 +30,8 @@ export default function SalaClient({
   asportoOn,
   deliveryOn,
   copertoModalita,
+  restaurantId,
+  initialOccupied,
   actions,
 }: {
   initialSale: Sala[];
@@ -33,6 +39,8 @@ export default function SalaClient({
   asportoOn: boolean;
   deliveryOn: boolean;
   copertoModalita: string;
+  restaurantId: string;
+  initialOccupied: Occupied[];
   actions: SalaActions;
 }) {
   const router = useRouter();
@@ -45,12 +53,41 @@ export default function SalaClient({
   const [orderTavolo, setOrderTavolo] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [occupied, setOccupied] = useState<Occupied[]>(initialOccupied);
+
+  const refreshOccupied = () => {
+    void actions.tavoliOccupati().then(setOccupied).catch(() => {});
+  };
+
+  // Live floor-plan: recolour tables whenever any order changes (new order,
+  // bill settled, served, cancelled). Same realtime pattern as ContiClient.
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    const ch = supabase
+      .channel(`sala-${restaurantId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders", filter: `restaurant_id=eq.${restaurantId}` },
+        () => refreshOccupied(),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId]);
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ id: string; moved: boolean } | null>(null);
   const idCounter = useRef(0);
 
   const room = sale[roomIdx] ?? null;
+
+  // A table is occupied if an open order matches its name (and its room, when
+  // the order carries a sala). Orders without a sala match by table name only.
+  const isOccupied = (t: SalaTavolo) =>
+    occupied.some((o) => o.tavolo === t.nome && (o.sala == null || o.sala === room?.nome));
+  const occupiedCount = (room?.tavoli ?? []).filter(isOccupied).length;
 
   function saveRemote(next: Sala[]) {
     void actions.updateSale(next).catch(() => {
@@ -238,6 +275,22 @@ export default function SalaClient({
             </div>
           )}
 
+          {mode === "servizio" && (room?.tavoli.length ?? 0) > 0 && (
+            <div className="mb-2 flex items-center gap-3 text-xs text-neutral-500">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-3 w-3 rounded-sm border" style={{ background: "#dcfce7", borderColor: "#22c55e" }} />
+                Libero
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-3 w-3 rounded-sm border" style={{ background: "#ffedd5", borderColor: "#fb923c" }} />
+                Occupato
+              </span>
+              {occupiedCount > 0 && (
+                <span className="ml-auto font-semibold text-orange-700">{occupiedCount} occupati</span>
+              )}
+            </div>
+          )}
+
           {/* Canvas */}
           <div
             ref={canvasRef}
@@ -254,6 +307,7 @@ export default function SalaClient({
                 t.forma === "rotondo" ? "rounded-full" : t.forma === "rettangolare" ? "rounded-lg" : "rounded-xl";
               const dims =
                 t.forma === "rettangolare" ? { width: 94, height: 56 } : { width: 64, height: 64 };
+              const occ = mode === "servizio" && isOccupied(t);
               return (
                 <button
                   key={t.id}
@@ -271,7 +325,8 @@ export default function SalaClient({
                     top: `${t.y}%`,
                     width: dims.width,
                     height: dims.height,
-                    background: mode === "servizio" ? "var(--brand-soft)" : "#fff",
+                    background: mode === "servizio" ? (occ ? "#ffedd5" : "#dcfce7") : "#fff",
+                    borderColor: mode === "servizio" ? (occ ? "#fb923c" : "#22c55e") : undefined,
                   }}
                 >
                   <span className="text-sm font-bold leading-none text-neutral-900">{t.nome}</span>
@@ -446,7 +501,7 @@ export default function SalaClient({
           onClose={() => setOrderTavolo(null)}
           onCreate={async (input) => {
             await actions.createManualOrder(input);
-            router.refresh();
+            refreshOccupied();
           }}
         />
       )}

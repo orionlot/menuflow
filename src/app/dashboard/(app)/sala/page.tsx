@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { MenuItem } from "@/types/db";
 import { isFeatureOn } from "@/lib/config/features";
 import { menuItemNeedsChoice } from "@/lib/menu";
-import { updateSale, createManualOrder } from "@/app/dashboard/actions";
+import { updateSale, createManualOrder, tavoliOccupati } from "@/app/dashboard/actions";
 import SalaClient, { type PickerItem } from "./SalaClient";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +50,22 @@ export default async function SalaPage() {
       disponibile: i.disponibile,
     }));
 
+  // Occupied tables for the live floor-plan (conti-aware): a table is occupied
+  // while it has an open order. With Conti on it frees on "estingui conto"
+  // (conto_chiuso_at); with Conti off, when the order is served (servito_at).
+  const contiOn = isFeatureOn(restaurant, "conti");
+  let occQ = supabase
+    .from("orders")
+    .select("tavolo, sala")
+    .eq("restaurant_id", restaurant.id)
+    .is("annullato_at", null)
+    .eq("asporto", false)
+    .not("tavolo", "is", null)
+    .in("stato", ["ricevuto", "pagato"]);
+  occQ = contiOn ? occQ.is("conto_chiuso_at", null) : occQ.is("servito_at", null);
+  const { data: occ } = await occQ;
+  const initialOccupied = (occ ?? []) as { tavolo: string; sala: string | null }[];
+
   return (
     <SalaClient
       initialSale={restaurant.sale ?? []}
@@ -57,7 +73,9 @@ export default async function SalaPage() {
       asportoOn={isFeatureOn(restaurant, "asporto")}
       deliveryOn={isFeatureOn(restaurant, "delivery")}
       copertoModalita={restaurant.coperto_modalita}
-      actions={{ updateSale, createManualOrder }}
+      restaurantId={restaurant.id}
+      initialOccupied={initialOccupied}
+      actions={{ updateSale, createManualOrder, tavoliOccupati }}
     />
   );
 }

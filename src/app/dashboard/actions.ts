@@ -765,6 +765,39 @@ export async function setReservationStatus(id: string, stato: PrenotazioneStato)
   revalidatePath("/dashboard/prenotazioni");
 }
 
+/** Tables currently "occupied" by an open order, for the Sala live floor-plan.
+ *  Conti-aware: with Conti on a table stays occupied until the bill is settled
+ *  (conto_chiuso_at); with Conti off, until the order is served (servito_at).
+ *  Owner-scoped (RLS + owner_id); returns [] on any error so the map degrades
+ *  gracefully to "all free" instead of crashing. */
+export async function tavoliOccupati(): Promise<{ tavolo: string; sala: string | null }[]> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data: r } = await supabase
+    .from("restaurants")
+    .select("*")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!r) return [];
+  const restaurant = r as Restaurant;
+  const contiOn = isFeatureOn(restaurant, "conti");
+  let q = supabase
+    .from("orders")
+    .select("tavolo, sala")
+    .eq("restaurant_id", restaurant.id)
+    .is("annullato_at", null)
+    .eq("asporto", false)
+    .not("tavolo", "is", null)
+    .in("stato", ["ricevuto", "pagato"]);
+  q = contiOn ? q.is("conto_chiuso_at", null) : q.is("servito_at", null);
+  const { data, error } = await q;
+  if (error) return [];
+  return (data ?? []) as { tavolo: string; sala: string | null }[];
+}
+
 export async function toggleScontrino(orderId: string, value: boolean) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
