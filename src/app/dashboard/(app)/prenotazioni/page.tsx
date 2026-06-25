@@ -27,6 +27,7 @@ export default async function PrenotazioniPage() {
     <PrenotazioniClient
       initial={(data as Prenotazione[]) ?? []}
       setStatus={setReservationStatus}
+      today={today}
     />
   );
 }
