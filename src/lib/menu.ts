@@ -165,6 +165,38 @@ export function sanitizeCategorieOrdine(raw: unknown): string[] {
   return out;
 }
 
+/** Whitelist the "auto-ready" category list (same rules as the category order). */
+export function sanitizeCategoriePronte(raw: unknown): string[] {
+  return sanitizeCategorieOrdine(raw);
+}
+
+/** Stamp order lines whose category is configured as "ready to serve" as already
+ *  prepared + ready, so the KDS shows them in "Pronti" the moment the order is
+ *  created (e.g. water/drinks that need no preparation). Held ("a seguire") lines
+ *  are never auto-readied — the waiter held them on purpose. Pure / no-op when the
+ *  list is empty. */
+export function markCategoriePronte<
+  T extends {
+    item_id: string;
+    a_seguire?: boolean;
+    preparazione_at?: string | null;
+    pronto_at?: string | null;
+  },
+>(
+  lines: T[],
+  categoriaById: Record<string, string | null | undefined>,
+  categoriePronte: string[],
+  nowIso: string,
+): T[] {
+  if (!categoriePronte.length) return lines;
+  const ready = new Set(categoriePronte);
+  return lines.map((l) => {
+    const cat = categoriaById[l.item_id];
+    if (l.a_seguire || !cat || !ready.has(cat)) return l;
+    return { ...l, preparazione_at: nowIso, pronto_at: nowIso };
+  });
+}
+
 /** Coerce a menu item's `ingredienti` value READ FROM THE DB into the canonical
  *  RicettaVoce[] shape. Tolerates legacy bare-id strings (pre-0035 rows, seeds,
  *  or out-of-band writes) and drops malformed entries. Apply at every read

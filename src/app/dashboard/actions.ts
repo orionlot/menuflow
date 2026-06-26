@@ -28,6 +28,8 @@ import {
   sanitizeI18n,
   sanitizeCategoriaTempi,
   sanitizeCategorieOrdine,
+  sanitizeCategoriePronte,
+  markCategoriePronte,
   type ItemPatch,
 } from "@/lib/menu";
 import { parseCsv, rowsToItemPatches } from "@/lib/csv";
@@ -481,6 +483,18 @@ export async function updateCategorieOrdine(value: unknown) {
   const { error } = await admin
     .from("restaurants")
     .update({ categorie_ordine: sanitizeCategorieOrdine(value) })
+    .eq("id", restaurantId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/dashboard/menu");
+}
+
+/** Categories whose items go straight to "Pronti" in the KDS on order. */
+export async function updateCategoriePronte(value: unknown) {
+  const restaurantId = await ownerRestaurantId();
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("restaurants")
+    .update({ categorie_pronte: sanitizeCategoriePronte(value) })
     .eq("id", restaurantId);
   if (error) throw new Error(error.message);
   revalidatePath("/dashboard/menu");
@@ -1121,6 +1135,26 @@ export async function createManualOrder(input: {
     ? lines.map((l) => (heldIds.has(l.item_id) ? { ...l, a_seguire: true } : l))
     : lines;
 
+  // Auto-ready categories (e.g. drinks) skip the kitchen and land in "Pronti".
+  let kitchenLines = finalLines;
+  const categoriePronte = restaurant.categorie_pronte ?? [];
+  if (categoriePronte.length) {
+    const orderedIds = [...new Set(finalLines.map((l) => l.item_id).filter(Boolean))] as string[];
+    if (orderedIds.length) {
+      const { data: catRows } = await admin
+        .from("menu_items")
+        .select("id, categoria")
+        .eq("restaurant_id", restaurant.id)
+        .in("id", orderedIds);
+      const catById: Record<string, string | null> = {};
+      for (const cr of catRows ?? []) {
+        const row = cr as { id: string; categoria: string | null };
+        catById[row.id] = row.categoria;
+      }
+      kitchenLines = markCategoriePronte(finalLines, catById, categoriePronte, new Date().toISOString());
+    }
+  }
+
   // Coperto applies to table orders per the restaurant's configured mode. Like
   // the public flow, a per-person cover charge requires a valid covers count.
   let coperti: number | null = null;
@@ -1143,7 +1177,7 @@ export async function createManualOrder(input: {
       tipo,
       sala: String(input.sala ?? "").trim().slice(0, 60) || null,
       indirizzo: tipo === "delivery" ? String(input.indirizzo ?? "").trim().slice(0, 200) || null : null,
-      items: finalLines,
+      items: kitchenLines,
       totale: totaleCents / 100,
       coperti,
       coperto_tot: copertoCents / 100,

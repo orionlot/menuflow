@@ -9,6 +9,7 @@ import { isFeatureOn } from "@/lib/config/features";
 import { ALLERGENI_BY_ID } from "@/lib/config/allergeni";
 import { decrementIngredientStock, composableCategories } from "@/lib/ingredients";
 import { decrementMenuItemStock } from "@/lib/menu-stock";
+import { markCategoriePronte } from "@/lib/menu";
 import { isMapsUrl } from "@/lib/urls";
 import { hitRateLimit, clientIp } from "@/lib/ratelimit";
 import { parseConsent, hasConsent } from "@/lib/cookies";
@@ -264,6 +265,24 @@ export async function POST(req: Request) {
       if (times.length) tempoStimato = Math.max(...times);
     }
 
+    // Auto-ready categories (e.g. drinks) skip the kitchen and land directly in
+    // "Pronti" in the KDS the moment the order is created.
+    let kitchenLines = finalLines;
+    const categoriePronte = restaurant.categorie_pronte ?? [];
+    if (categoriePronte.length && orderedIds.length) {
+      const { data: catRows } = await admin
+        .from("menu_items")
+        .select("id, categoria")
+        .eq("restaurant_id", restaurant.id)
+        .in("id", orderedIds);
+      const catById: Record<string, string | null> = {};
+      for (const cr of catRows ?? []) {
+        const row = cr as { id: string; categoria: string | null };
+        catById[row.id] = row.categoria;
+      }
+      kitchenLines = markCategoriePronte(finalLines, catById, categoriePronte, new Date().toISOString());
+    }
+
     const note = clean(body.note, 280);
     // Takeaway can pay at the counter → treat as a non-online (case A) order.
     const payAtCounter = asporto && Boolean(body.paga_in_cassa);
@@ -326,7 +345,7 @@ export async function POST(req: Request) {
         tipo,
         indirizzo,
         posizione,
-        items: finalLines,
+        items: kitchenLines,
         totale,
         mancia: manciaCents / 100,
         coperti,
