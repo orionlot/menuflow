@@ -4,7 +4,13 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { MenuItem } from "@/types/db";
 import { isFeatureOn } from "@/lib/config/features";
 import { menuItemNeedsChoice } from "@/lib/menu";
-import { updateSale, createManualOrder, tavoliOccupati } from "@/app/dashboard/actions";
+import {
+  updateSale,
+  createManualOrder,
+  tavoliOccupati,
+  contoTavolo,
+  estinguiConto,
+} from "@/app/dashboard/actions";
 import SalaClient, { type PickerItem } from "./SalaClient";
 
 export const dynamic = "force-dynamic";
@@ -75,7 +81,8 @@ export default async function SalaPage() {
       copertoModalita={restaurant.coperto_modalita}
       restaurantId={restaurant.id}
       initialOccupied={initialOccupied}
-      actions={{ updateSale, createManualOrder, tavoliOccupati }}
+      contiOn={contiOn}
+      actions={{ updateSale, createManualOrder, tavoliOccupati, contoTavolo, estinguiConto }}
     />
   );
 }

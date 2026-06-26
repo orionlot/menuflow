@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Sala, SalaTavolo } from "@/types/db";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import ManualOrderModal from "../ordini/ManualOrderModal";
+import ManualOrderModal, { type ContoData } from "../ordini/ManualOrderModal";
 
 type Occupied = { tavolo: string; sala: string | null };
 
@@ -22,6 +22,8 @@ type SalaActions = {
     items: { item_id: string; qta: number }[];
   }) => Promise<{ orderId: string }>;
   tavoliOccupati: () => Promise<Occupied[]>;
+  contoTavolo: (tavolo: string, sala?: string) => Promise<ContoData>;
+  estinguiConto: (ids: string[]) => Promise<void>;
 };
 
 export default function SalaClient({
@@ -32,6 +34,7 @@ export default function SalaClient({
   copertoModalita,
   restaurantId,
   initialOccupied,
+  contiOn,
   actions,
 }: {
   initialSale: Sala[];
@@ -41,6 +44,7 @@ export default function SalaClient({
   copertoModalita: string;
   restaurantId: string;
   initialOccupied: Occupied[];
+  contiOn: boolean;
   actions: SalaActions;
 }) {
   const router = useRouter();
@@ -498,6 +502,10 @@ export default function SalaClient({
           copertoModalita={copertoModalita}
           initialTavolo={orderTavolo}
           initialSala={room?.nome}
+          tableOnly
+          contiOn={contiOn}
+          caricaConto={actions.contoTavolo}
+          estingui={actions.estinguiConto}
           onClose={() => setOrderTavolo(null)}
           onCreate={async (input) => {
             await actions.createManualOrder(input);
