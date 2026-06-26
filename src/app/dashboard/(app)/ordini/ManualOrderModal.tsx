@@ -78,6 +78,7 @@ export default function ManualOrderModal({
   const [conto, setConto] = useState<ContoData | null>(null);
   const [loadingConto, setLoadingConto] = useState(false);
   const [estinguendo, setEstinguendo] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const categories = useMemo(() => {
@@ -136,24 +137,28 @@ export default function ManualOrderModal({
     }
   }
 
-  async function submit() {
+  function validate(): boolean {
     setError(null);
     if (!lineCount) {
       setError("Aggiungi almeno un prodotto.");
-      return;
+      return false;
     }
     if (!tavolo.trim()) {
       setError(tipo === "tavolo" ? "Inserisci il tavolo." : "Inserisci il nome.");
-      return;
+      return false;
     }
     if (tipo === "delivery" && !indirizzo.trim()) {
       setError("Inserisci l'indirizzo di consegna.");
-      return;
+      return false;
     }
     if (tipo === "tavolo" && copertoModalita === "persona" && !coperti) {
       setError("Indica il numero di coperti.");
-      return;
+      return false;
     }
+    return true;
+  }
+
+  async function doCreate() {
     setSubmitting(true);
     try {
       await onCreate({
@@ -173,7 +178,16 @@ export default function ManualOrderModal({
     } catch (e) {
       setError(e instanceof Error ? e.message : "Errore nella creazione.");
       setSubmitting(false);
+      setConfirming(false); // surface the error back in the modal
     }
+  }
+
+  function submit() {
+    if (!validate()) return;
+    // From the Sala (servizio) a confirmation popup gates the create; elsewhere
+    // (Ordini page) the order is created directly as before.
+    if (tableOnly) setConfirming(true);
+    else void doCreate();
   }
 
   const tipoOptions: { id: Tipo; label: string }[] = [
@@ -399,6 +413,54 @@ export default function ManualOrderModal({
             >
               {submitting ? "Creazione…" : "Crea ordine"}
             </button>
+          </div>
+        )}
+
+        {confirming && (
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+            onClick={() => setConfirming(false)}
+          >
+            <div className="w-full max-w-sm rounded-2xl bg-white p-5" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-base font-bold">Confermi l&apos;ordine?</h3>
+              <p className="mt-1 text-sm text-neutral-500">
+                Tavolo {tavolo.trim() || "—"}
+                {sala.trim() ? ` · ${sala.trim()}` : ""}
+              </p>
+              <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto text-sm">
+                {Object.entries(cart).map(([id, q]) => (
+                  <li key={id} className="flex items-baseline justify-between gap-2">
+                    <span className="min-w-0">
+                      <span className="font-medium">{q}×</span> {byId.get(id)?.nome ?? id}
+                    </span>
+                    <span className="shrink-0 text-neutral-500">
+                      {formatEUR(Math.round((byId.get(id)?.prezzo ?? 0) * 100) * q)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 flex justify-between border-t border-neutral-200 pt-2 text-sm font-semibold">
+                <span>Totale stimato</span>
+                <span>~{formatEUR(estimateCents)}</span>
+              </div>
+              {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  onClick={() => setConfirming(false)}
+                  disabled={submitting}
+                  className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={() => void doCreate()}
+                  disabled={submitting}
+                  className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-50"
+                >
+                  {submitting ? "Invio…" : "Conferma e invia"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
