@@ -31,6 +31,7 @@ import NotesEditor from "./NotesEditor";
 import EtichetteEditor from "./EtichetteEditor";
 import RepartiEditor from "./RepartiEditor";
 import CategoriaTempiEditor from "./CategoriaTempiEditor";
+import CategoriePronteEditor from "./CategoriePronteEditor";
 import ComposizioneEditor from "./ComposizioneEditor";
 import TaglieEditor from "./TaglieEditor";
 
@@ -60,6 +61,7 @@ export interface MenuActions {
   updateEtichette?: (etichette: string[]) => Promise<void>;
   updateReparti?: (reparti: Reparto[]) => Promise<void>;
   updateCategoriaTempi?: (value: Record<string, number>) => Promise<void>;
+  updateCategoriePronte?: (value: string[]) => Promise<void>;
   updateCategorieOrdine?: (order: string[]) => Promise<void>;
   updateCapienzaDefault?: (value: number | null) => Promise<void>;
   reorder: (updates: { id: string; ordine: number }[]) => Promise<void>;
@@ -101,6 +103,7 @@ export default function MenuManager({
   fasceOrarieOn = false,
   tempoStimatoOn = false,
   categoriaTempi = {},
+  categoriePronte = [],
   categorieOrdine: initialCategorieOrdine = [],
   capienzaDefault = null,
   pesoOn = false,
@@ -126,6 +129,7 @@ export default function MenuManager({
   fasceOrarieOn?: boolean;
   tempoStimatoOn?: boolean;
   categoriaTempi?: Record<string, number>;
+  categoriePronte?: string[];
   categorieOrdine?: string[];
   capienzaDefault?: number | null;
   pesoOn?: boolean;
@@ -568,28 +572,37 @@ export default function MenuManager({
 
       {/* ── Categorie ────────────────────────────────────────── */}
       {tab === "categorie" && (
-        <CategoriesTab
-          categories={categoryNames}
-          grouped={grouped}
-          disabled={pending}
-          onReorder={reorderCategorie}
-          onRename={(oldName, newName) => {
-            const targets = (grouped.get(oldName) ?? []).map((i) => i.id);
-            setItems((prev) =>
-              prev.map((i) => (i.categoria === oldName ? { ...i, categoria: newName } : i)),
-            );
-            run(async () => {
-              for (const id of targets) await actions.updateItem(id, { categoria: newName });
-              router.refresh();
-            });
-          }}
-          onAdd={(name) => {
-            run(async () => {
-              await actions.createItem({ nome: "Nuovo prodotto", categoria: name, prezzo: 0 });
-              router.refresh();
-            });
-          }}
-        />
+        <div className="space-y-4">
+          <CategoriesTab
+            categories={categoryNames}
+            grouped={grouped}
+            disabled={pending}
+            onReorder={reorderCategorie}
+            onRename={(oldName, newName) => {
+              const targets = (grouped.get(oldName) ?? []).map((i) => i.id);
+              setItems((prev) =>
+                prev.map((i) => (i.categoria === oldName ? { ...i, categoria: newName } : i)),
+              );
+              run(async () => {
+                for (const id of targets) await actions.updateItem(id, { categoria: newName });
+                router.refresh();
+              });
+            }}
+            onAdd={(name) => {
+              run(async () => {
+                await actions.createItem({ nome: "Nuovo prodotto", categoria: name, prezzo: 0 });
+                router.refresh();
+              });
+            }}
+          />
+          {actions.updateCategoriePronte && (
+            <CategoriePronteEditor
+              value={categoriePronte}
+              categories={categoryNames}
+              onSave={(v) => run(() => actions.updateCategoriePronte!(v))}
+            />
+          )}
+        </div>
       )}
 
       {/* ── Varianti (per-dish options) ──────────────────────── */}

@@ -160,6 +160,9 @@ export interface Restaurant {
   /** Custom display order of categories on the public menu (category names).
    *  Categories not listed fall back to alphabetical after the listed ones. */
   categorie_ordine: string[];
+  /** Categories whose items go straight to "Pronti" in the KDS on order (skip
+   *  preparation) — e.g. water/drinks. Empty = off. */
+  categorie_pronte: string[];
   /** Per-tenant legal data that fills the Cookie/Privacy policy templates. */
   dati_legali: DatiLegali;
   /** Default kitchen concurrency (dishes prepared at once) for the wait estimate
