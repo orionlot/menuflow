@@ -798,6 +798,87 @@ export async function tavoliOccupati(): Promise<{ tavolo: string; sala: string |
   return (data ?? []) as { tavolo: string; sala: string | null }[];
 }
 
+/** Aggregated open conto for a single table — for the Sala "Conto" tab. Same
+ *  conti-aware "open order" definition as tavoliOccupati; owner-scoped. Returns
+ *  an empty conto on any error so the modal never crashes. */
+export async function contoTavolo(
+  tavolo: string,
+  sala?: string,
+): Promise<{
+  ids: string[];
+  lines: { nome: string; qta: number; totCents: number }[];
+  prodottiCents: number;
+  copertoCents: number;
+  manciaCents: number;
+  totCents: number;
+}> {
+  const empty = { ids: [], lines: [], prodottiCents: 0, copertoCents: 0, manciaCents: 0, totCents: 0 };
+  const t = String(tavolo ?? "").trim();
+  if (!t) return empty;
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return empty;
+  const { data: r } = await supabase
+    .from("restaurants")
+    .select("*")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!r) return empty;
+  const restaurant = r as Restaurant;
+  const contiOn = isFeatureOn(restaurant, "conti");
+  let q = supabase
+    .from("orders")
+    .select("id, items, coperto_tot, mancia, sala")
+    .eq("restaurant_id", restaurant.id)
+    .is("annullato_at", null)
+    .eq("asporto", false)
+    .eq("tavolo", t)
+    .in("stato", ["ricevuto", "pagato"]);
+  q = contiOn ? q.is("conto_chiuso_at", null) : q.is("servito_at", null);
+  const { data, error } = await q;
+  if (error || !data) return empty;
+  const wantSala = sala?.trim() || null;
+  type Row = {
+    id: string;
+    items: { nome: string; qta: number; prezzo: number }[] | null;
+    coperto_tot: number | null;
+    mancia: number | null;
+    sala: string | null;
+  };
+  const orders = (data as Row[]).filter((o) => !wantSala || o.sala == null || o.sala === wantSala);
+  const lineMap = new Map<string, { nome: string; qta: number; totCents: number }>();
+  let prodottiCents = 0;
+  let copertoCents = 0;
+  let manciaCents = 0;
+  const ids: string[] = [];
+  for (const o of orders) {
+    ids.push(o.id);
+    copertoCents += Math.round(Number(o.coperto_tot ?? 0) * 100);
+    manciaCents += Math.round(Number(o.mancia ?? 0) * 100);
+    for (const it of o.items ?? []) {
+      const cents = Math.round(Number(it.prezzo ?? 0) * 100) * it.qta;
+      prodottiCents += cents;
+      const ex = lineMap.get(it.nome);
+      if (ex) {
+        ex.qta += it.qta;
+        ex.totCents += cents;
+      } else {
+        lineMap.set(it.nome, { nome: it.nome, qta: it.qta, totCents: cents });
+      }
+    }
+  }
+  return {
+    ids,
+    lines: [...lineMap.values()],
+    prodottiCents,
+    copertoCents,
+    manciaCents,
+    totCents: prodottiCents + copertoCents + manciaCents,
+  };
+}
+
 export async function toggleScontrino(orderId: string, value: boolean) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase

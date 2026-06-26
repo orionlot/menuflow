@@ -6,6 +6,24 @@ import type { PickerItem } from "./OrdiniClient";
 
 type Tipo = "tavolo" | "asporto" | "delivery";
 
+export type ContoData = {
+  ids: string[];
+  lines: { nome: string; qta: number; totCents: number }[];
+  prodottiCents: number;
+  copertoCents: number;
+  manciaCents: number;
+  totCents: number;
+};
+
+const EMPTY_CONTO: ContoData = {
+  ids: [],
+  lines: [],
+  prodottiCents: 0,
+  copertoCents: 0,
+  manciaCents: 0,
+  totCents: 0,
+};
+
 export default function ManualOrderModal({
   items,
   asportoOn,
@@ -14,6 +32,10 @@ export default function ManualOrderModal({
   portateOn = false,
   initialTavolo,
   initialSala,
+  tableOnly = false,
+  contiOn = false,
+  caricaConto,
+  estingui,
   onClose,
   onCreate,
 }: {
@@ -24,6 +46,11 @@ export default function ManualOrderModal({
   portateOn?: boolean;
   initialTavolo?: string;
   initialSala?: string;
+  /** Sala "servizio" context: hide Asporto/Delivery, show a "Conto" tab. */
+  tableOnly?: boolean;
+  contiOn?: boolean;
+  caricaConto?: (tavolo: string, sala?: string) => Promise<ContoData>;
+  estingui?: (ids: string[]) => Promise<void>;
   onClose: () => void;
   onCreate: (input: {
     tavolo: string;
@@ -45,6 +72,12 @@ export default function ManualOrderModal({
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // "Conto" view (Sala servizio only).
+  const [view, setView] = useState<"ordine" | "conto">("ordine");
+  const [conto, setConto] = useState<ContoData | null>(null);
+  const [loadingConto, setLoadingConto] = useState(false);
+  const [estinguendo, setEstinguendo] = useState(false);
 
   const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const categories = useMemo(() => {
@@ -78,6 +111,29 @@ export default function ManualOrderModal({
       else next.add(id);
       return next;
     });
+  }
+
+  function openConto() {
+    setView("conto");
+    if (!caricaConto) return;
+    setLoadingConto(true);
+    caricaConto(tavolo.trim() || (initialTavolo ?? ""), sala.trim() || undefined)
+      .then(setConto)
+      .catch(() => setConto(EMPTY_CONTO))
+      .finally(() => setLoadingConto(false));
+  }
+
+  async function doEstingui() {
+    if (!estingui || !conto || conto.ids.length === 0) return;
+    setError(null);
+    setEstinguendo(true);
+    try {
+      await estingui(conto.ids);
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Errore nella chiusura del conto.");
+      setEstinguendo(false);
+    }
   }
 
   async function submit() {
@@ -133,143 +189,218 @@ export default function ManualOrderModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-3">
-          <h2 className="text-lg font-bold">Nuovo ordine</h2>
+          <h2 className="text-lg font-bold">{view === "conto" ? "Conto del tavolo" : "Nuovo ordine"}</h2>
           <button onClick={onClose} aria-label="Chiudi" className="text-2xl leading-none text-neutral-400 hover:text-neutral-700">
             ×
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {/* Destination */}
+          {/* Tabs: Tavolo/Asporto/Delivery (Ordini) — or Tavolo/Conto (Sala servizio) */}
           <div className="mb-3 flex flex-wrap gap-1.5">
-            {tipoOptions.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTipo(t.id)}
-                className={`rounded-full px-3 py-1 text-sm font-medium transition ${
-                  tipo === t.id ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <input
-              value={tavolo}
-              onChange={(e) => setTavolo(e.target.value)}
-              placeholder={tipo === "tavolo" ? "Numero tavolo" : "Nome cliente"}
-              maxLength={40}
-              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-            />
-            <input
-              value={sala}
-              onChange={(e) => setSala(e.target.value)}
-              placeholder="Sala / zona (facoltativo)"
-              maxLength={60}
-              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-            />
-            {tipo === "delivery" && (
-              <input
-                value={indirizzo}
-                onChange={(e) => setIndirizzo(e.target.value)}
-                placeholder="Indirizzo di consegna"
-                maxLength={200}
-                className="rounded-lg border border-neutral-300 px-3 py-2 text-sm sm:col-span-2"
-              />
-            )}
-            {tipo === "tavolo" && copertoModalita === "persona" && (
-              <input
-                type="number"
-                min="0"
-                value={coperti || ""}
-                onChange={(e) => setCoperti(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                placeholder="Coperti"
-                className="rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-              />
-            )}
+            {tableOnly
+              ? (["ordine", "conto"] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => (v === "conto" ? openConto() : setView("ordine"))}
+                    className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+                      view === v ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                    }`}
+                  >
+                    {v === "ordine" ? "Tavolo" : "Conto"}
+                  </button>
+                ))
+              : tipoOptions.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTipo(t.id)}
+                    className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+                      tipo === t.id ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
           </div>
 
-          {/* Item picker */}
-          <div className="space-y-3">
-            {categories.map((cat) => (
-              <div key={cat}>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-neutral-400">{cat}</p>
-                <ul className="space-y-1">
-                  {items
-                    .filter((i) => i.categoria === cat)
-                    .map((i) => {
-                      const q = cart[i.id] ?? 0;
-                      return (
-                        <li key={i.id} className="flex items-center gap-2">
-                          <span className="min-w-0 flex-1 truncate text-sm">{i.nome}</span>
-                          <span className="shrink-0 text-sm text-neutral-500">
-                            {formatEUR(Math.round(i.prezzo * 100))}
-                          </span>
-                          {portateOn && q > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => toggleSeguire(i.id)}
-                              title="Servi a seguire (il cuoco lo terrà per dopo)"
-                              className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-bold ${
-                                aSeguire.has(i.id)
-                                  ? "bg-violet-600 text-white"
-                                  : "border border-neutral-300 text-neutral-500 hover:bg-neutral-50"
-                              }`}
-                            >
-                              A seguire
-                            </button>
-                          )}
-                          <div className="flex shrink-0 items-center gap-1.5">
-                            <button
-                              onClick={() => addQty(i.id, -1)}
-                              disabled={q === 0}
-                              className="grid h-7 w-7 place-items-center rounded-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200 disabled:opacity-40"
-                            >
-                              −
-                            </button>
-                            <span className="w-5 text-center text-sm font-semibold tabular-nums">{q}</span>
-                            <button
-                              onClick={() => addQty(i.id, 1)}
-                              className="grid h-7 w-7 place-items-center rounded-full bg-neutral-900 text-white hover:bg-neutral-700"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </li>
-                      );
-                    })}
-                </ul>
+          {view === "conto" ? (
+            <div>
+              {loadingConto ? (
+                <p className="py-8 text-center text-sm text-neutral-500">Carico il conto…</p>
+              ) : !conto || conto.ids.length === 0 ? (
+                <p className="py-8 text-center text-sm text-neutral-500">Nessun ordine aperto a questo tavolo.</p>
+              ) : (
+                <>
+                  <ul className="space-y-1">
+                    {conto.lines.map((l, i) => (
+                      <li key={i} className="flex items-baseline justify-between gap-2 text-sm">
+                        <span className="min-w-0">
+                          <span className="font-medium text-neutral-900">{l.qta}×</span> {l.nome}
+                        </span>
+                        <span className="shrink-0 text-neutral-500">{formatEUR(l.totCents)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-3 space-y-1 border-t border-neutral-200 pt-3 text-sm">
+                    <div className="flex justify-between text-neutral-500">
+                      <span>Prodotti</span>
+                      <span>{formatEUR(conto.prodottiCents)}</span>
+                    </div>
+                    {conto.copertoCents > 0 && (
+                      <div className="flex justify-between text-neutral-500">
+                        <span>Coperto</span>
+                        <span>{formatEUR(conto.copertoCents)}</span>
+                      </div>
+                    )}
+                    {conto.manciaCents > 0 && (
+                      <div className="flex justify-between text-neutral-500">
+                        <span>Mancia</span>
+                        <span>{formatEUR(conto.manciaCents)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-1 text-base font-bold">
+                      <span>Totale</span>
+                      <span>{formatEUR(conto.totCents)}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Destination */}
+              <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <input
+                  value={tavolo}
+                  onChange={(e) => setTavolo(e.target.value)}
+                  placeholder={tipo === "tavolo" ? "Numero tavolo" : "Nome cliente"}
+                  maxLength={40}
+                  className="rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                />
+                <input
+                  value={sala}
+                  onChange={(e) => setSala(e.target.value)}
+                  placeholder="Sala / zona (facoltativo)"
+                  maxLength={60}
+                  className="rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                />
+                {tipo === "delivery" && (
+                  <input
+                    value={indirizzo}
+                    onChange={(e) => setIndirizzo(e.target.value)}
+                    placeholder="Indirizzo di consegna"
+                    maxLength={200}
+                    className="rounded-lg border border-neutral-300 px-3 py-2 text-sm sm:col-span-2"
+                  />
+                )}
+                {tipo === "tavolo" && copertoModalita === "persona" && (
+                  <input
+                    type="number"
+                    min="0"
+                    value={coperti || ""}
+                    onChange={(e) => setCoperti(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    placeholder="Coperti"
+                    className="rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                  />
+                )}
               </div>
-            ))}
-            {items.length === 0 && (
-              <p className="text-sm text-neutral-500">Nessun prodotto disponibile.</p>
-            )}
-          </div>
 
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Note (facoltative)"
-            maxLength={280}
-            rows={2}
-            className="mt-3 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-          />
+              {/* Item picker */}
+              <div className="space-y-3">
+                {categories.map((cat) => (
+                  <div key={cat}>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-neutral-400">{cat}</p>
+                    <ul className="space-y-1">
+                      {items
+                        .filter((i) => i.categoria === cat)
+                        .map((i) => {
+                          const q = cart[i.id] ?? 0;
+                          return (
+                            <li key={i.id} className="flex items-center gap-2">
+                              <span className="min-w-0 flex-1 truncate text-sm">{i.nome}</span>
+                              <span className="shrink-0 text-sm text-neutral-500">
+                                {formatEUR(Math.round(i.prezzo * 100))}
+                              </span>
+                              {portateOn && q > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSeguire(i.id)}
+                                  title="Servi a seguire (il cuoco lo terrà per dopo)"
+                                  className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-bold ${
+                                    aSeguire.has(i.id)
+                                      ? "bg-violet-600 text-white"
+                                      : "border border-neutral-300 text-neutral-500 hover:bg-neutral-50"
+                                  }`}
+                                >
+                                  A seguire
+                                </button>
+                              )}
+                              <div className="flex shrink-0 items-center gap-1.5">
+                                <button
+                                  onClick={() => addQty(i.id, -1)}
+                                  disabled={q === 0}
+                                  className="grid h-7 w-7 place-items-center rounded-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200 disabled:opacity-40"
+                                >
+                                  −
+                                </button>
+                                <span className="w-5 text-center text-sm font-semibold tabular-nums">{q}</span>
+                                <button
+                                  onClick={() => addQty(i.id, 1)}
+                                  className="grid h-7 w-7 place-items-center rounded-full bg-neutral-900 text-white hover:bg-neutral-700"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                    </ul>
+                  </div>
+                ))}
+                {items.length === 0 && (
+                  <p className="text-sm text-neutral-500">Nessun prodotto disponibile.</p>
+                )}
+              </div>
+
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Note (facoltative)"
+                maxLength={280}
+                rows={2}
+                className="mt-3 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+              />
+            </>
+          )}
         </div>
 
         {error && <p className="px-5 text-sm text-red-600">{error}</p>}
-        <div className="flex items-center justify-between gap-3 border-t border-neutral-200 px-5 py-3">
-          <span className="text-sm text-neutral-500">
-            {lineCount} {lineCount === 1 ? "prodotto" : "prodotti"} · ~{formatEUR(estimateCents)}
-          </span>
-          <button
-            onClick={submit}
-            disabled={submitting || !lineCount}
-            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-50"
-          >
-            {submitting ? "Creazione…" : "Crea ordine"}
-          </button>
-        </div>
+        {view === "conto" ? (
+          <div className="flex items-center justify-end gap-3 border-t border-neutral-200 px-5 py-3">
+            {contiOn && conto && conto.ids.length > 0 && (
+              <button
+                onClick={doEstingui}
+                disabled={estinguendo}
+                className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-50"
+              >
+                {estinguendo ? "Chiusura…" : "Estingui conto"}
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-3 border-t border-neutral-200 px-5 py-3">
+            <span className="text-sm text-neutral-500">
+              {lineCount} {lineCount === 1 ? "prodotto" : "prodotti"} · ~{formatEUR(estimateCents)}
+            </span>
+            <button
+              onClick={submit}
+              disabled={submitting || !lineCount}
+              className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-50"
+            >
+              {submitting ? "Creazione…" : "Crea ordine"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
