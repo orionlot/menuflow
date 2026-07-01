@@ -70,6 +70,7 @@ export default function ManualOrderModal({
   const [indirizzo, setIndirizzo] = useState("");
   const [coperti, setCoperti] = useState(0);
   const [note, setNote] = useState("");
+  const [query, setQuery] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,6 +80,8 @@ export default function ManualOrderModal({
   const [loadingConto, setLoadingConto] = useState(false);
   const [estinguendo, setEstinguendo] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  // "Dividi alla romana" — on-screen helper for the waiter (Conto tab).
+  const [persone, setPersone] = useState(2);
 
   const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const categories = useMemo(() => {
@@ -196,6 +199,16 @@ export default function ManualOrderModal({
     ...(deliveryOn ? ([{ id: "delivery", label: "Delivery" }] as const) : []),
   ];
 
+  // Dish search — filters the picker by name or category so the waiter can find
+  // a plate fast instead of scrolling every category. Items already in the cart
+  // stay visible even while a search is active, so every line that will be
+  // submitted remains reachable (adjust quantity / "a seguire").
+  const queryLc = query.trim().toLowerCase();
+  const matchesQuery = (i: PickerItem) =>
+    !queryLc || i.nome.toLowerCase().includes(queryLc) || i.categoria.toLowerCase().includes(queryLc);
+  const inPicker = (i: PickerItem) => matchesQuery(i) || (cart[i.id] ?? 0) > 0;
+  const anyVisible = items.some(inPicker);
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center" onClick={onClose}>
       <div
@@ -277,6 +290,42 @@ export default function ManualOrderModal({
                       <span>{formatEUR(conto.totCents)}</span>
                     </div>
                   </div>
+
+                  {/* Dividi alla romana — quota per persona (solo a schermo) */}
+                  <div className="mt-3 rounded-lg bg-neutral-50 px-3 py-2.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium">Dividi alla romana</span>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setPersone((n) => Math.max(1, n - 1))}
+                          disabled={persone <= 1}
+                          aria-label="Meno persone"
+                          className="grid h-7 w-7 place-items-center rounded-full bg-neutral-200 text-neutral-700 hover:bg-neutral-300 disabled:opacity-40"
+                        >
+                          −
+                        </button>
+                        <span className="w-6 text-center text-sm font-semibold tabular-nums">{persone}</span>
+                        <button
+                          type="button"
+                          onClick={() => setPersone((n) => Math.min(50, n + 1))}
+                          aria-label="Più persone"
+                          className="grid h-7 w-7 place-items-center rounded-full bg-neutral-900 text-white hover:bg-neutral-700"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-1.5 flex items-baseline justify-between">
+                      <span className="text-xs text-neutral-500">
+                        {persone} {persone === 1 ? "persona" : "persone"}
+                      </span>
+                      <span className="text-base font-bold">
+                        {formatEUR(Math.ceil(conto.totCents / persone))}
+                        <span className="ml-1 text-xs font-normal text-neutral-500">a testa</span>
+                      </span>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
@@ -319,14 +368,41 @@ export default function ManualOrderModal({
                 )}
               </div>
 
+              {/* Dish search */}
+              {items.length > 0 && (
+                <div className="relative mb-3">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">🔍</span>
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Cerca un piatto…"
+                    maxLength={60}
+                    aria-label="Cerca un piatto"
+                    className="w-full rounded-lg border border-neutral-300 py-2 pl-9 pr-9 text-sm"
+                  />
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={() => setQuery("")}
+                      aria-label="Cancella ricerca"
+                      className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              )}
+
               {/* Item picker */}
               <div className="space-y-3">
-                {categories.map((cat) => (
+                {categories.map((cat) => {
+                  const catItems = items.filter((i) => i.categoria === cat && inPicker(i));
+                  if (catItems.length === 0) return null;
+                  return (
                   <div key={cat}>
                     <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-neutral-400">{cat}</p>
                     <ul className="space-y-1">
-                      {items
-                        .filter((i) => i.categoria === cat)
+                      {catItems
                         .map((i) => {
                           const q = cart[i.id] ?? 0;
                           return (
@@ -370,9 +446,15 @@ export default function ManualOrderModal({
                         })}
                     </ul>
                   </div>
-                ))}
+                  );
+                })}
                 {items.length === 0 && (
                   <p className="text-sm text-neutral-500">Nessun prodotto disponibile.</p>
+                )}
+                {items.length > 0 && queryLc && !anyVisible && (
+                  <p className="py-4 text-center text-sm text-neutral-500">
+                    Nessun piatto trovato per «{query.trim()}».
+                  </p>
                 )}
               </div>
 
