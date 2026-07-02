@@ -88,6 +88,7 @@ export default function KitchenClient({
   tempoStimatoOn = true,
   autoStampaOn = false,
   portateOn = false,
+  ruolo = "all",
 }: {
   restaurantName: string;
   restaurantId: string;
@@ -96,6 +97,7 @@ export default function KitchenClient({
   tempoStimatoOn?: boolean;
   autoStampaOn?: boolean;
   portateOn?: boolean;
+  ruolo?: "all" | "cameriere" | "cuoco";
 }) {
   const [orders, setOrders] = useState<KOrder[]>([]);
   const [audioOn, setAudioOn] = useState(false);
@@ -465,8 +467,13 @@ export default function KitchenClient({
       {/* Header */}
       <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 bg-[#14171c] px-4 py-3 sm:px-6">
         <div className="flex items-baseline gap-3">
-          <Link href="/dashboard" className="text-sm text-neutral-400 hover:text-white">
-            ← Dashboard
+          {ruolo !== "cuoco" && (
+            <Link href="/dashboard" className="text-sm text-neutral-400 hover:text-white">
+              ← Dashboard
+            </Link>
+          )}
+          <Link href="/dashboard/ruolo" className="text-sm text-neutral-400 hover:text-white" title="Cambia ruolo del dispositivo">
+            ⇆ Ruolo
           </Link>
           <h1 className="text-lg font-bold">Cucina · {restaurantName}</h1>
         </div>

@@ -125,6 +125,15 @@ export const COOKIE_REGISTRY: CookieDef[] = [
     provider: "Supabase",
     surface: "dashboard",
   },
+  {
+    name: "mf_ruolo",
+    category: "necessari",
+    scopo:
+      "Ricorda il ruolo scelto per questo dispositivo nella dashboard del ristoratore (All view, Cameriere o Cuoco).",
+    durata: "6 mesi",
+    provider: "MenuFlow",
+    surface: "dashboard",
+  },
 ];
 
 /** The cookies that apply to a given tenant's public menu, given its config. */

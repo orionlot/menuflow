@@ -1,8 +1,10 @@
 import type { CSSProperties } from "react";
+import { cookies } from "next/headers";
 import { requireOwner } from "@/lib/auth";
 import { signOut, setDashboardTema } from "@/app/dashboard/actions";
 import { adminBrandVars } from "@/lib/brand";
 import { isFeatureOn } from "@/lib/config/features";
+import { parseRuolo, RUOLO_COOKIE } from "@/lib/ruoli";
 import DashboardSidebar from "./DashboardSidebar";
 
 export default async function DashboardLayout({
@@ -11,6 +13,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { restaurant } = await requireOwner();
+  const ruolo = parseRuolo((await cookies()).get(RUOLO_COOKIE)?.value) ?? "all";
   const brandVars = adminBrandVars(
     restaurant.colore_primario,
     restaurant.colore_secondario,
@@ -40,6 +43,7 @@ export default async function DashboardLayout({
         salaOn={isFeatureOn(restaurant, "sala")}
         contiOn={isFeatureOn(restaurant, "conti")}
         prenotazioniOn={isFeatureOn(restaurant, "prenotazioni")}
+        ruolo={ruolo}
         dark={dark}
         setTema={setDashboardTema}
       />

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { RUOLO_COOKIE } from "@/lib/ruoli";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isStripeConfigured } from "@/lib/env";
@@ -1230,5 +1232,8 @@ export async function updateBranding(patch: BrandingPatch) {
 export async function signOut() {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
+  // Clear the device role so the next account to log in on this device gets
+  // the role picker instead of inheriting a stale Cameriere/Cuoco view.
+  (await cookies()).delete(RUOLO_COOKIE);
   redirect("/dashboard/login");
 }
