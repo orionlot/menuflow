@@ -3,8 +3,17 @@
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { Ruolo } from "@/lib/ruoli";
 
 type Item = { href: string; label: string; icon: IconName; exact?: boolean };
+
+/** Sections the "cameriere" role can reach (mirror of lib/ruoli allow-list). */
+const CAMERIERE_HREFS = new Set([
+  "/dashboard/sala",
+  "/dashboard/ordini",
+  "/dashboard/conti",
+  "/dashboard/prenotazioni",
+]);
 
 const PRIMARY: Item[] = [
   { href: "/dashboard", label: "Dashboard", icon: "grid", exact: true },
@@ -31,6 +40,7 @@ export default function DashboardSidebar({
   salaOn = false,
   contiOn = false,
   prenotazioniOn = false,
+  ruolo = "all",
   dark = false,
   setTema,
 }: {
@@ -39,6 +49,7 @@ export default function DashboardSidebar({
   salaOn?: boolean;
   contiOn?: boolean;
   prenotazioniOn?: boolean;
+  ruolo?: Ruolo;
   dark?: boolean;
   setTema?: (t: "light" | "dark") => Promise<void>;
 }) {
@@ -47,8 +58,10 @@ export default function DashboardSidebar({
     (i) =>
       (salaOn || i.href !== "/dashboard/sala") &&
       (contiOn || i.href !== "/dashboard/conti") &&
-      (prenotazioniOn || i.href !== "/dashboard/prenotazioni"),
+      (prenotazioniOn || i.href !== "/dashboard/prenotazioni") &&
+      (ruolo !== "cameriere" || CAMERIERE_HREFS.has(i.href)),
   );
+  const settings = ruolo === "cameriere" ? [] : SETTINGS;
   const temaToggle = setTema ? (
     <button
       onClick={() => void setTema(dark ? "light" : "dark")}
@@ -77,14 +90,14 @@ export default function DashboardSidebar({
         <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setOpen(false)}>
           <div className="absolute inset-0 bg-black/40" />
           <div className="absolute inset-y-0 left-0 w-64 bg-white p-3" onClick={(e) => e.stopPropagation()}>
-            <Nav nome={nome} esci={esci} primary={primary} temaToggle={temaToggle} onNavigate={() => setOpen(false)} />
+            <Nav nome={nome} esci={esci} primary={primary} settings={settings} ruolo={ruolo} temaToggle={temaToggle} onNavigate={() => setOpen(false)} />
           </div>
         </div>
       )}
 
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-neutral-200 bg-white lg:block">
-        <Nav nome={nome} esci={esci} primary={primary} temaToggle={temaToggle} />
+        <Nav nome={nome} esci={esci} primary={primary} settings={settings} ruolo={ruolo} temaToggle={temaToggle} />
       </aside>
     </>
   );
@@ -94,12 +107,16 @@ function Nav({
   nome,
   esci,
   primary,
+  settings,
+  ruolo,
   temaToggle,
   onNavigate,
 }: {
   nome: string;
   esci: ReactNode;
   primary: Item[];
+  settings: Item[];
+  ruolo: Ruolo;
   temaToggle?: ReactNode;
   onNavigate?: () => void;
 }) {
@@ -139,10 +156,25 @@ function Nav({
       </div>
       <nav aria-label="Sezioni" className="flex-1 space-y-1 overflow-y-auto">
         {primary.map(link)}
-        <div className="my-2 border-t border-neutral-100" />
-        {SETTINGS.map(link)}
+        {settings.length > 0 && <div className="my-2 border-t border-neutral-100" />}
+        {settings.map(link)}
       </nav>
       <div className="mt-3 border-t border-neutral-100 pt-3">
+        <Link
+          href="/dashboard/ruolo"
+          onClick={onNavigate}
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900"
+        >
+          <span className="text-neutral-400">
+            <Icon name="role" />
+          </span>
+          <span className="min-w-0 truncate">
+            Cambia ruolo
+            <span className="ml-1 text-xs text-neutral-400">
+              · {ruolo === "all" ? "All view" : ruolo === "cameriere" ? "Cameriere" : "Cuoco"}
+            </span>
+          </span>
+        </Link>
         {temaToggle}
         {esci}
       </div>
@@ -152,7 +184,7 @@ function Nav({
 
 type IconName =
   | "grid" | "receipt" | "chef" | "book" | "box" | "users" | "chart" | "qr"
-  | "palette" | "scale" | "gear" | "menu" | "logo" | "tables" | "wallet" | "calendar";
+  | "palette" | "scale" | "gear" | "menu" | "logo" | "tables" | "wallet" | "calendar" | "role";
 
 function Icon({ name }: { name: IconName }) {
   const p: Record<IconName, ReactNode> = {
@@ -172,6 +204,7 @@ function Icon({ name }: { name: IconName }) {
     tables: <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><circle cx="17" cy="17" r="3" /></>,
     wallet: <><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18" /><circle cx="16.5" cy="14" r="1" /></>,
     calendar: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /></>,
+    role: <><circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0 1 12 0" /><path d="M17 4l3 3-3 3M20 7h-6" /></>,
   };
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

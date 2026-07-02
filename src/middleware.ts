@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ROOT_DOMAIN } from "@/lib/env";
 import { updateSession } from "@/lib/supabase/middleware";
+import { allowedForRole, homeForRole, parseRuolo, RUOLO_COOKIE } from "@/lib/ruoli";
 
 /**
  * Multi-tenant router.
@@ -36,7 +37,19 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Auth-protected app surfaces: keep the session fresh, never rewrite.
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/dashboard")) {
+    // Device role (All view / Cameriere / Cuoco): pure path gating from the
+    // mf_ruolo cookie — no DB access. Missing cookie → force the role picker.
+    const ruolo = parseRuolo(request.cookies.get(RUOLO_COOKIE)?.value);
+    if (!allowedForRole(pathname, ruolo)) {
+      const url = request.nextUrl.clone();
+      url.pathname = ruolo ? homeForRole(ruolo) : "/dashboard/ruolo";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    return updateSession(request);
+  }
+  if (pathname.startsWith("/admin")) {
     return updateSession(request);
   }
   if (pathname.startsWith("/api")) {
