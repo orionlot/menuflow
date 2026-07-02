@@ -36,9 +36,13 @@ const CAMERIERE_PREFIXES = [
   "/dashboard/ordini",
   "/dashboard/conti",
   "/dashboard/prenotazioni",
-  "/dashboard/stampa", // bill print, reachable from Conti
+  "/dashboard/stampa", // per-order comanda print (from Ordini)
+  "/dashboard/conto", // aggregated bill print /dashboard/conto/stampa (from Conti)
 ];
-const CUOCO_PREFIXES = ["/dashboard/cucina"];
+const CUOCO_PREFIXES = [
+  "/dashboard/cucina",
+  "/dashboard/stampa", // comanda print — the KDS auto-print fetches this route
+];
 
 /** Reachable regardless of role — login and the role picker itself. */
 const ALWAYS_PREFIXES = ["/dashboard/login", "/dashboard/ruolo"];

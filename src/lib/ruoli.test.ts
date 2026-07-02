@@ -30,13 +30,14 @@ describe("allowedForRole", () => {
     }
   });
 
-  it("cameriere sees sala/ordini/conti/prenotazioni/stampa (and subpaths)", () => {
+  it("cameriere sees sala/ordini/conti/prenotazioni + both print routes", () => {
     for (const p of [
       "/dashboard/sala",
       "/dashboard/ordini",
       "/dashboard/conti",
       "/dashboard/prenotazioni",
-      "/dashboard/stampa/abc-123",
+      "/dashboard/stampa/abc-123", // per-order comanda (from Ordini)
+      "/dashboard/conto/stampa", // aggregated bill (from Conti)
     ]) {
       expect(allowedForRole(p, "cameriere")).toBe(true);
     }
@@ -48,9 +49,10 @@ describe("allowedForRole", () => {
     }
   });
 
-  it("cuoco sees only the kitchen", () => {
+  it("cuoco sees the kitchen and the comanda print route (KDS auto-print)", () => {
     expect(allowedForRole("/dashboard/cucina", "cuoco")).toBe(true);
-    for (const p of ["/dashboard", "/dashboard/sala", "/dashboard/ordini", "/dashboard/menu"]) {
+    expect(allowedForRole("/dashboard/stampa/abc-123", "cuoco")).toBe(true);
+    for (const p of ["/dashboard", "/dashboard/sala", "/dashboard/ordini", "/dashboard/menu", "/dashboard/conto/stampa"]) {
       expect(allowedForRole(p, "cuoco")).toBe(false);
     }
   });

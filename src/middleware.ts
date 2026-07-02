@@ -40,8 +40,12 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/dashboard")) {
     // Device role (All view / Cameriere / Cuoco): pure path gating from the
     // mf_ruolo cookie — no DB access. Missing cookie → force the role picker.
+    // Only GET navigations are gated: a 307 on a server-action POST would
+    // re-send the action body to a different route and lose the mutation
+    // (e.g. role switched in another tab while a form was open). The role is
+    // a focus filter, not a security boundary — auth/RLS still applies.
     const ruolo = parseRuolo(request.cookies.get(RUOLO_COOKIE)?.value);
-    if (!allowedForRole(pathname, ruolo)) {
+    if (request.method === "GET" && !allowedForRole(pathname, ruolo)) {
       const url = request.nextUrl.clone();
       url.pathname = ruolo ? homeForRole(ruolo) : "/dashboard/ruolo";
       url.search = "";
